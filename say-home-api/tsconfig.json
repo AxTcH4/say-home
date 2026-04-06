@@ -4,6 +4,7 @@
     // File Layout
     "rootDir": "./",
     "outDir": "./dist",
+    
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
@@ -23,7 +24,7 @@
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
+    "exactOptionalPropertyTypes": false,
 
     // Style Options
     // "noImplicitReturns": true,
