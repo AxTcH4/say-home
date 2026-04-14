@@ -189,20 +189,14 @@ export default function PropertyDetailPage() {
             <h2 className="text-lg font-bold text-gray-900 mb-6">
               Propriétés similaires
             </h2>
-            <div className="grid grid-cols-3 gap-6">
+            {/* <div className="grid grid-cols-3 gap-6">
               {similar.map((prop: any) => (
                 <PropertyCard
-                  main_pic={prop.main_pic}
-                  key={prop.id}
-                  id={prop.id}
-                  location="Location"
-                  title={prop.title}
-                  price={`${prop.price} MAD`}
-                  surface="N/A"
-                  rooms="N/A"
+                key={prop}
+                 property = {prop}
                 />
               ))}
-            </div>
+            </div> */}
           </div>
         )}
       </div>
