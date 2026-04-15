@@ -1,8 +1,9 @@
 package ma.sayhome.say_home_api.notification;
 import jakarta.persistence.*;
+import lombok.Data;
 import ma.sayhome.say_home_api.auth.User;
 import ma.sayhome.say_home_api.shared.EntityBase;
-
+@Data
 @Entity
 @Table(name = "notifications")
 public class Notification extends EntityBase {
@@ -15,7 +16,7 @@ public class Notification extends EntityBase {
     private String message;
 
     @Column(nullable = false)
-    private Boolean read = false;
+    private Boolean is_read = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

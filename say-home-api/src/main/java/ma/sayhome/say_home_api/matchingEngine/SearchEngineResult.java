@@ -1,8 +1,10 @@
 package ma.sayhome.say_home_api.matchingEngine;
 
-import ma.sayhome.say_home_api.property.Property;
-import ma.sayhome.say_home_api.property.PropertyDTO;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import ma.sayhome.say_home_api.property.dto.PropertyDTO;
 
+@Data
 public class SearchEngineResult {
     private PropertyDTO property;
     private Float score; // the fake percentage for now
@@ -20,4 +22,5 @@ public class SearchEngineResult {
     public void setProperty(PropertyDTO property) { this.property = property; }
     public void setScore(Float score) { this.score = score; }
     // getters
+
 }

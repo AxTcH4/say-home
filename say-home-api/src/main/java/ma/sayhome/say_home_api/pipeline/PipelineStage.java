@@ -2,13 +2,14 @@ package ma.sayhome.say_home_api.pipeline;
 
 import jakarta.persistence.*;
 import ma.sayhome.say_home_api.prospect.Prospect;
+import ma.sayhome.say_home_api.shared.EntityBase;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "pipeline_stages")
-public class PipelineStage {
+public class PipelineStage extends EntityBase {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

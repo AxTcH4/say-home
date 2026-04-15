@@ -19,9 +19,6 @@ public class MatchingEngineController extends ControllerBase {
 
     @GetMapping("/api/properties/search")
     @CrossOrigin(origins = "http://localhost:3000")
-    //search for attributes and similar
-    //create a percentage column
-    //sort by percentage
 
     //sanitize inputs
     public ResponseEntity<ApiResponse<List<SearchEngineResult>>> search (@Valid @ModelAttribute SearchRequest request) {
@@ -36,16 +33,17 @@ public class MatchingEngineController extends ControllerBase {
 
             //forward request to FASTAPI
             List<SearchEngineResult> result = matchingEngineService.fetchMatchingProperties(request);
-            MatchResult matchResult = new MatchResult();
 
+            MatchResult matchResult = new MatchResult();
+            //construct a match result
+            //store result in match result and send back to front
         if (result == null || result.isEmpty()) {
             throw new ResourceNotFoundException("Aucun resultat");
         }
 
 
 
-            //construct a match result
-            //store result in match result and send back to front
+
 
         return ok(result);
 

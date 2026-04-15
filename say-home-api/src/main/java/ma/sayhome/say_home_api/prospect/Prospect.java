@@ -63,5 +63,4 @@ public class Prospect extends EntityBase {
     @OneToMany(mappedBy = "prospect", cascade = CascadeType.ALL)
     private List<MatchRun> matchRuns = new ArrayList<>();
 
-    // getters + setters
 }

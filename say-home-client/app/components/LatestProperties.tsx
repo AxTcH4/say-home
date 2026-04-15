@@ -6,31 +6,30 @@ import { getLatestProperties } from '@/lib/api';
 
 const filters = ['Villas à vendre', 'Villas à louer', 'Appartements à vendre', 'Appartements à louer', 'Riads à vendre', 'Riads à louer'];
 
-const placeholders = [
-  { id: 1, location: 'Location', title: "Titre de l'offre bibliablalba", price: '1000000 MAD', surface: '400 M²', rooms: '4' },
-  { id: 2, location: 'Location', title: "Titre de l'offre bibliablalba", price: '8000000 MAD', surface: '300 M²', rooms: '3' },
-  { id: 3, location: 'Location', title: "Titre de l'offre bibliablalba", price: '3000000 MAD', surface: '500 M²', rooms: '5' },
-];
+
 
 export default function LatestProperties() {
   const [activeFilter, setActiveFilter] = useState(filters[0]);
-  const [properties, setProperties] = useState<any[]>(placeholders);
+  const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const data = await getLatestProperties();
-        if (data === null || data.length === 0) {
-          setProperties(placeholders);
+        const result = await getLatestProperties();
+        
+        if (result.data === null || result.data.length === 0) {
+          setProperties([]);
         } else {
-          setProperties(data.map((p: any) => ({
-            id: p.id,
-            location: p.description || 'Location',
-            title: p.title,
-            price: `${p.price} MAD`,
-            surface: 'N/A',
-            rooms: 'N/A',
+          setProperties(result.data.map((p: any) => ({
+          id: p.id,
+          description: p.description || 'Location',
+          medias: p.medias,
+          secteur: p.secteur,
+          title: p.title,
+          price: `${p.price} MAD`,
+          surface: p.surface ? `${p.surface} M2` : 'N/A',
+          rooms: p.rooms ? `${p.rooms} chambre(s)` : 'N/A', 
           })));
         }
       } catch (error) {
@@ -61,7 +60,7 @@ export default function LatestProperties() {
           </button>
         ))}
       </div>
-      <div className="grid grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-7xl mx-auto">
         {properties.map((property: any) => (
           <PropertyCard key={property.id} {...property} />
         ))}

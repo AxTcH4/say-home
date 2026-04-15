@@ -7,11 +7,13 @@ import AboutSection from './components/AboutSection';
 import ContactSection from './components/ContactSection';
 import Footer from './components/Footer';
 
+
 export default function HomePage() {
   return (
     <main>
       <Navbar 
         onHero={true} />
+      
       <Hero />
       <LatestProperties />
       <AboutSection />

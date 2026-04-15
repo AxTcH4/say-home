@@ -8,6 +8,7 @@ import { Search } from 'lucide-react';
 import { getAllProperties, searchProperties } from '../../lib/api';
 import { set, z } from "zod";
 import { redirect } from 'next/navigation'
+import { toast } from "sonner"
 
 const searchSchema = z.object({
     title: z.string().optional(),
@@ -18,35 +19,17 @@ const searchSchema = z.object({
     });
 
 
-const placeholders = [
-  { id: 1, location: 'Location', title: "Titre de l'offre bibliablalba", price: '10000000 MAD', surface: '5000 M²', rooms: '50' },
-  { id: 2, location: 'Location', title: "Titre de l'offre bibliablalba", price: '40000000 MAD', surface: '5000 M²', rooms: '60' },
-  { id: 3, location: 'Location', title: "Titre de l'offre bibliablalba", price: '60000000 MAD', surface: '5000 M²', rooms: '60' },
-  { id: 4, location: 'Location', title: "Titre de l'offre bibliablalba", price: '10000000 MAD', surface: '5000 M²', rooms: '90' },
-  { id: 5, location: 'Location', title: "Titre de l'offre bibliablalba", price: '40000000 MAD', surface: '5000 M²', rooms: '30' },
-  { id: 6, location: 'Location', title: "Titre de l'offre bibliablalba", price: '60000000 MAD', surface: '5000 M²', rooms: '50' },
-  { id: 7, location: 'Location', title: "Titre de l'offre bibliablalba", price: '10000000 MAD', surface: '5000 M²', rooms: '93' },
-  { id: 8, location: 'Location', title: "Titre de l'offre bibliablalba", price: '40000000 MAD', surface: '5000 M²', rooms: '40' },
-  { id: 9, location: 'Location', title: "Titre de l'offre bibliablalba", price: '60000000 MAD', surface: '5000 M²', rooms: '50' },
-];
-
 export default function PropertiesPage() {
-  const [items, setItems] = useState<any[]>(placeholders);
+  const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const typeRef = useRef<HTMLSelectElement>(null);
   const secteurRef = useRef<HTMLSelectElement>(null);
   const minPriceRef = useRef<HTMLInputElement>(null);
   const maxPriceRef = useRef<HTMLInputElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
-  // const [searchResults, setSearchResults] = useState<any[]>([]);
   const [error, setError] = useState<"404" | "400" | "500" | null>(null);
-  useEffect(() => {
-    console.log('New items:' + items);
-  }, [items]);
   
-  useEffect(() => {
-    console.log('New error:' + error);
-  },[error])
+
   const fetchProperties = async () => {
     setLoading(true);
     try {
@@ -54,23 +37,28 @@ export default function PropertiesPage() {
       if (data && data.length > 0) {
         setItems(data.map((p: any) => ({
           id: p.id,
-          location: p.description || 'Location',
+          description: p.description ,
           title: p.title,
+          secteur: p.secteur ,
+          medias: p.medias,
           price: `${p.price} MAD`,
-          surface: 'N/A',
-          rooms: 'N/A',
+          surface: p.surface ? `${p.surface} M2` : 'N/A',
+          rooms: p.rooms ? `${p.rooms} chambre(s)` : 'N/A',
         })));
       } else {
-        setItems(placeholders);
+        setItems([]);
       }
     } catch (error) {
       console.error('Erreur:', error);
-      setItems(placeholders);
+      setItems([]);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchProperties();
+  }, []);
 
 
   const searchContent = async (e: any) => {
@@ -80,37 +68,51 @@ export default function PropertiesPage() {
         title: titleRef.current?.value.trim(),
         type: typeRef.current?.value.trim(),
         secteur: secteurRef.current?.value.trim(),
-        minPrice: minPriceRef.current?.value ||0,
-        maxPrice: maxPriceRef.current?.value ||0,
+        minPrice: minPriceRef.current?.value || 0,
+        maxPrice: maxPriceRef.current?.value || 0,
       });
       
       try {
-          const result = await searchProperties(data);
-          console.log(result);
+        if (Number(minPriceRef.current?.value) > Number(maxPriceRef.current?.value) && Number(maxPriceRef.current?.value) !== 0) {
+          toast.error("Le prix minimum doit être inférieur au prix maximum", { duration: 3000 });
+          return;
+        }
+        if (Number(minPriceRef.current?.value) < 0 || Number(maxPriceRef.current?.value) < 0) {
+          toast.error("Le prix doit être positif", { duration: 3000 });
+          return;
+        }
+        const result = await searchProperties(data);
+          console.log("Result from backend: ", result);
 
         if (result.status === 404) {
-          console.log("In 404 condition");
-          setItems([]);
+          // setItems([]);
           setError("404");
+          toast.error("Aucun resultat", {duration: 3000});
           }
         else if (!result || result.status === 500) {
           setItems([]);
           setError("500");
+          toast.error("Une erreur est survenue", {duration: 3000});
+
         }
         else if (result.status === 400) {
-          setItems([]);
+          // setItems([]);
           setError("400");
+          toast.error("Un ou plusieurs champs sont invalides", {duration: 3000});
+
         }
         else {
 
         setItems(result.data.map((item: any) => ({
           id: item.property.id,
-          main_pic: item.property.main_pic || '/placeholder.jpg',
-          secteur: item.property.secteur || 'Location',
+          description: item.property.description || 'No Desciption provided',
+          type: item.property.type || 'N/A',
+          secteur: item.property.secteur || 'Unknown location',
           title: item.property.title,
           price: `${item.property.price} MAD`,
-          surface: item.property.surface || 'N/A',
-          rooms: item.property.rooms || 'N/A',
+          surface: item.property.surface + 'M2' || 'N/A',
+          rooms: item.property.rooms || + + 'chambre(s)' ||  'N/A',
+          medias : item.property.medias,
           score: item.score
         })));
         setError(null); // clear any previous error
@@ -178,21 +180,21 @@ export default function PropertiesPage() {
           { 
             error === "400" ?
             <div className="flex flex-col justify-center ">
-              <span></span>
+              
               <p className=" relative text-2xl font-bold text-gray-500">Bad Request</p>
 
             </div>
             
-              :
+            :
             error === "404" ? <div className="flex flex-col justify-center ">
             <p className="text-sm font-medium text-gray-700">
             Résultats: <span className="font-bold">0 propriétés</span>
             </p>
                <div className="flex flex-col items-center justify-center mt-7 ">
                  <Image  src="/err-404.png" alt="error 404" width={450} height={50} />
-       
+                
                  <p className=" relative mt-[-3.5vw] text-2xl font-bold text-gray-500 ">Aucun Bien trouvé</p>
-               </div>
+               </div> 
 
             </div>
             
@@ -203,8 +205,10 @@ export default function PropertiesPage() {
 
               <p className=" relative text-2xl font-bold text-gray-500">Une Erreur Interne est survenue</p>
             </div>
+            
             :
-     
+          
+          
 
            <>
             <div className="flex items-center justify-between mb-4">
@@ -214,6 +218,7 @@ export default function PropertiesPage() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                  {items.map((item: any, index: number) => (
+                  console.log(item),
                     <PropertyCard key={index} {...item} />
                ))}
              </div>

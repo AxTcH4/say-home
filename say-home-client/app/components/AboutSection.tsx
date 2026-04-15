@@ -3,7 +3,7 @@ import Image from 'next/image';
 export default function AboutSection() {
   return (
     <>
-      <section className="flex w-full h-screen bg-black">
+      <section id="about" className="flex w-full h-screen bg-black">
         <div className="relative w-1/2 mt-[-50px]">
           <Image src="/riad.png" alt="Riad" fill sizes="50vw" className="object-cover object-center" />
         </div>

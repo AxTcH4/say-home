@@ -1,5 +1,6 @@
 package ma.sayhome.say_home_api.auth;
 import jakarta.persistence.*;
+import lombok.Data;
 import ma.sayhome.say_home_api.shared.EntityBase;
 import ma.sayhome.say_home_api.shared.enums.Role;
 import ma.sayhome.say_home_api.appointment.Appointment;
@@ -10,7 +11,7 @@ import ma.sayhome.say_home_api.property.Property;
 import java.util.ArrayList;
 import java.util.List;
 
-
+@Data
 @Entity
 @Table(name = "users")
 public class User extends EntityBase {
@@ -44,5 +45,11 @@ public class User extends EntityBase {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Notification> notifications = new ArrayList<>();
 
-    // getters + setters
+
+
+
+
+    public String getFullName(){
+        return firstName + " " + lastName;
+    }
 }

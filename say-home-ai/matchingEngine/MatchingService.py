@@ -42,11 +42,13 @@ class MatchingService:
                 "property": {
                     "id": p["id"],
                     "title": p["title"],
+                    "description": p["description"],
+                    "type": p["type"],
                     "secteur": p.get("secteur"),
                     "price": p["price"],
-                    "main_pic": None,
                     "surface": p.get("surface"),
                     "rooms": p.get("rooms"),
+                    "agent_id": p.get("agent_id"),
                 },
                 "score": round(random.uniform(70, 99), 1)
             }
