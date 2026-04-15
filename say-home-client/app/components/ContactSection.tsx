@@ -36,7 +36,7 @@ export default function ContactSection() {
             <div className="flex flex-col gap-1.5 text-gray-700 mb-3" style={{ fontSize: 'clamp(0.6rem, 1vw, 0.75rem)' }}>
               <div className="flex items-center gap-1.5"><MapPin size={10} /><span>Marrakech, Maroc</span></div>
               <div className="flex items-center gap-1.5"><Phone size={10} /><span>0887654321</span></div>
-              <div className="flex items-center gap-1.5"><Mail size={10} /><span>541HOME@gmail.com</span></div>
+              <div className="flex items-center gap-1.5"><Mail size={10} /><span>sayhome.app@gmail.com</span></div>
             </div>
             <div className="flex gap-3 text-gray-600">
               <FaInstagram size={11} className="cursor-pointer hover:text-black" />

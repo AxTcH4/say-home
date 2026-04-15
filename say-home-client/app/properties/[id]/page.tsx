@@ -232,7 +232,7 @@ export default function PropertyDetailPage() {
                 <span>📞</span> 0687654321
               </div>
               <div className="flex items-center gap-2">
-                <span>✉️</span> S4YHOME@gmail.com
+                <span>✉️</span> sayhome.app@gmail.com
               </div>
             </div>
             <div className="flex gap-3 text-gray-400">

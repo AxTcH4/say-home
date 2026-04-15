@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(node_modules/.bin/next lint:*)",
+      "Bash(node_modules/.bin/eslint \"modules/auth/context/AuthContext.tsx\")",
+      "Bash(node_modules/.bin/eslint . --ext .ts,.tsx)"
+    ]
+  }
+}

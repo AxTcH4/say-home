@@ -1,9 +1,13 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { APP_ROUTES } from '@/lib/routes';
+import { useAuth } from '@/modules/auth/hooks/useAuth';
+
 export default function Navbar({ onHero }: { onHero: boolean }) {
   //init the scrolling state 
   const [scrolled, setScrolled] = useState(false);
+  const { isAuthenticated, logout } = useAuth();
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > window.innerHeight * 0.95); // adjust 80 to your hero height
@@ -31,12 +35,25 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
 
         {/* Buttons */}
         <div className="flex items-center gap-3">
-          <Link href="#" className={`-fit px-5 py-2 text-sm ${scrolled || !onHero ? 'text-black border border-black' : 'text-white border border-white'} font-medium hover:bg-[#2C1A0E] hover:border-transparent hover:text-white transition rounded-[1px]`}>
-            Se connecter
-          </Link>
-          <Link href="#" className="w-fit px-6 py-[9px] text-sm bg-[#2C1A0E] text-white  hover:scale-110 transition rounded-[1px]">
-            S'inscrire
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <Link href={APP_ROUTES.DASHBOARD} className={`-fit px-5 py-2 text-sm ${scrolled || !onHero ? 'text-black border border-black' : 'text-white border border-white'} font-medium hover:bg-[#2C1A0E] hover:border-transparent hover:text-white transition rounded-[1px]`}>
+                Dashboard
+              </Link>
+              <button type="button" onClick={logout} className="w-fit px-6 py-[9px] text-sm bg-[#2C1A0E] text-white hover:scale-110 transition rounded-[1px]">
+                Deconnexion
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href={APP_ROUTES.LOGIN} className={`-fit px-5 py-2 text-sm ${scrolled || !onHero ? 'text-black border border-black' : 'text-white border border-white'} font-medium hover:bg-[#2C1A0E] hover:border-transparent hover:text-white transition rounded-[1px]`}>
+                Se connecter
+              </Link>
+              <Link href={APP_ROUTES.SIGNUP} className="w-fit px-6 py-[9px] text-sm bg-[#2C1A0E] text-white hover:scale-110 transition rounded-[1px]">
+                S&apos;inscrire
+              </Link>
+            </>
+          )}
         </div>
       </nav>
       </div>
