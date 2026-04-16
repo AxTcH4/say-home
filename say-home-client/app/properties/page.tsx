@@ -1,11 +1,11 @@
 'use client';
 import { useState, useEffect, useRef, use } from 'react';
-import Navbar from '../components/Navbar';
+import Navbar from '../../shared/components/Navbar';
 import Image from 'next/image';
-import Footer from '../components/Footer';
-import PropertyCard from '../components/PropertyCard';
+import Footer from '../../shared/components/Footer';
+import PropertyCard from '../../features/properties/components/PropertyCard';
 import { Search } from 'lucide-react';
-import { getAllProperties, searchProperties } from '../../lib/api';
+import { getAllProperties, searchProperties } from '../../shared/lib/api';
 import { set, z } from "zod";
 import { redirect } from 'next/navigation'
 import { toast } from "sonner"

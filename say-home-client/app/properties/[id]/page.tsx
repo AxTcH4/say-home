@@ -2,12 +2,12 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import Navbar from "../../components/Navbar";
-import PropertyCard from "../../components/PropertyCard";
+import Navbar from "../../../shared/components/Navbar";
+import PropertyCard from "../../../features/properties/components/PropertyCard";
 import { MapPin, Calendar, User } from "lucide-react";
 import { FaInstagram, FaTwitter, FaFacebookF, FaYoutube } from "react-icons/fa";
-import { getPropertyById } from "@/lib/api";
-import Footer from "../../components/Footer";
+import { getPropertyById } from "@/shared/lib/api";
+import Footer from "../../../shared/components/Footer";
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
@@ -234,7 +234,7 @@ export default function PropertyDetailPage() {
                 <span>📞</span> 0687654321
               </div>
               <div className="flex items-center gap-2">
-                <span>✉️</span> S4YHOME@gmail.com
+                <span>✉️</span> sayhome.app@gmail.com
               </div>
             </div>
             <div className="flex gap-3 text-gray-400">
