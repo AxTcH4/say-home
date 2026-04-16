@@ -4,6 +4,7 @@ import { FaInstagram, FaTwitter, FaFacebookF, FaYoutube } from 'react-icons/fa';
 
 export default function ContactSection() {
   return (
+    
     <div id="contact">
       <div className="w-full h-6 bg-white" />
       <section className="flex flex-row w-full" style={{ height: 'clamp(320px, 40vw, 480px)' }}>
