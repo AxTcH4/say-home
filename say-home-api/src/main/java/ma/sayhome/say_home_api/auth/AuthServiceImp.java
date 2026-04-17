@@ -3,7 +3,6 @@ package ma.sayhome.say_home_api.auth;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import ma.sayhome.say_home_api.auth.dto.*;
-import ma.sayhome.say_home_api.shared.ApiResponse;
 import ma.sayhome.say_home_api.shared.enums.Role;
 import ma.sayhome.say_home_api.shared.exceptions.BadRequestException;
 import ma.sayhome.say_home_api.shared.exceptions.UnauthorizedException;
@@ -13,7 +12,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.function.EntityResponse;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
