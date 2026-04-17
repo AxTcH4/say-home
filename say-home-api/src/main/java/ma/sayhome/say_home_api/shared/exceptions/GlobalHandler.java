@@ -2,6 +2,8 @@ package ma.sayhome.say_home_api.shared.exceptions;
 
 import ma.sayhome.say_home_api.shared.ApiResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -18,6 +20,18 @@ public class GlobalHandler {
         @ExceptionHandler(BadRequestException.class)
         public ResponseEntity<ApiResponse> handleBadRequest(BadRequestException ex) {
             return ResponseEntity.status(400).body(ApiResponse.error("Invalid Request", ex.getMessage()));
+        }
+
+        @ExceptionHandler(MethodArgumentNotValidException.class)
+        public ResponseEntity<ApiResponse> handleValidation(MethodArgumentNotValidException ex) {
+            String message = ex.getBindingResult()
+                    .getFieldErrors()
+                    .stream()
+                    .map(FieldError::getDefaultMessage)
+                    .findFirst()
+                    .orElse("Validation failed");
+
+            return ResponseEntity.status(400).body(ApiResponse.error("Invalid Request", message));
         }
 
         @ExceptionHandler(UnauthorizedException.class)

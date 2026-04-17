@@ -2,11 +2,12 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import Navbar from "../../components/Navbar";
-import PropertyCard from "../../components/PropertyCard";
+import Navbar from "../../../shared/components/Navbar";
+import PropertyCard from "../../../features/properties/components/PropertyCard";
 import { MapPin, Calendar, User } from "lucide-react";
 import { FaInstagram, FaTwitter, FaFacebookF, FaYoutube } from "react-icons/fa";
-import { getPropertyById } from "@/lib/api";
+import { getPropertyById } from "@/shared/lib/api";
+import Footer from "../../../shared/components/Footer";
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
@@ -57,12 +58,22 @@ export default function PropertyDetailPage() {
       <div className="pt-20 px-10 max-w-7xl mx-auto">
         {/* Galerie */}
         <div className="flex gap-3 mt-6 mb-8">
-          <div className="w-1/2 h-80 bg-gray-300" />
+          <div className="w-1/2 h-80 " 
+          style = {{
+            backgroundImage: `url(${property.medias?.[0] || '/placeholder.jpg'})`, backgroundRepeat: 'no-repeat',
+            backgroundSize: 'cover', backgroundPosition: 'center', }}
+          />
           <div className="w-1/2 grid grid-cols-2 gap-3">
-            <div className="h-[150px] bg-gray-300" />
-            <div className="h-[150px] bg-gray-300" />
-            <div className="h-[150px] bg-gray-300" />
-            <div className="h-[150px] bg-gray-300" />
+            {[1,2,3,4].map((i) => (
+            <div
+              key={i}
+              className="h-[150px]"
+              style={{
+                backgroundImage: `url(${property.medias?.[i] || '/placeholder.jpg'})`, backgroundRepeat: 'no-repeat',
+            backgroundSize: 'cover', backgroundPosition: 'center',
+              }}
+            />
+          ))}
           </div>
         </div>
 
@@ -75,7 +86,7 @@ export default function PropertyDetailPage() {
                   {property.title}
                 </h1>
                 <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                  <MapPin size={12} />
+                  <MapPin size={12} />3
                   <span>Marrakech, Maroc</span>
                 </div>
               </div>
@@ -85,18 +96,18 @@ export default function PropertyDetailPage() {
             </div>
 
             {/* Caractéristiques */}
-            <div className="flex gap-6 my-6 border-y border-gray-100 py-4">
+            <div className="flex flex-row justify-start align-center gap-15 my-6 border-y border-gray-100 py-4">
               <div className="flex flex-col items-center gap-1">
-                <span className="text-2xl">🛏</span>
-                <span className="text-xs font-medium">5 Chambres</span>
+                <span className="text-2xl"><Image src="/chambres.svg" width={35} height={35} alt="" /></span>
+                <span className="text-xs font-medium">{property.rooms} Chambres</span>
               </div>
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-2xl">🚿</span>
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-2xl"><Image src="/shower.svg" width={30} height={30}  alt="" /></span>
                 <span className="text-xs font-medium">4 Salles de bain</span>
               </div>
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-2xl">📐</span>
-                <span className="text-xs font-medium">420 m²</span>
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-2xl"><Image src="/surface.svg" width={30} height={30} alt="" /></span>
+                <span className="text-xs font-medium">{property.surface} m2</span>
               </div>
             </div>
 
@@ -189,25 +200,16 @@ export default function PropertyDetailPage() {
             <h2 className="text-lg font-bold text-gray-900 mb-6">
               Propriétés similaires
             </h2>
-            <div className="grid grid-cols-3 gap-6">
-              {similar.map((prop: any) => (
-                <PropertyCard
-                  main_pic={prop.main_pic}
-                  key={prop.id}
-                  id={prop.id}
-                  location="Location"
-                  title={prop.title}
-                  price={`${prop.price} MAD`}
-                  surface="N/A"
-                  rooms="N/A"
-                />
-              ))}
-            </div>
+              <div className="grid grid-cols-3 gap-6">
+                 {similar.map((item: any, index: number) => (
+                    <PropertyCard key={index} {...item} />
+               ))}
+             </div>
           </div>
         )}
       </div>
 
-      {/* Footer */}
+      {/* Footer
       <div className="flex w-full">
         <div className="w-1/2 bg-gray-100 px-10 py-8 flex items-center">
           <div className="flex items-center gap-2">
@@ -232,7 +234,7 @@ export default function PropertyDetailPage() {
                 <span>📞</span> 0687654321
               </div>
               <div className="flex items-center gap-2">
-                <span>✉️</span> S4YHOME@gmail.com
+                <span>✉️</span> sayhome.app@gmail.com
               </div>
             </div>
             <div className="flex gap-3 text-gray-400">
@@ -269,8 +271,10 @@ export default function PropertyDetailPage() {
           <a href="#" className="hover:text-white">
             Contact
           </a>
-        </div>
-      </div>
+        </div> 
+      </div>*/}
+        <Footer />
+
     </main>
   );
 }

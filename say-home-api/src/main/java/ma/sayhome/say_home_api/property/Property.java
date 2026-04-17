@@ -1,6 +1,8 @@
 package ma.sayhome.say_home_api.property;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.ToString;
 import ma.sayhome.say_home_api.appointment.Appointment;
 import ma.sayhome.say_home_api.auth.User;
 import ma.sayhome.say_home_api.matchingEngine.matchResult.MatchResult;
@@ -9,8 +11,11 @@ import ma.sayhome.say_home_api.shared.EntityBase;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+@Data
 @Entity
+@ToString(exclude = {"agent"})
 @Table(name = "properties")
 public class Property extends EntityBase {
 
@@ -22,6 +27,16 @@ public class Property extends EntityBase {
     private String title;
 
     private String description;
+
+    private String type;
+
+    private String secteur;
+
+    @Column(nullable = false)
+    public Integer surface;
+
+    @Column(nullable = false)
+    public Integer rooms;
 
     @Column(nullable = false)
     private Float price;
@@ -39,5 +54,13 @@ public class Property extends EntityBase {
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL)
     private List<MatchResult> matchResults = new ArrayList<>();
 
-    // getters + setters
+    public Property() {}
+
+    public Property(String title, String type, String secteur, Float price) {
+        this.title = title;
+        this.type = type;
+        this.secteur = secteur;
+        this.price = price;
+    }
+
 }

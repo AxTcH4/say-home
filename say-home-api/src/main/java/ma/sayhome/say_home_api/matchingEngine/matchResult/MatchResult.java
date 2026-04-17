@@ -7,7 +7,7 @@ import ma.sayhome.say_home_api.shared.enums.Role;
 
 @Entity
 @Table(name = "match_results")
-public class MatchResult {
+public class MatchResult extends EntityBase {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
