@@ -44,7 +44,7 @@ export default function DashboardCards() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[6px] bg-[#2f1b10] px-7 py-6 text-white shadow-[0_18px_40px_rgba(0,0,0,0.14)]">
+      <div className="rounded-[2px] bg-[#2f1b10] px-7 py-6 text-white shadow-[0_18px_40px_rgba(0,0,0,0.14)]">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-medium text-[#d8c9bd]">
@@ -56,7 +56,7 @@ export default function DashboardCards() {
           </div>
           <Link
             href={APP_ROUTES.PROFILE}
-            className="w-fit rounded-[4px] bg-white px-5 py-2.5 text-sm font-medium text-[#2f1b10] transition hover:bg-[#f3eee9]"
+            className="w-fit rounded-[2px] bg-white px-5 py-2.5 text-sm font-medium text-[#2f1b10] transition hover:bg-[#f3eee9]"
           >
             Modifier mon profil
           </Link>
@@ -64,7 +64,7 @@ export default function DashboardCards() {
       </div>
 
       {error && (
-        <div className="rounded-[4px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-[2px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -74,14 +74,14 @@ export default function DashboardCards() {
           <Link
             key={card.title}
             href={card.route}
-            className="group flex min-h-52 flex-col justify-between rounded-[6px] border border-[#ded8d1] bg-white p-6 shadow-[0_12px_30px_rgba(0,0,0,0.08)] transition hover:-translate-y-1 hover:border-[#2f1b10] hover:shadow-[0_18px_38px_rgba(0,0,0,0.13)]"
+            className="group flex min-h-52 flex-col justify-between rounded-[2px] border border-[#ded8d1] bg-white p-6 shadow-[0_12px_30px_rgba(0,0,0,0.08)] transition hover:-translate-y-1 hover:border-[#2f1b10] hover:shadow-[0_18px_38px_rgba(0,0,0,0.13)]"
           >
             <div>
               <div className="flex items-start justify-between gap-4">
                 <p className="text-sm font-medium text-[#88786c]">
                   {card.eyebrow}
                 </p>
-                <span className="rounded-[4px] bg-[#f8f6f2] px-3 py-1 text-xs font-semibold text-[#2f1b10]">
+                <span className="rounded-[2px] bg-[#f8f6f2] px-3 py-1 text-xs font-semibold text-[#2f1b10]">
                   {card.value}
                 </span>
               </div>

@@ -19,8 +19,12 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Integer> login(@RequestBody LogoutRequest request) {
-        return ResponseEntity.ok(authService.logout(request));
+    public ResponseEntity<Integer> login(@RequestHeader("Authorization") String authHeader) {
+        System.out.println("Hit the endpoint!");
+        String token = authHeader.replace("Bearer ", "");
+        System.out.println("Auth Token: " + token);
+        System.out.println("Auth Token: " + token);
+        return ResponseEntity.ok(authService.logout(token));
     }
 
     @PostMapping("/signup")

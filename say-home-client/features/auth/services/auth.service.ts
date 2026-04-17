@@ -10,14 +10,26 @@ import type {
 
 export const authService = {
   async login(payload: LoginPayload) {
-    const { data } = await apiClient.post<AuthResponse>("/auth/login", payload);
+    const res = await apiClient.post<AuthResponse>("/auth/login", payload);
+    const data = res.data; 
     return data;
   },
 
-  async signup(payload: SignupPayload) {
-    const { data } = await apiClient.post<AuthResponse>("/auth/signup", payload);
-    return data;
+  async logout() {
+    try { 
+      const { data } = await apiClient.post("/auth/logout");
+      return data;
+
+    } catch (e) {
+      console.log(e);
+    }
+
   },
+
+async signup(payload: SignupPayload) {
+  const { data } = await apiClient.post("/auth/signup", payload);
+  return data;
+},
 
   async verifyRegistration(token: string) {
     const { data } = await apiClient.get<AuthResponse>("/auth/verify-registration", {

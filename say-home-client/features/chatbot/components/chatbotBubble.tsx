@@ -76,7 +76,7 @@ export default function ChatBubble() {
       {/* fenetre generale */}
       <div
         className={cn(
-          "mb-4 flex h-[480px] w-[360px] flex-col overflow-hidden rounded-[8px] bg-white shadow-2xl transition-all duration-300 ease-out",
+          "mb-4 flex h-[480px] w-[360px] flex-col overflow-hidden rounded-[2px] bg-white shadow-2xl transition-all duration-300 ease-out",
 
           isOpen
             ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
@@ -116,7 +116,7 @@ export default function ChatBubble() {
               >
                 <div
                   className={cn(
-                    "max-w-[80%] rounded-[8px] px-4 py-2.5 text-sm",
+                    "max-w-[80%] rounded-[2px] px-4 py-2.5 text-sm",
                     message.sender === "user"
                       ? "rounded-br-md bg-amber-950 text-white"
                       : "rounded-bl-md bg-white text-gray-800 shadow-sm"

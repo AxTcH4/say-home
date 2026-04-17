@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { APP_ROUTES } from "@/shared/lib/routes";
 import { useAuth } from "../hooks/useAuth";
+import { toast } from "sonner";
 
 export default function SignupForm() {
   const { signup } = useAuth();
@@ -20,6 +21,18 @@ export default function SignupForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+const [showPassword, setShowPassword] = useState(false);
+  useEffect(() => {
+    if (showPassword) {
+      document.getElementById("password")!.setAttribute("type", "text")
+      document.getElementById("confirmPassword")!.setAttribute("type", "text");
+      ;
+    } else {
+      document.getElementById("password")!.setAttribute("type", "password")
+      document.getElementById("confirmPassword")!.setAttribute("type", "text");
+      ;
+    }
+  });
 
   const handleChange =
     (field: keyof typeof formData) =>
@@ -86,7 +99,8 @@ export default function SignupForm() {
       setSuccess("");
 
       await signup(formData);
-      setSuccess("Compte presque pret. Verifiez votre email pour confirmer votre inscription.");
+      // setSuccess("Compte presque pret. Verifiez votre email pour confirmer votre inscription.");
+      toast.success("Compte presque pret. Verifiez votre email pour confirmer votre inscription.", {duration: 5000, position: "bottom-center"});
       setFormData({
         firstName: "",
         lastName: "",
@@ -104,7 +118,7 @@ export default function SignupForm() {
   };
 
   return (
-    <div className="rounded-[6px] bg-white p-6 shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
+    <div className="rounded-[2px] bg-white p-6 shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="mb-2 block text-sm font-medium text-[#222222]">
@@ -117,7 +131,7 @@ export default function SignupForm() {
               placeholder="Prénom"
               value={formData.firstName}
               onChange={handleChange("firstName")}
-              className="h-12 w-full rounded-[4px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+              className="h-12 w-full rounded-[2px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
             />
 
             <input
@@ -125,7 +139,7 @@ export default function SignupForm() {
               placeholder="Nom"
               value={formData.lastName}
               onChange={handleChange("lastName")}
-              className="h-12 w-full rounded-[4px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+              className="h-12 w-full rounded-[2px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
             />
           </div>
         </div>
@@ -139,7 +153,7 @@ export default function SignupForm() {
             placeholder="0612345678"
             value={formData.phone}
             onChange={handleChange("phone")}
-            className="h-12 w-full rounded-[4px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+            className="h-12 w-full rounded-[2px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
           />
         </div>
 
@@ -152,7 +166,7 @@ export default function SignupForm() {
             placeholder="yourname@example.com"
             value={formData.email}
             onChange={handleChange("email")}
-            className="h-12 w-full rounded-[4px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+            className="h-12 w-full rounded-[2px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
           />
         </div>
 
@@ -160,36 +174,84 @@ export default function SignupForm() {
           <label className="mb-2 block text-sm font-medium text-[#222222]">
             Mot de passe
           </label>
+          <div className="relative" >
           <input
             type="password"
+            id="password"
             placeholder="************"
             value={formData.password}
             onChange={handleChange("password")}
-            className="h-12 w-full rounded-[4px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+            className="h-12 w-full rounded-[2px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
           />
+          <button
+              type="button"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9a9a9a] hover:text-[#222222]"
+              onClick={()=> setShowPassword(!showPassword)}
+            >
+              <svg
+                xmlns="http://w3.org"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+          
         </div>
 
         <div>
           <label className="mb-2 block text-sm font-medium text-[#222222]">
             Confirmez votre mot de passe
           </label>
+          <div className="relative" >
           <input
             type="password"
+            id="confirmPassword"
             placeholder="************"
             value={formData.confirmPassword}
             onChange={handleChange("confirmPassword")}
-            className="h-12 w-full rounded-[4px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+            className="h-12 w-full rounded-[2px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
           />
+          <button
+              type="button"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9a9a9a] hover:text-[#222222]"
+              onClick={()=> setShowPassword(!showPassword)}
+            >
+              <svg
+                xmlns="http://w3.org"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+          
         </div>
 
         {error && (
-          <div className="rounded-[4px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="rounded-[2px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="rounded-[4px] border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+          <div className="rounded-[2px] border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
             {success}
           </div>
         )}
@@ -197,7 +259,7 @@ export default function SignupForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="h-12 w-full rounded-[4px] bg-[#2f1b10] text-sm font-medium text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
+          className="h-12 w-full rounded-[2px] bg-[#2f1b10] text-sm font-medium text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isLoading ? "Inscription..." : "Inscription"}
         </button>

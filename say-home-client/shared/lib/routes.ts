@@ -7,7 +7,7 @@ export const APP_ROUTES = {
   RESET_PASSWORD: "/auth/reset-password",
   CONTACT: "/contact",
 
-  DASHBOARD: "/dashboard",
+  // DASHBOARD: "/dashboard",
   PROFILE: "/user/profile",
   REAL_ESTATE: "/real-estate",
   TICKETS: "/tickets",

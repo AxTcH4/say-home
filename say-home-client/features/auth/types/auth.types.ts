@@ -12,6 +12,10 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface LogoutPayload {
+  token: string;
+}
+
 export interface SignupPayload {
   firstName: string;
   lastName: string;

@@ -60,7 +60,7 @@ export default function RealEstateTabs() {
               key={tab.key}
               type="button"
               onClick={() => setActiveKey(tab.key)}
-              className={`rounded-[6px] border p-5 text-left transition ${
+              className={`rounded-[2px] border p-5 text-left transition ${
                 isActive
                   ? "border-[#2f1b10] bg-[#2f1b10] text-white shadow-[0_14px_35px_rgba(0,0,0,0.14)]"
                   : "border-[#ded8d1] bg-white text-[#222222] hover:border-[#2f1b10]"
@@ -83,12 +83,12 @@ export default function RealEstateTabs() {
       </div>
 
       {error && (
-        <div className="rounded-[4px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-[2px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <div className="overflow-hidden rounded-[6px] border border-[#ded8d1] bg-white shadow-[0_14px_35px_rgba(0,0,0,0.08)]">
+      <div className="overflow-hidden rounded-[2px] border border-[#ded8d1] bg-white shadow-[0_14px_35px_rgba(0,0,0,0.08)]">
         <div className="bg-[#f8f6f2] px-8 py-6">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#88786c]">
             Mon espace immobilier
@@ -102,7 +102,7 @@ export default function RealEstateTabs() {
                 {activeTab.description}
               </p>
             </div>
-            <div className="rounded-[4px] bg-white px-4 py-3 text-sm font-semibold text-[#2f1b10]">
+            <div className="rounded-[2px] bg-white px-4 py-3 text-sm font-semibold text-[#2f1b10]">
               {loading
                 ? "Chargement..."
                 : `${activeCount} element${activeCount > 1 ? "s" : ""}`}
@@ -111,7 +111,7 @@ export default function RealEstateTabs() {
         </div>
 
         <div className="px-8 py-10">
-          <div className="flex flex-col items-center justify-center rounded-[6px] border border-dashed border-[#cfc7bf] bg-[#fbfaf8] px-6 py-12 text-center">
+          <div className="flex flex-col items-center justify-center rounded-[2px] border border-dashed border-[#cfc7bf] bg-[#fbfaf8] px-6 py-12 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#2f1b10] text-xl font-semibold text-white">
               SH
             </div>
@@ -126,13 +126,13 @@ export default function RealEstateTabs() {
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/properties"
-                className="rounded-[4px] bg-[#2f1b10] px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-95"
+                className="rounded-[2px] bg-[#2f1b10] px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-95"
               >
                 Explorer les biens
               </Link>
               <Link
                 href={APP_ROUTES.CONTACT}
-                className="rounded-[4px] border border-[#cfc7bf] px-5 py-2.5 text-sm font-medium text-[#444444] transition hover:bg-[#f5f5f3]"
+                className="rounded-[2px] border border-[#cfc7bf] px-5 py-2.5 text-sm font-medium text-[#444444] transition hover:bg-[#f5f5f3]"
               >
                 Contacter Say Home
               </Link>

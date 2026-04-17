@@ -37,7 +37,7 @@ function VerifyEmailContent() {
   return (
     <section className="bg-[#f5f5f3] px-6 py-12 md:px-10 md:py-14">
       <div className="mx-auto flex max-w-[900px] justify-center">
-        <div className="w-full max-w-[520px] rounded-[6px] bg-white p-8 text-center shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
+        <div className="w-full max-w-[520px] rounded-[2px] bg-white p-8 text-center shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
           <h1 className="text-[34px] font-semibold leading-tight text-[#222222]">
             Confirmation du compte
           </h1>
@@ -53,7 +53,7 @@ function VerifyEmailContent() {
           {status === "success" && (
             <Link
               href={APP_ROUTES.LOGIN}
-              className="mt-8 inline-flex h-12 items-center justify-center rounded-[4px] bg-[#2f1b10] px-6 text-sm font-medium text-white transition hover:opacity-95"
+              className="mt-8 inline-flex h-12 items-center justify-center rounded-[2px] bg-[#2f1b10] px-6 text-sm font-medium text-white transition hover:opacity-95"
             >
               Se connecter
             </Link>
@@ -70,7 +70,7 @@ export default function VerifyEmailPage() {
       fallback={
         <section className="bg-[#f5f5f3] px-6 py-12 md:px-10 md:py-14">
           <div className="mx-auto flex max-w-[900px] justify-center">
-            <div className="w-full max-w-[520px] rounded-[6px] bg-white p-8 text-center shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
+            <div className="w-full max-w-[520px] rounded-[2px] bg-white p-8 text-center shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
               <p className="text-sm text-[#555555]">Verification de votre inscription...</p>
             </div>
           </div>

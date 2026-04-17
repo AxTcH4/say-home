@@ -6,6 +6,8 @@ import { contactService } from "../services/contact.service";
 
 export default function ContactForm() {
   const { user, isAuthenticated } = useAuth();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -93,9 +95,10 @@ export default function ContactForm() {
       setIsLoading(false);
     }
   };
-
+// className={`relative top-0 w-full h-[92vh] overflow-hidden transition-all duration-700 ease-out
+ 
   return (
-    <div className="rounded-[6px] bg-white p-8 shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
+    <div className={`rounded-[2px] bg-white p-8 shadow-[0_12px_30px_rgba(0,0,0,0.12)] transition-all duration-700 ease-out ${mounted ? "opacity-100 translate-y-0" : "opacity-0 "}`}>
       <h2 className="text-[24px] font-semibold text-[#222222]">
         Envoyer un message
       </h2>
@@ -107,7 +110,7 @@ export default function ContactForm() {
             placeholder="Prénom"
             value={formData.firstName}
             onChange={handleChange("firstName")}
-            className="h-12 rounded-[4px] border border-[#d8d8d8] px-4 text-sm outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+            className="h-12 rounded-[2px] border border-[#d8d8d8] px-4 text-sm outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
           />
 
           <input
@@ -115,7 +118,7 @@ export default function ContactForm() {
             placeholder="Nom"
             value={formData.lastName}
             onChange={handleChange("lastName")}
-            className="h-12 rounded-[4px] border border-[#d8d8d8] px-4 text-sm outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+            className="h-12 rounded-[2px] border border-[#d8d8d8] px-4 text-sm outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
           />
         </div>
 
@@ -124,7 +127,7 @@ export default function ContactForm() {
           placeholder="yourname@example.com"
           value={formData.email}
           onChange={handleChange("email")}
-          className="h-12 w-full rounded-[4px] border border-[#d8d8d8] px-4 text-sm outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+          className="h-12 w-full rounded-[2px] border border-[#d8d8d8] px-4 text-sm outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
         />
 
         <textarea
@@ -132,17 +135,17 @@ export default function ContactForm() {
           placeholder="Écrivez votre message..."
           value={formData.message}
           onChange={handleChange("message")}
-          className="w-full resize-none rounded-[4px] border border-[#d8d8d8] px-4 py-4 text-sm outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+          className="w-full resize-none rounded-[2px] border border-[#d8d8d8] px-4 py-4 text-sm outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
         />
 
         {error && (
-          <div className="rounded-[4px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="rounded-[2px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="rounded-[4px] border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+          <div className="rounded-[2px] border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
             {success}
           </div>
         )}
@@ -150,7 +153,7 @@ export default function ContactForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="h-12 w-full rounded-[4px] bg-[#2f1b10] text-sm font-medium text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
+          className="h-12 w-full rounded-[2px] bg-[#2f1b10] text-sm font-medium text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isLoading ? "Envoi..." : "Envoyer"}
         </button>

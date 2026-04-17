@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { APP_ROUTES } from "@/shared/lib/routes";
 import { authService } from "../services/auth.service";
+import { toast } from "sonner";
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -27,9 +28,7 @@ export default function ForgotPasswordForm() {
 
       await authService.forgotPassword({ email });
 
-      setSuccess(
-        "Si cette adresse existe, un lien de réinitialisation a été envoyé."
-      );
+      toast.success("Si cette adresse existe, un lien de réinitialisation a been envoyé.", {duration: 5000, position: "bottom-center"});
       setEmail("");
     } catch (error) {
       setError("Impossible d’envoyer le lien pour le moment.");
@@ -40,7 +39,7 @@ export default function ForgotPasswordForm() {
   };
 
   return (
-    <div className="rounded-[6px] bg-white p-6 shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
+    <div className="rounded-[2px] bg-white p-6 shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="mb-2 block text-sm font-medium text-[#222222]">
@@ -55,18 +54,18 @@ export default function ForgotPasswordForm() {
               setError("");
               setSuccess("");
             }}
-            className="h-12 w-full rounded-[4px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+            className="h-12 w-full rounded-[2px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
           />
         </div>
 
         {error && (
-          <div className="rounded-[4px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="rounded-[2px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="rounded-[4px] border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+          <div className="rounded-[2px] border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
             {success}
           </div>
         )}
@@ -74,7 +73,7 @@ export default function ForgotPasswordForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="h-12 w-full rounded-[4px] bg-[#2f1b10] text-sm font-medium text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
+          className="h-12 w-full rounded-[2px] bg-[#2f1b10] text-sm font-medium text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isLoading ? "Envoi..." : "Envoyer le lien"}
         </button>

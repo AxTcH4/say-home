@@ -15,7 +15,7 @@ export default function PublicOnlyRoute({
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace(APP_ROUTES.DASHBOARD);
+      router.replace(APP_ROUTES.HOME);
     }
   }, [isAuthenticated, isLoading, router]);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import PublicOnlyRoute from "@/shared/components/shared/PublicOnlyRoute";
+import PublicOnlyRoute from "@/shared/components/PublicOnlyRoute";
 import ResetPasswordForm from "@/features/auth/components/ResetPasswordForm";
 
 export default function ResetPasswordPage() {

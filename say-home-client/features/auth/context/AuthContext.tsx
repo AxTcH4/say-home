@@ -3,7 +3,9 @@
 import { createContext, useEffect, useMemo, useState } from "react";
 import { storage } from "@/shared/lib/storage";
 import { authService } from "../services/auth.service";
-import type { AuthUser, LoginPayload, SignupPayload } from "../types/auth.types";
+import type { AuthUser, LoginPayload, LogoutPayload, SignupPayload } from "../types/auth.types";
+import { toast } from "sonner";
+
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -12,7 +14,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (payload: LoginPayload) => Promise<void>;
   signup: (payload: SignupPayload) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   setCurrentUser: (user: AuthUser) => void;
 }
@@ -37,27 +39,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (payload: LoginPayload) => {
+
     const response = await authService.login(payload);
 
-    if (!response.token || !response.user) {
+    if (!response.token || !response.user ) {
       throw new Error("Invalid authentication response");
     }
+
+    
 
     storage.setToken(response.token);
     storage.setUser(response.user);
 
     setToken(response.token);
     setUser(response.user);
+    toast.success("Bienvenue à nouveau, " + response.user.firstName, {duration: 3000,position: "bottom-center"});
   };
 
   const signup = async (payload: SignupPayload) => {
+    try{
     await authService.signup(payload);
+
+    } catch (error: any) {
+      toast.error(error.response.data.message, {duration: 3000,position: "bottom-center"});
+    }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await authService.logout();;
+
     storage.clearAuth();
     setToken(null);
     setUser(null);
+    toast.success("Vous avez bien vous deconnecté!", {duration: 3000,position: "bottom-center"});
+
+
   };
 
   const setCurrentUser = (user: AuthUser) => {

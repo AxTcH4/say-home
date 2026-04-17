@@ -41,16 +41,17 @@ public class AuthServiceImp implements AuthService {
         this.mailSender = mailSender;
     }
 
-    public Integer logout(LogoutRequest logout) {
+    public Integer logout(String logout) {
+        System.out.println("Hit the Service!");
         //verify token
-        if (logout == null || logout.getToken() == null) {
+        if (logout == null || logout.equals(" ")) {
 
         throw new BadRequestException("Couldnt logout");
     }
 
     //delete token from db
-    int deleted = userTokenRepository.deleteByToken(logout.getToken());
-
+    int deleted = userTokenRepository.deleteUserTokensByToken(logout);
+    System.out.println("deleted value: " + deleted);
         if (deleted == 0) {
             throw new RuntimeException("couldnt delete token");
         }
@@ -177,7 +178,7 @@ public class AuthServiceImp implements AuthService {
             user.setToken(resetToken);
             userRepository.save(user);
 
-            String resetLink = FRONTEND_URL + "/reset-password?token=" + resetToken;
+            String resetLink = FRONTEND_URL + "/auth/reset-password?token=" + resetToken;
 
             try {
                 sendHtmlEmail(

@@ -1,6 +1,6 @@
 "use client";
 
-import PublicOnlyRoute from "@/shared/components/shared/PublicOnlyRoute";
+import PublicOnlyRoute from "@/shared/components/PublicOnlyRoute";
 import SignupForm from "@/features/auth/components/SignupForm";
 import Navbar from "@/shared/components/Navbar";
 import Footer from "@/shared/components/Footer";

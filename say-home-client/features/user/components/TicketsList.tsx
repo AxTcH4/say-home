@@ -34,7 +34,7 @@ export default function TicketsList() {
         {stats.map((item) => (
           <div
             key={item.label}
-            className="rounded-[6px] border border-[#ded8d1] bg-white p-5 shadow-[0_14px_35px_rgba(0,0,0,0.06)]"
+            className="rounded-[2px] border border-[#ded8d1] bg-white p-5 shadow-[0_14px_35px_rgba(0,0,0,0.06)]"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#88786c]">
               {item.label}
@@ -52,12 +52,12 @@ export default function TicketsList() {
       </div>
 
       {error && (
-        <div className="rounded-[4px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-[2px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <div className="overflow-hidden rounded-[6px] border border-[#ded8d1] bg-white shadow-[0_14px_35px_rgba(0,0,0,0.08)]">
+      <div className="overflow-hidden rounded-[2px] border border-[#ded8d1] bg-white shadow-[0_14px_35px_rgba(0,0,0,0.08)]">
         <div className="bg-[#f8f6f2] px-8 py-6">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#88786c]">
             Assistance Say Home
@@ -71,7 +71,7 @@ export default function TicketsList() {
                 Suivez vos reclamations, questions et demandes d'aide.
               </p>
             </div>
-            <div className="rounded-[4px] bg-white px-4 py-3 text-sm font-semibold text-[#2f1b10]">
+            <div className="rounded-[2px] bg-white px-4 py-3 text-sm font-semibold text-[#2f1b10]">
               {loading
                 ? "Chargement..."
                 : `${ticketsCount} ticket${ticketsCount > 1 ? "s" : ""}`}
@@ -81,7 +81,7 @@ export default function TicketsList() {
 
         <div className="px-8 py-10">
           {ticketsCount > 0 ? (
-            <div className="rounded-[6px] border border-[#ded8d1] bg-[#f8f6f2] p-6">
+            <div className="rounded-[2px] border border-[#ded8d1] bg-[#f8f6f2] p-6">
               <h3 className="text-lg font-semibold text-[#222222]">
                 Demandes en cours
               </h3>
@@ -91,7 +91,7 @@ export default function TicketsList() {
               </p>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center rounded-[6px] border border-dashed border-[#cfc7bf] bg-[#fbfaf8] px-6 py-12 text-center">
+            <div className="flex flex-col items-center justify-center rounded-[2px] border border-dashed border-[#cfc7bf] bg-[#fbfaf8] px-6 py-12 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#2f1b10] text-xl font-semibold text-white">
                 ?
               </div>
@@ -106,13 +106,13 @@ export default function TicketsList() {
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href={APP_ROUTES.CONTACT}
-                  className="rounded-[4px] bg-[#2f1b10] px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-95"
+                  className="rounded-[2px] bg-[#2f1b10] px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-95"
                 >
                   Creer une demande
                 </Link>
                 <Link
-                  href={APP_ROUTES.DASHBOARD}
-                  className="rounded-[4px] border border-[#cfc7bf] px-5 py-2.5 text-sm font-medium text-[#444444] transition hover:bg-[#f5f5f3]"
+                  href={APP_ROUTES.HOME}
+                  className="rounded-[2px] border border-[#cfc7bf] px-5 py-2.5 text-sm font-medium text-[#444444] transition hover:bg-[#f5f5f3]"
                 >
                   Retour au dashboard
                 </Link>

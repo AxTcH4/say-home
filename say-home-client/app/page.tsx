@@ -28,7 +28,12 @@ export default function HomePage() {
       <LatestProperties />
       <AboutSection />
       {/* <ContactSection /> */}
+      {
+        isAuthenticated && (
       <ChatBubble/>
+
+        )
+      }
       <Footer />
     </main>
   );

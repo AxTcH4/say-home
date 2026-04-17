@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useRouter } from "next/navigation";
 export default function Navbar({ onHero }: { onHero: boolean }) {
@@ -10,6 +10,12 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
   //init the scrolling state
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const initial = useMemo(() => {
+    const first = user?.firstName.trim().charAt(0);
+    const last = user?.lastName.trim().charAt(0);
+    return `${first}${last}`.toUpperCase() || "SH";
+  }, [user?.firstName, user?.lastName]);
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > window.innerHeight * 0.95); // adjust 80 to your hero height
@@ -85,19 +91,23 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
           ) : (
             <>
               <div className="relative flex items-center gap-4">
-                <div>
+                {/* <div>
                   {" "}
                   <span
                     className={`py-7 text-base ${scrolled || !onHero ? "text-black" : "text-white"} font-medium `}
                   >
                     {user?.firstName + " " + user?.lastName}
                   </span>
-                </div>
-                <img
-                  src="/avatar.jpg"
-                  className="w-10 h-10 rounded-full cursor-pointer hover:brightness-90 hover:scale-110 transition"
+                </div> */}
+                <div
                   onClick={() => setOpen(!open)}
-                />
+                  className="w-14 h-14 rounded-full bg-[#F5F5F5] cursor-pointer hover:brightness-90 text- hover:scale-105 transition flex items-center justify-center text-sm font-medium uppercase opacity-70 hover:opacity-90"
+                >
+                  <span className="text-xl font-bold">{initial}</span>
+                </div>
+                {/* <img
+                  src="/avatar.jpg"
+                /> */}
 
                 {open && (
                   <div className="absolute min-w-[200px] min-h-[110px] top-12 right-0 bg-white border shadow p-3 rounded">
@@ -118,9 +128,17 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
                       Mes Tickets
                     </p>
                     <p
-                      className="py-1 hover:bg-[#F5F5F5] transition cursor-pointer"
+                      className="py-1 hover:bg-[#F5F5F5] transition"
                       onClick={() => {
-                        logout();
+                        router.push("/user/real-estate");
+                      }}
+                    >
+                      Mes Biens
+                    </p>
+                    <p
+                      className="py-1 hover:bg-[#F5F5F5] transition"
+                      onClick={async () => {
+                        await logout();
                         router.push("/");
                       }}
                     >

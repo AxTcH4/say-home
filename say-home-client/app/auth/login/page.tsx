@@ -1,6 +1,6 @@
 "use client";
 
-import PublicOnlyRoute from "@/shared/components/shared/PublicOnlyRoute";
+import PublicOnlyRoute from "@/shared/components/PublicOnlyRoute";
 import LoginForm from "@/features/auth/components/LoginForm";
 import Navbar from "@/shared/components/Navbar";
 import Footer from "@/shared/components/Footer";
@@ -28,7 +28,7 @@ export default function LoginPage() {
           </div>
 
           <div className="hidden lg:block">
-            <div className="overflow-hidden rounded-[6px] shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
+            <div className="overflow-hidden rounded-[2px] shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
               <img
                 src="/login-image.png"
                 alt="Lieu inspirant"

@@ -1,6 +1,6 @@
 "use client";
 
-import PublicOnlyRoute from "@/shared/components/shared/PublicOnlyRoute";
+import PublicOnlyRoute from "@/shared/components/PublicOnlyRoute";
 import ForgotPasswordForm from "@/features/auth/components/ForgotPasswordForm";
 
 export default function ForgotPasswordPage() {

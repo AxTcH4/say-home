@@ -74,11 +74,11 @@ export default function PropertiesPage() {
       
       try {
         if (Number(minPriceRef.current?.value) > Number(maxPriceRef.current?.value) && Number(maxPriceRef.current?.value) !== 0) {
-          toast.error("Le prix minimum doit être inférieur au prix maximum", { duration: 3000 });
+          toast.error("Le prix minimum doit être inférieur au prix maximum", { duration: 3000, position: "top-center" }, );
           return;
         }
         if (Number(minPriceRef.current?.value) < 0 || Number(maxPriceRef.current?.value) < 0) {
-          toast.error("Le prix doit être positif", { duration: 3000 });
+          toast.error("Le prix doit être positif", { duration: 3000, position: "top-center" });
           return;
         }
         const result = await searchProperties(data);
@@ -87,18 +87,18 @@ export default function PropertiesPage() {
         if (result.status === 404) {
           // setItems([]);
           setError("404");
-          toast.error("Aucun resultat", {duration: 3000});
+          toast.error("Aucun resultat", {duration: 3000, position: "top-center"});
           }
         else if (!result || result.status === 500) {
           setItems([]);
           setError("500");
-          toast.error("Une erreur est survenue", {duration: 3000});
+          toast.error("Une erreur est survenue", {duration: 3000, position: "top-center"});
 
         }
         else if (result.status === 400) {
           // setItems([]);
           setError("400");
-          toast.error("Un ou plusieurs champs sont invalides", {duration: 3000});
+          toast.error("Un ou plusieurs champs sont invalides", {duration: 3000, position: "top-center"});
 
         }
         else {
