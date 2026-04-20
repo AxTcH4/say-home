@@ -1,12 +1,18 @@
-package ma.sayhome.say_home_api.chatbot.chatMessage;
+package ma.sayhome.say_home_api.helpDesk.chatMessage;
 import jakarta.persistence.*;
-import ma.sayhome.say_home_api.chatbot.chatSession.ChatSession;
-import ma.sayhome.say_home_api.prospect.Prospect;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
 import ma.sayhome.say_home_api.shared.EntityBase;
+import ma.sayhome.say_home_api.shared.enums.Sender;
 
-import java.util.ArrayList;
-
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
+@ToString(exclude = "session")
 @Table(name = "chat_messages")
 public class ChatMessage extends EntityBase {
 
@@ -16,13 +22,12 @@ public class ChatMessage extends EntityBase {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
-
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String sender; // "agent" or "prospect"
+    private Sender sender; // "agent" or "prospect"
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", nullable = false)
     private ChatSession session;
 
-    // getters + setters
 }

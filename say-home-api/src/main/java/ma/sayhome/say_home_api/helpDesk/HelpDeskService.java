@@ -1,12 +1,12 @@
-package ma.sayhome.say_home_api.chatbot;
+package ma.sayhome.say_home_api.helpDesk;
 
-import ma.sayhome.say_home_api.appointment.Appointment;
-import ma.sayhome.say_home_api.shared.ServiceBase;
-import org.springframework.stereotype.Service;
+import ma.sayhome.say_home_api.auth.User;
+import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessage;
+import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
+import ma.sayhome.say_home_api.helpDesk.dto.ChatMessageRequest;
+import ma.sayhome.say_home_api.prospect.Prospect;
 
-import java.util.List;
+public interface HelpDeskService {
 
-public interface ChatbotService  {
-
-
+    boolean handleSendingMessage (User authUser, ChatMessageRequest messageRequest);
 }
