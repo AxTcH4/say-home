@@ -1,8 +1,27 @@
-package ma.sayhome.say_home_api.chatbot.chatSession;
+package ma.sayhome.say_home_api.helpDesk.chatSession;
 
+import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessage;
+import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
+import ma.sayhome.say_home_api.helpDesk.dto.ChatSessionDTO;
+import ma.sayhome.say_home_api.prospect.Prospect;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface ChatSessionRepository extends JpaRepository<ChatSession,Integer> {
+    ChatSession findByProspect(Prospect prospect);
+
+    List<ChatSessionDTO> findChatSessionByProspect(Prospect prospect);
+
+    List<ChatSession> findAllByProspect(Prospect prospect);
+
+    ChatSession findByMessagesExists(List<ChatMessage> messages);
+
+//    ChatSession findByMessagesIsLikeIgnoreCase(List<ChatMessage> messages);
+    @Query("SELECT DISTINCT cs FROM ChatSession cs JOIN cs.messages m WHERE LOWER(m.content) LIKE LOWER(CONCAT('%', :content, '%'))")
+    ChatSession findByMessageContent(@Param("content") String content);
 }

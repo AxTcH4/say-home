@@ -1,4 +1,4 @@
-package ma.sayhome.say_home_api.chatbot.ticket;
+package ma.sayhome.say_home_api.helpDesk.ticket;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.shared.EntityBase;
 import ma.sayhome.say_home_api.shared.enums.TicketStatus;

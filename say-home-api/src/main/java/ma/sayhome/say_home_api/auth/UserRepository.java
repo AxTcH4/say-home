@@ -11,4 +11,5 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     Optional<User> findByToken(String token);
     User findByFirstNameAndLastName(String firstName, String lastName);
 
+    Optional<User> findUserByFirstNameAndLastName(String s, String s1);
 }
