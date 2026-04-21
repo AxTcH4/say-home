@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { APP_ROUTES } from "@/shared/lib/routes";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../services/hooks/useAuth";
 import { toast } from "sonner";
 
 export default function SignupForm() {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth/services/hooks/useAuth";
 import { contactService } from "../services/contact.service";
 
 export default function ContactForm() {

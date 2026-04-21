@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { APP_ROUTES } from "@/shared/lib/routes";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth/services/hooks/useAuth";
 import { accountService } from "../services/account.service";
 import { useAccount } from "../hooks/useAccount";
 import { toast } from "sonner";

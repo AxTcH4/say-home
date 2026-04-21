@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { APP_ROUTES } from "@/shared/lib/routes";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth/services/hooks/useAuth";
 import { useAccount } from "../hooks/useAccount";
 
 const tabs = [

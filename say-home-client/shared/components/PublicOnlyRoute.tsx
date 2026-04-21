@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { APP_ROUTES } from "@/shared/lib/routes";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth/services/hooks/useAuth";
 
 export default function PublicOnlyRoute({
   children,

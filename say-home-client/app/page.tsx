@@ -7,7 +7,7 @@ import LatestProperties from '../features/home/components/LatestProperties';
 import AboutSection from '../features/home/components/AboutSection';
 import ContactSection from '../features/home/components/ContactSection';
 import Footer from '../shared/components/Footer';
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth/services/hooks/useAuth";
 import { is } from "zod/locales";
 
 
