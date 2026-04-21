@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth/services/hooks/useAuth";
 import { useRouter } from "next/navigation";
 export default function Navbar({ onHero }: { onHero: boolean }) {
   const { user, isAuthenticated } = useAuth();
