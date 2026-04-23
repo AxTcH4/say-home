@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { APP_ROUTES } from "@/shared/lib/routes";
-import { useAuth } from "../services/hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
 
 export default function LoginForm() {
   const router = useRouter();

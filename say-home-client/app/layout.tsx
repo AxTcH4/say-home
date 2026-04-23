@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/shared/lib/utils";
-import { AuthProvider } from "@/features/auth/services/context/AuthContext";
+import { AuthProvider } from "@/features/auth/context/AuthContext";
 import { Toaster } from "@/shared/components/ui/sonner";
 import { use } from "react";
 

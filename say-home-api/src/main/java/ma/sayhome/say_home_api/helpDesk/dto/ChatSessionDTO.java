@@ -6,10 +6,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import ma.sayhome.say_home_api.auth.dto.UserDTO;
 import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessage;
 import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
 import ma.sayhome.say_home_api.prospect.Prospect;
+import ma.sayhome.say_home_api.prospect.dto.ChatSessionOwner;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 @Data
@@ -20,18 +23,36 @@ public class ChatSessionDTO {
 
     private Integer id;
 
-    private Prospect prospect;
+    private ChatSessionOwner prospect;
+
+    private List<ChatMessageResponse> messages;
+
+    private LocalDateTime createdAt;
 
     boolean isOngoing;
 
-    private List<ChatMessage> messages = new ArrayList<>();
+
 
     public static ChatSessionDTO toDTO(ChatSession session){
+         List<ChatMessage> messagesDTO = new ArrayList<>();
         ChatSessionDTO chatSessionDTO = new ChatSessionDTO();
         chatSessionDTO.setId(session.getId());
-        chatSessionDTO.setProspect(session.getProspect());
+//        chatSessionDTO.setProspect(session./);
+        chatSessionDTO.setProspect(
+                new ChatSessionOwner(
+                        session.getProspect().getId(),
+                        session.getProspect().getStatus(),
+                        UserDTO.toDTO(session.getProspect().getUser())
+                )
+        );
         chatSessionDTO.setOngoing(session.isOngoing());
-        chatSessionDTO.setMessages(session.getMessages());
+        List<ChatMessageResponse> chatMessages = new ArrayList<>();
+        for (ChatMessage chatMessage : session.getMessages()) {
+            ChatMessageResponse chatMessageResponse = ChatMessageResponse.toDTO(chatMessage);
+            chatMessages.add(chatMessageResponse);
+        }
+        chatSessionDTO.setMessages(chatMessages);
+        chatSessionDTO.setCreatedAt(session.getCreatedAt());
 
         return chatSessionDTO;
     }

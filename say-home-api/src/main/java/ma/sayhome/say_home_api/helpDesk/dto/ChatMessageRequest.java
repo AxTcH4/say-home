@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessage;
 import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
 import ma.sayhome.say_home_api.shared.EntityBase;
@@ -14,6 +15,8 @@ import ma.sayhome.say_home_api.shared.enums.Sender;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = "session")
+
 public class ChatMessageRequest {
 
         private Integer id;

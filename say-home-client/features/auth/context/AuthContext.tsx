@@ -2,8 +2,8 @@
 
 import { createContext, useEffect, useMemo, useState } from "react";
 import { storage } from "@/shared/lib/storage";
-import { authService } from "../auth.service";
-import type { AuthUser, LoginPayload, LogoutPayload, SignupPayload } from "../../types/auth.types";
+import { authService } from "../services/auth.service";
+import type { AuthUser, LoginPayload, LogoutPayload, SignupPayload } from "../types/auth.types";
 import { toast } from "sonner";
 
 

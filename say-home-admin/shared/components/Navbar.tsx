@@ -81,7 +81,7 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
         {/* Buttons */}
         <div className="flex justify-between align-center items-center gap-3">
           {/* if user s not connected */}
-          {!isAuthenticated ? (
+        
             <>
               <Link
                 href="/auth/login"
@@ -107,59 +107,11 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
                     {user?.firstName + " " + user?.lastName}
                   </span>
                 </div> */}
-                <div
-                  onClick={() => setOpen(!open)}
-                  className="w-14 h-14 rounded-full bg-[#F5F5F5] cursor-pointer hover:brightness-90 text- hover:scale-105 transition flex items-center justify-center text-sm font-medium uppercase opacity-70 hover:opacity-90"
-                >
-                  <span className="text-xl font-bold">{initial}</span>
-                </div>
-                {/* <img
-                  src="/avatar.jpg"
-                /> */}
-
-                {open && (
-                  <div className="absolute min-w-[200px] min-h-[110px] top-12 right-0 bg-white border shadow p-3 rounded">
-                    <p
-                      className="py-1 hover:bg-[#F5F5F5] transition"
-                      onClick={() => {
-                        router.push("/user/profile");
-                      }}
-                    >
-                      Mon Profile
-                    </p>
-                    <p
-                      className="py-1 hover:bg-[#F5F5F5] transition"
-                      onClick={() => {
-                        router.push("/user/tickets");
-                      }}
-                    >
-                      Mes Tickets
-                    </p>
-                    <p
-                      className="py-1 hover:bg-[#F5F5F5] transition"
-                      onClick={() => {
-                        router.push("/user/real-estate");
-                      }}
-                    >
-                      Mes Biens
-                    </p>
-                    <p
-                      className="py-1 hover:bg-[#F5F5F5] transition"
-                      onClick={async () => {
-                        // await logout();
-                        router.push("/");
-                      }}
-                    >
-                      Déconnexion
-                    </p>
-                  </div>
-                )}
+                
               </div>
             </>
-          )}
+    
 
-          {/* if connected */}
-          {/* name filed + profile picture (acts as dropdown) */}
         </div>
       </nav>
     </div>

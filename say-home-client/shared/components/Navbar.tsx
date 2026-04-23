@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
-import { useAuth } from "@/features/auth/services/hooks/useAuth";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useRouter } from "next/navigation";
 export default function Navbar({ onHero }: { onHero: boolean }) {
   const { user, isAuthenticated } = useAuth();
@@ -101,16 +101,16 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
                 </div> */}
                 <div
                   onClick={() => setOpen(!open)}
-                  className="w-14 h-14 rounded-full bg-[#F5F5F5] cursor-pointer hover:brightness-90 text- hover:scale-105 transition flex items-center justify-center text-sm font-medium uppercase opacity-70 hover:opacity-90"
+                  className="w-12 h-12 rounded-full bg-[#F5F5F5] cursor-pointer hover:brightness-90 text- hover:scale-105 transition flex items-center justify-center text-sm font-medium uppercase opacity-70 hover:opacity-90"
                 >
-                  <span className="text-xl font-bold">{initial}</span>
+                  <span className="text-lg font-semibold">{initial}</span>
                 </div>
                 {/* <img
                   src="/avatar.jpg"
                 /> */}
 
                 {open && (
-                  <div className="absolute min-w-[200px] min-h-[110px] top-12 right-0 bg-white border shadow p-3 rounded">
+                  <div className="absolute min-w-[200px] min-h-[110px] top-12 right-0 bg-white border shadow p-3 rounded text-sm">
                     <p
                       className="py-1 hover:bg-[#F5F5F5] transition"
                       onClick={() => {
