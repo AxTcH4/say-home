@@ -1,10 +1,14 @@
 package ma.sayhome.say_home_api.prospect;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import ma.sayhome.say_home_api.appointment.Appointment;
 import ma.sayhome.say_home_api.auth.User;
-import ma.sayhome.say_home_api.chatbot.chatSession.ChatSession;
-import ma.sayhome.say_home_api.chatbot.ticket.Ticket;
+import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
+import ma.sayhome.say_home_api.helpDesk.ticket.Ticket;
 import ma.sayhome.say_home_api.leadScore.LeadScore;
 import ma.sayhome.say_home_api.matchingEngine.matchRun.MatchRun;
 import ma.sayhome.say_home_api.pipeline.PipelineStage;
@@ -15,7 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "prospects")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+
 public class Prospect extends EntityBase {
 
     @Id

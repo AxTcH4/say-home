@@ -7,6 +7,7 @@ import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessageRepository;
 import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
 import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSessionRepository;
 import ma.sayhome.say_home_api.helpDesk.dto.ChatMessageRequest;
+import ma.sayhome.say_home_api.helpDesk.dto.ChatMessageResponse;
 import ma.sayhome.say_home_api.helpDesk.dto.ChatSessionDTO;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.prospect.ProspectRepository;
@@ -19,6 +20,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -54,20 +56,26 @@ public class HelpDeskServiceImp implements HelpDeskService {
         messageRequest.setSender(Sender.PROSPECT);
         System.out.println("Sending message...");
         messageRequest.setSession(getOrCreateSession(prospect));
-        System.out.println("About to send (ChatMessageRequest)" + messageRequest.toString());
+        System.out.println("About to send message for session: " + messageRequest.getSession().getId());
         //save message to session
         ChatMessage message = sendProspectMessage(messageRequest);
         System.out.print("Message sent: " + message.getId() );
-        getBotReply(prospect, messageRequest);
+
+        try {
+            getBotReply(prospect, messageRequest);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return true;
     }
 
     //kitchen tools (used by bot in function calling)
     @Async
-    public void getBotReply(Prospect prospect, ChatMessageRequest messageRequest) {
+    public void getBotReply(Prospect prospect, ChatMessageRequest messageRequest) throws InterruptedException {
         System.out.println("Getting bot reply...");
+        Thread.sleep(1500);
         String botReply = "test bot reply"; // replace with real AI call later
-        ChatMessage botMessage = sendBotMessage(messageRequest.getSession(), botReply);
+        ChatMessageResponse botMessage = sendBotMessage(messageRequest.getSession(), botReply);
         System.out.println("Bot reply: " + botReply);
         messagingTemplate.convertAndSend(
                 "/topic/session/" + messageRequest.getSession().getId(),
@@ -75,14 +83,33 @@ public class HelpDeskServiceImp implements HelpDeskService {
         );
     }
 
-    public ChatMessage sendBotMessage (ChatSession currentSession, String botReply) {
+    public ChatMessageResponse sendBotMessage (ChatSession currentSession, String botReply) {
         System.out.println("Sending bot message...");
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setSession(currentSession);
         chatMessage.setContent(botReply);
         chatMessage.setSender(Sender.BOT);
-        return chatMessageRepository.save(chatMessage);
+        return ChatMessageResponse.toDTO(chatMessageRepository.save(chatMessage));
     }
+    //get active sessions by prospectId
+    public ChatSessionDTO getActiveSessionsByProspectId(User authenticatedUser) {
+        //check if user is prospect
+        Prospect prospect = prospectRepository.findByUser(authenticatedUser);
+        if  (prospect == null) {
+            throw new ForbiddenException("Visitors are  not allowed to use chatbot ");
+        }
+
+        System.out.println("Request came from a prospect");
+
+        //get active sessions
+
+        Optional<ChatSession> resuts = chatSessionRepository.findActiveSession(prospect, LocalDateTime.now());
+        //map results
+
+
+        return ChatSessionDTO.toDTO(resuts.get());
+        }
+
 
     //get sessions by userId
     public List<ChatSessionDTO> getSessionsByUserId (Integer userId) {
@@ -159,18 +186,19 @@ public class HelpDeskServiceImp implements HelpDeskService {
     }
 
     //-----------------------------Helpers----------------------------------
-    public ChatSession getOrCreateSession (Prospect prospect) {
-        //verify if there's an ongoing chatSession
-        ChatSession ongoingSession =  chatSessionRepository.findByProspect(prospect);
-        if (ongoingSession==null) {
-            //create new session
-           ChatSession sesh = chatSessionRepository.save(new ChatSession(prospect));
-            System.out.print("Session created: " + sesh.getId() );
+    public ChatSession getOrCreateSession(Prospect prospect) {
+        Optional<ChatSession> active = chatSessionRepository.findActiveSession(prospect, LocalDateTime.now());
 
-           return sesh;
+        if (active.isPresent()) {
+            System.out.println("Active session found: " + active.get().getId());
+            return active.get();
         }
-        System.out.print("Session exists: " + ongoingSession.getId() );
-        return ongoingSession;
+
+        // create new session
+        ChatSession sesh = new ChatSession(prospect);
+        sesh.setExpiresAt(LocalDateTime.now().plusMinutes(60));
+        sesh.setOngoing(true);
+        return chatSessionRepository.save(sesh);
     }
 
     public ChatMessage sendProspectMessage (ChatMessageRequest messageRequest) {

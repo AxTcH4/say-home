@@ -25,35 +25,39 @@ public class AuthenticationFilter extends OncePerRequestFilter {
     private UserTokenRepository userTokenRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        System.out.println("Filter hit: " + request.getRequestURI());
-        String authHeader = request.getHeader("Authorization");
-        System.out.println("authHeader: " + authHeader);
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+//            try {
+
+            System.out.println("Filter hit: " + request.getRequestURI());
+            String authHeader = request.getHeader("Authorization");
+            System.out.println("authHeader: " + authHeader);
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                filterChain.doFilter(request, response);
+                return;        }
+
+            String token = authHeader.substring(7).trim();
+            System.out.println("token: " + token);
+            if(token.equals(" ")){
+                System.out.println("token is empty");
+                throw new UnauthorizedException("Header is empty");
+            }
+            UserToken userToken = userTokenRepository.findByToken(token);
+            System.out.println("finding userToken in DB...");
+
+            User authUser = userToken.getUser();
+            System.out.println("userToken is found in DB");
+            //set context
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(authUser, null, List.of());
+
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            System.out.println("Security context set for: " + authUser.getEmail());
+
             filterChain.doFilter(request, response);
-            return;        }
-
-        String token = authHeader.substring(7).trim();
-        System.out.println("token: " + token);
-        if(token.equals(" ")){
-            System.out.println("token is empty");
-            throw new UnauthorizedException("Header is empty");
+            System.out.print("Forwarded request to controller!!");
+//    }
+//            catch (Exception e) {
+//                System.out.println("Exception: " + e.getMessage());
+//            }
         }
-        UserToken userToken = userTokenRepository.findByToken(token);
-        System.out.println("finding userToken in DB...");
-
-        User authUser = userToken.getUser();
-
-        //set context
-        UsernamePasswordAuthenticationToken auth =
-                new UsernamePasswordAuthenticationToken(authUser, null, List.of());
-
-        SecurityContextHolder.getContext().setAuthentication(auth);
-        System.out.println("Security context set for: " + authUser.getEmail());
-
-        filterChain.doFilter(request, response);
-
-
-
-    }
 }

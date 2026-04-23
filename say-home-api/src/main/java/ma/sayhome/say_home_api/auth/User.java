@@ -1,6 +1,9 @@
 package ma.sayhome.say_home_api.auth;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import ma.sayhome.say_home_api.shared.EntityBase;
 import ma.sayhome.say_home_api.shared.enums.Role;
 import ma.sayhome.say_home_api.appointment.Appointment;
@@ -11,8 +14,10 @@ import ma.sayhome.say_home_api.property.Property;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+//@Data
 @Entity
+@Getter
+@Setter
 @Table(name = "users")
 public class User extends EntityBase {
 

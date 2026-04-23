@@ -18,7 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/helpdesk")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class HelpDeskController extends ControllerBase {
     @Autowired
     private HelpDeskServiceImp helpDeskService;
@@ -26,7 +26,7 @@ public class HelpDeskController extends ControllerBase {
 
     //order food
     @PostMapping("/new")
-    public ResponseEntity<ApiResponse<Boolean>> create(@Valid @RequestBody ChatMessageRequest messageRequest) {
+    public ResponseEntity<ApiResponse<Boolean>> create(@Valid @RequestBody ChatMessageRequest messageRequest) throws InterruptedException {
         System.out.println("Hit the endpoint!!");
 
         User authenticatedUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -51,10 +51,25 @@ public class HelpDeskController extends ControllerBase {
         return ok(results);
     }
 
+    @GetMapping("sessions/active")
+    public ResponseEntity<ApiResponse<ChatSessionDTO>>getActiveSessionsByProspectId(){
+        User authenticatedUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (authenticatedUser == null) {
+            throw new UnauthorizedException("User is not logged in");
+        }
+        System.out.println("user is authenticated");
+
+        System.out.println("Request approved. forwarding to service...");
+        ChatSessionDTO results = helpDeskService.getActiveSessionsByProspectId(authenticatedUser);
+        return ok(results);
+    }
+
     //get all sessions
     @GetMapping("/sessions")
     public ResponseEntity<ApiResponse<List<ChatSessionDTO>>>getAllChats() {
         List<ChatSessionDTO> results = helpDeskService.getAllSessions();
+        System.out.println("Results abt to go to frontEnd" + results);
 
         return ok(results);
     }

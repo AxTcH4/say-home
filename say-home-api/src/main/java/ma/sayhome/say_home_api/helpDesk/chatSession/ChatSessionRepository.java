@@ -9,7 +9,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ChatSessionRepository extends JpaRepository<ChatSession,Integer> {
@@ -24,4 +26,8 @@ public interface ChatSessionRepository extends JpaRepository<ChatSession,Integer
 //    ChatSession findByMessagesIsLikeIgnoreCase(List<ChatMessage> messages);
     @Query("SELECT DISTINCT cs FROM ChatSession cs JOIN cs.messages m WHERE LOWER(m.content) LIKE LOWER(CONCAT('%', :content, '%'))")
     ChatSession findByMessageContent(@Param("content") String content);
+
+    @Query("SELECT s FROM ChatSession s WHERE s.prospect = :prospect AND s.isOngoing = true AND s.expiresAt > :now")
+    Optional<ChatSession> findActiveSession(@Param("prospect") Prospect prospect, @Param("now") LocalDateTime now);
+
 }

@@ -10,6 +10,7 @@ import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessage;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.shared.EntityBase;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 @Data
@@ -24,9 +25,12 @@ public class ChatSession extends EntityBase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "prospect_id", nullable = false)
     private Prospect prospect;
+
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
 
     @Column
     boolean isOngoing;
@@ -37,9 +41,9 @@ public class ChatSession extends EntityBase {
 
     public ChatSession(Prospect prospect) {
         this.prospect = prospect;
+        expiresAt = LocalDateTime.now().plusMinutes(60);
+
         isOngoing=true;
     }
 
-
-    // getters + setters
 }
