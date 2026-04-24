@@ -5,6 +5,8 @@ import { storage } from "@/shared/lib/storage";
 import { authService } from "../services/auth.service";
 import type { AuthUser, LoginPayload, LogoutPayload, SignupPayload } from "../types/auth.types";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { APP_ROUTES } from "@/shared/lib/routes";
 
 
 interface AuthContextType {
@@ -25,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   const refreshUser = async () => {
     try {
@@ -40,20 +43,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (payload: LoginPayload) => {
 
-    const response = await authService.login(payload);
+   const response = await authService.login(payload);
 
-    if (!response.token || !response.user ) {
+    if (!response.user ) {
       throw new Error("Invalid authentication response");
     }
 
-    
-
-    storage.setToken(response.token);
+    if (response.user.role === "CLIENT") {
+    window.location.href = process.env.NEXT_PUBLIC_FRONTOFFICE_URL!;
+          toast.success("redireiction vers espace client", {
+        duration: 3000,
+        position: "bottom-center",
+      });
+    return;
+    } else {
+      
     storage.setUser(response.user);
 
-    setToken(response.token);
     setUser(response.user);
+    router.push(APP_ROUTES.HOME);
     toast.success("Bienvenue à nouveau, " + response.user.firstName, {duration: 3000,position: "bottom-center"});
+
+    }
+    
   };
 
   const signup = async (payload: SignupPayload) => {
@@ -69,7 +81,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await authService.logout();;
 
     storage.clearAuth();
-    setToken(null);
     setUser(null);
     toast.success("Vous avez bien vous deconnecté!", {duration: 3000,position: "bottom-center"});
 
@@ -83,19 +94,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const init = async () => {
-      const savedToken = storage.getToken();
-      const savedUser = storage.getUser<AuthUser>();
-
-      if (savedToken) {
-        setToken(savedToken);
-      }
-
-      if (savedUser) {
-        setUser(savedUser);
-      }
-
-      if (savedToken) {
-        await refreshUser();
+      try {
+        const user = await authService.getCurrentUser(); // uses HttpOnly cookie
+        setUser(user);
+      } catch {
+        setUser(null);
       }
 
       setIsLoading(false);
@@ -108,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       user,
       token,
-      isAuthenticated: !!token,
+      isAuthenticated: !!user,
       isLoading,
       login,
       signup,
@@ -116,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshUser,
       setCurrentUser,
     }),
-    [user, token, isLoading]
+    [user, isLoading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

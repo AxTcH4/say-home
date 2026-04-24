@@ -7,7 +7,8 @@ import { ticketService } from "@/features/tickets/services/ticketService";
 import { stat } from "fs";
 import ConfirmationModal from "@/shared/components/ConfirmationModal";
 import { Span } from "next/dist/trace";
-
+import { toast} from "sonner";
+import { calculateTimeAgo } from "@/shared/lib/utils";
 type Message = {
   sender: "BOT" | "PROSPECT";
   content: string;
@@ -94,22 +95,7 @@ export default function ChatSessions() {
   const [openPanelId, setOpenPanelId] = useState<string | null>(null);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
 
-  const calculateTimeAgo = (time: string) => {
-    const diffMs = Date.now() - new Date(time).getTime();
-    const diffSec = diffMs / 1000;
-    if (diffSec < 60) {
-      return `${diffSec.toFixed(0)} seconds`;
-    } else if (diffSec < 3600) {
-      const diffMin = diffSec / 60;
-      return `${diffMin.toFixed(0)} minutes`;
-    } else if (diffSec < 86400) {
-      const diffHr = diffSec / 3600;
-      return `${diffHr.toFixed(0)} heurs`;
-    } else {
-      const diffDay = diffSec / 86400;
-      return `${diffDay.toFixed(0)} jours`;
-    }
-  };
+  
   useEffect(() => {
     if (showConfirmationModal || !showConfirmationModal) {
       setIsChatOpen(false);
@@ -120,6 +106,8 @@ export default function ChatSessions() {
     try {
       await ticketService.deleteChatSession(id);
       fetchChatSessions();
+      toast.success("Ticket deleted successfully");
+
     } catch (e) {
       console.log("error", e);
     }

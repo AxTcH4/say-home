@@ -34,8 +34,8 @@ export default function ChatBubble() {
       const result = await chatbotService.getActiveSessions();
       console.log("session result:", result.data);
 
-      if (result?.data && result.data.length > 0) {
-        const session = result.data[0]; // ← get first session from array
+      if (result?.data) {
+        const session = result.data; // ← get first session from array
         setActiveSessionId(session.id);
 
         // map messages to your Message interface

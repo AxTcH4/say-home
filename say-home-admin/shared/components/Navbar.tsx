@@ -96,7 +96,7 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
                 S'inscrire
               </Link>
             </>
-          ) : (
+            
             <>
               <div className="relative flex items-center gap-4">
                 {/* <div>

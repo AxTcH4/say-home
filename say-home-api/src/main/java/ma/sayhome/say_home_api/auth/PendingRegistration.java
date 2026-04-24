@@ -26,6 +26,8 @@ public class PendingRegistration extends EntityBase {
     @Column(nullable = false)
     private String password;
 
+
+
     @Column
     private String phone;
 

@@ -2,6 +2,7 @@ package ma.sayhome.say_home_api.security.filters;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import ma.sayhome.say_home_api.auth.User;
@@ -26,38 +27,75 @@ public class AuthenticationFilter extends OncePerRequestFilter {
 
     @Override
         protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-//            try {
 
             System.out.println("Filter hit: " + request.getRequestURI());
-            String authHeader = request.getHeader("Authorization");
-            System.out.println("authHeader: " + authHeader);
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                filterChain.doFilter(request, response);
-                return;        }
 
-            String token = authHeader.substring(7).trim();
-            System.out.println("token: " + token);
-            if(token.equals(" ")){
-                System.out.println("token is empty");
-                throw new UnauthorizedException("Header is empty");
+        System.out.println("==== REQUEST DEBUG ====");
+        System.out.println("URI: " + request.getRequestURI());
+        System.out.println("Method: " + request.getMethod());
+        System.out.println("RemoteAddr: " + request.getRemoteAddr());
+
+            Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            System.out.println("No cookies found");
+            filterChain.doFilter(request, response);
+            return;
             }
+
+        if (cookies == null) {
+            System.out.println("Cookies: NULL");
+        } else {
+            System.out.println("Cookies:");
+            for (Cookie c : cookies) {
+                System.out.println(" - " + c.getName() + " = " + c.getValue());
+            }
+        }
+
+
+        System.out.println("Headers:");
+        var headerNames = request.getHeaderNames();
+
+        while (headerNames.hasMoreElements()) {
+            String name = headerNames.nextElement();
+            System.out.println(" - " + name + ": " + request.getHeader(name));
+        }
+
+        System.out.println("Origin: " + request.getHeader("Origin"));
+        System.out.println("Host: " + request.getHeader("Host"));
+
+            String token = "";
+            for(Cookie c: cookies) {
+                System.out.println(c.getName() +  ": " + c.getValue());
+                if(c.getName().equals("token")) {
+                    token = c.getValue();
+                    break;
+                }
+            }
+            System.out.println("token: " + token);
+            if (token == null || token.isBlank()) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+            System.out.println("searching userToken...");
             UserToken userToken = userTokenRepository.findByToken(token);
+            if (userToken == null) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
+                return; // stop here, don't continue the filter chain
+            }
             System.out.println("finding userToken in DB...");
 
             User authUser = userToken.getUser();
             System.out.println("userToken is found in DB");
             //set context
             UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(authUser, null, List.of());
+                    new UsernamePasswordAuthenticationToken(authUser, null, authUser.getAuthorities());
 
             SecurityContextHolder.getContext().setAuthentication(auth);
             System.out.println("Security context set for: " + authUser.getEmail());
+            System.out.println("Authorities: " + authUser.getAuthorities());
 
             filterChain.doFilter(request, response);
             System.out.print("Forwarded request to controller!!");
-//    }
-//            catch (Exception e) {
-//                System.out.println("Exception: " + e.getMessage());
-//            }
+
         }
 }

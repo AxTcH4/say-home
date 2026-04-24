@@ -2,19 +2,15 @@
 import Link from "next/link";
 import { APP_ROUTES } from "@/shared/lib/routes";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState, useMemo, use } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export default function SideBar() {
   const pathname = usePathname();
   const router = useRouter();
-  // const { user } = useAuth();
-  const user = {
-    firstName: "Abderrahmane",
-    lastName: "Techa",
-    email: "M5Y8o@example.com",
-    role: "agent",
-  };
+  const { user } = useAuth();
+
+  const { logout } = useAuth();
   const [open, setOpen] = useState(false);
   const initial = useMemo(() => {
     if (!user) return "";
@@ -140,7 +136,7 @@ export default function SideBar() {
           <div
             className={`group hover:shadow-sm transition px-6 py-3 mt-1 rounded-[2px] mt-2 ${pathname === APP_ROUTES.AGENTS ? "bg-[#2f1b10] text-white shadow-sm" : "bg-gray"}`}
           >
-            <div className="flex flex-row gap-4 items-center ">
+            {user?.role === "ADMIN" && <div className="flex flex-row gap-4 items-center ">
               <img
                 src="/agent.svg"
                 alt=""
@@ -149,7 +145,7 @@ export default function SideBar() {
               <Link href={APP_ROUTES.AGENTS} className="font-medium text-sm">
                 Agents
               </Link>
-            </div>
+            </div>}
           </div>
         </div>
       </div>
@@ -162,7 +158,7 @@ export default function SideBar() {
           <div className="flex flex-col items-baseline text-[13px] ">
             <span className="font-semibold">{user?.firstName.trim()}</span>
             <span className="text-gray-500 font-regular">
-              {user?.role.charAt(0).toUpperCase() + user?.role.slice(1)}
+              {user?.role && user?.role.charAt(0).toUpperCase() + user?.role.slice(1).toLowerCase()}
             </span>
           </div>
         </div>
@@ -190,7 +186,7 @@ export default function SideBar() {
             <p
               className="py-1 hover:bg-[#F5F5F5] transition"
               onClick={async () => {
-                // await logout();
+                await logout();
                 router.push("/");
               }}
             >
