@@ -10,7 +10,9 @@ import type {
 
 export const authService = {
   async login(payload: LoginPayload) {
+    console.log("payload: ",payload);
     const res = await apiClient.post<AuthResponse>("/auth/login", payload);
+    console.log(res);
     const data = res.data; 
     return data;
   },

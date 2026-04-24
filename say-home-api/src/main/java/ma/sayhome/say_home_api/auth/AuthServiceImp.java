@@ -22,7 +22,7 @@ public class AuthServiceImp implements AuthService {
     private UserTokenRepository userTokenRepository;
 
     private static final String SAY_HOME_EMAIL = "sayhome.app@gmail.com";
-    private static final String FRONTEND_URL = "http://localhost:3000";
+    private static final String FRONTEND_URL = "http://localhost:3001";
 
     private final UserRepository userRepository;
     private final PendingRegistrationRepository pendingRegistrationRepository;
@@ -39,48 +39,48 @@ public class AuthServiceImp implements AuthService {
         this.mailSender = mailSender;
     }
 
-    public Integer logout(String logout) {
-        System.out.println("Hit the Service!");
-        //verify token
-        if (logout == null || logout.equals(" ")) {
+        public Integer logout(String logout) {
+            System.out.println("Hit the Service!");
+            //verify token
+            if (logout == null || logout.equals(" ")) {
 
-        throw new BadRequestException("Couldnt logout");
-    }
-
-    //delete token from db
-    int deleted = userTokenRepository.deleteUserTokensByToken(logout);
-    System.out.println("deleted value: " + deleted);
-        if (deleted == 0) {
-            throw new RuntimeException("couldnt delete token");
+            throw new BadRequestException("Couldnt logout");
         }
-        return deleted;
 
-}
+        //delete token from db
+        int deleted = userTokenRepository.deleteUserTokensByToken(logout);
+        System.out.println("deleted value: " + deleted);
+            if (deleted == 0) {
+                throw new RuntimeException("couldnt delete token");
+            }
+            return deleted;
 
-    @Override
-    public AuthResponse login(LoginRequest request) {
-        if (request.email == null || request.email.isBlank())
-            throw new BadRequestException("Email is required");
-        if (request.password == null || request.password.isBlank())
-            throw new BadRequestException("Password is required");
-
-        User user = userRepository.findByEmail(request.email)
-                .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
-
-        if (!passwordEncoder.matches(request.password, user.getPassword()))
-            throw new UnauthorizedException("Invalid email or password");
-
-        String token = UUID.randomUUID().toString();
-
-        //add token to db
-        UserToken toke = new UserToken(token, user);
-        UserToken userToken = userTokenRepository.save(toke);
-
-        user.setToken(token);
-        userRepository.save(user);
-
-        return new AuthResponse("Login successful", token, user);
     }
+
+        @Override
+        public AuthResponse login(LoginRequest request) {
+            if (request.email == null || request.email.isBlank())
+                throw new BadRequestException("Email is required");
+            if (request.password == null || request.password.isBlank())
+                throw new BadRequestException("Password is required");
+
+            User user = userRepository.findByEmail(request.email)
+                    .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
+
+            if (!passwordEncoder.matches(request.password, user.getPassword()))
+                throw new UnauthorizedException("Invalid email or password");
+
+            String token = UUID.randomUUID().toString();
+
+            //add token to db
+            UserToken toke = new UserToken(token, user);
+            UserToken userToken = userTokenRepository.save(toke);
+
+            user.setToken(token);
+            userRepository.save(user);
+
+            return new AuthResponse("Login successful", token, user);
+        }
 
     @Override
     public AuthResponse signup(RegisterRequest request) {
@@ -144,7 +144,8 @@ public class AuthServiceImp implements AuthService {
         user.setEmail(pendingRegistration.getEmail());
         user.setPhone(pendingRegistration.getPhone());
         user.setPassword(pendingRegistration.getPassword());
-        user.setRole(Role.CLIENT);
+
+        user.setRole(Role.ADMIN);
 
         String authToken = UUID.randomUUID().toString();
         user.setToken(authToken);

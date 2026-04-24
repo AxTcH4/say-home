@@ -17,7 +17,7 @@ export const chatbotService = {
 }, 
 
 async getActiveSessions () {
-    const res = await apiClient.get("/helpdesk/sessions");
+    const res = await apiClient.get("/helpdesk/sessions/active");
     const data =  res.data;
     console.log("RESULTS: ", data);
     return data;

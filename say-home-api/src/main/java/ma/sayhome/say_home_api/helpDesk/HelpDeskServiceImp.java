@@ -6,12 +6,13 @@ import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessage;
 import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessageRepository;
 import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
 import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSessionRepository;
-import ma.sayhome.say_home_api.helpDesk.dto.ChatMessageRequest;
-import ma.sayhome.say_home_api.helpDesk.dto.ChatMessageResponse;
-import ma.sayhome.say_home_api.helpDesk.dto.ChatSessionDTO;
+import ma.sayhome.say_home_api.helpDesk.dto.*;
+import ma.sayhome.say_home_api.helpDesk.ticket.Ticket;
+import ma.sayhome.say_home_api.helpDesk.ticket.TicketRepository;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.prospect.ProspectRepository;
 import ma.sayhome.say_home_api.shared.enums.Sender;
+import ma.sayhome.say_home_api.shared.enums.TicketStatus;
 import ma.sayhome.say_home_api.shared.exceptions.ForbiddenException;
 import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
 import ma.sayhome.say_home_api.shared.exceptions.UnauthorizedException;
@@ -41,6 +42,9 @@ public class HelpDeskServiceImp implements HelpDeskService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private TicketRepository ticketRepository;
 
     //order food (returns if order placed [boolean])
     @Override
@@ -209,5 +213,105 @@ public class HelpDeskServiceImp implements HelpDeskService {
     }
 
 
+//    ----------------------TICKETS----------------------------
+// create ticket
+public TicketDTO createTicket(User authenticatedUser, TicketRequest ticketRequest) {
+    Prospect prospect = prospectRepository.findByUser(authenticatedUser);
+    if (prospect == null) {
+        throw new ForbiddenException("Visitors are not allowed to create tickets");
+    }
+
+    Ticket ticket = new Ticket();
+    ticket.setTitle(ticketRequest.getTitle());
+    ticket.setDescription(ticketRequest.getDescription());
+    ticket.setStatus(TicketStatus.OPEN);
+    ticket.setProspect(prospect);
+    ticket.setUpdatedAt(LocalDateTime.now());
+    ticket.setPriority(ticketRequest.getPriority());
+
+    return TicketDTO.toDTO(ticketRepository.save(ticket));
+}
+
+    // get all tickets
+    public List<TicketDTO> getAllTickets() {
+        List<Ticket> tickets = ticketRepository.findAll();
+        List<TicketDTO> results = new ArrayList<>();
+        for (Ticket ticket : tickets) {
+            results.add(TicketDTO.toDTO(ticket));
+        }
+        return results;
+    }
+
+    // get tickets by prospectId
+    public List<TicketDTO> getTicketsByProspectId(Integer prospectId) {
+        Prospect prospect = prospectRepository.findById(prospectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Prospect not found"));
+        List<Ticket> tickets = ticketRepository.findAllByProspect(prospect);
+        List<TicketDTO> results = new ArrayList<>();
+        for (Ticket ticket : tickets) {
+            results.add(TicketDTO.toDTO(ticket));
+        }
+        return results;
+    }
+
+    // get tickets by prospect name
+    public List<TicketDTO> getTicketsByProspectName(String prospectName) {
+        String[] name  =  prospectName.split(" ");
+        Optional<User> user2Search = userRepository.findUserByFirstNameAndLastName(name[0], name[1]);
+        if  (user2Search.isEmpty()) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
+        //check if user is a prospect
+        Prospect prospect = prospectRepository.findByUser(user2Search.get());
+        if  (prospect == null) {
+            throw new ResourceNotFoundException("Visitors have no chat sessions ");
+        }
+        List<Ticket> tickets = ticketRepository.findAllByProspect(prospect);
+        List<TicketDTO> results = new ArrayList<>();
+        for (Ticket ticket : tickets) {
+            results.add(TicketDTO.toDTO(ticket));
+        }
+        return results;
+    }
+
+    // get tickets by status
+    public List<TicketDTO> getTicketsByStatus(TicketStatus status) {
+        List<Ticket> tickets = ticketRepository.findAllByStatus(status);
+        List<TicketDTO> results = new ArrayList<>();
+        for (Ticket ticket : tickets) {
+            results.add(TicketDTO.toDTO(ticket));
+        }
+        return results;
+    }
+
+    // get ticket by title
+    public TicketDTO getTicketByTitle(String title) {
+        Ticket ticket = ticketRepository.findByTitle(title)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+        return TicketDTO.toDTO(ticket);
+    }
+
+    // update ticket
+    public TicketDTO updateTicket(Integer ticketId, TicketRequest ticketRequest) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+        ticket.setTitle(ticketRequest.getTitle());
+        ticket.setDescription(ticketRequest.getDescription());
+        ticket.setStatus(ticketRequest.getStatus());
+        ticket.setPriority(ticketRequest.getPriority());
+        ticket.setUpdatedAt(LocalDateTime.now());
+
+
+        return TicketDTO.toDTO(ticketRepository.save(ticket));
+    }
+
+    // delete ticket
+    public boolean deleteTicketById(Integer ticketId) {
+        ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+        ticketRepository.deleteById(ticketId);
+        return true;
+    }
 
 }

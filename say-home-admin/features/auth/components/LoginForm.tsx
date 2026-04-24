@@ -47,7 +47,6 @@ export default function LoginForm() {
       setIsLoading(true);
       setError("");
       await login(formData);
-      // router.push(APP_ROUTES.HOME);
     } catch (error) {
       setError("Email ou mot de passe incorrect.");
       console.error(error);

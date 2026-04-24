@@ -14,6 +14,8 @@ import { is } from "zod/locales";
 
 export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
+  
+  
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -22,7 +24,8 @@ export default function HomePage() {
   return (
     <main>
       <Navbar 
-        onHero={true} />
+        onHero={true}
+        />
       
       <Hero />
       <LatestProperties />

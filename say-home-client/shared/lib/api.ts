@@ -1,17 +1,19 @@
 import { ok } from "assert";
 import { error } from "console";
-const API_URL = process.env.API_URL || "http://localhost:8080";
+const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-//TODO: fix API_URL
+//TODO: fix NEXT_PUBLIC_API_URL
 
 // Récupérer les derniers biens - Home Page
 export const getLatestProperties = async () => {
-  const res = await fetch(`${API_URL}/api/properties/latest`);
+  const res = await fetch(`${NEXT_PUBLIC_API_URL}/properties/latest`, {  method: "GET", credentials: "include",
+  });
   console.log(`RESPONSE STATUS CODE: ${res.status}`);
   if (res.status === 404) return null;
   const data = await res.json();
   return data;
 };
+
 
 
 export const searchProperties = async (data: any) => {
@@ -27,8 +29,9 @@ export const searchProperties = async (data: any) => {
 
   console.log("urlParams", urlParams);
 
-  const url = `${API_URL}/api/properties/search?${urlParams}`;
-  const res = await fetch(url);
+  const url = `${NEXT_PUBLIC_API_URL}/properties/search?${urlParams}`;
+  const res = await fetch(url,  {  method: "GET", credentials: "include",
+  });
 
   if (!res.ok) {
     return {
@@ -48,7 +51,8 @@ export const getAllProperties = async (filters?: {
   maxPrice?: string;
 }) => {
   const params = new URLSearchParams(filters as any).toString();
-  const res = await fetch(`${API_URL}/api/properties?${params}`);
+  const res = await fetch(`${NEXT_PUBLIC_API_URL}/properties?${params}`, {  method: "GET", credentials: "include",
+  });
   console.log(`RESPONSE STATUS CODE: ${res.status}`);
   if (res.status === 404) return null;
   const data = await res.json();
@@ -58,7 +62,8 @@ export const getAllProperties = async (filters?: {
 
 // Récupérer un bien par ID - Détail
 export const getPropertyById = async (id: string) => {
-  const res = await fetch(`${API_URL}/api/properties/${id}`);
+  const res = await fetch(`${NEXT_PUBLIC_API_URL}/properties/${id}`,  {  method: "GET", credentials: "include",
+  });
     console.log(`RESPONSE STATUS CODE: ${res.status}`);
   if (res.status === 404) return null;
   const data = await res.json();

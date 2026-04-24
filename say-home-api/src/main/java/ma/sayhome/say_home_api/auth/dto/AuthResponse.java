@@ -1,7 +1,10 @@
 package ma.sayhome.say_home_api.auth.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import ma.sayhome.say_home_api.auth.User;
-
+@Data
+@AllArgsConstructor
 public class AuthResponse {
 
     private String message;
@@ -17,6 +20,8 @@ public class AuthResponse {
         this.token = token;
         this.user = new UserDto(user);
     }
+
+
 
     public String getMessage() { return message; }
     public String getToken() { return token; }

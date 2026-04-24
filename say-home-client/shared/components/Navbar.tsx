@@ -7,6 +7,7 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
   const { user, isAuthenticated } = useAuth();
   const { logout } = useAuth();
   const router = useRouter();
+  
   //init the scrolling state
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -15,6 +16,9 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
     const last = user?.lastName.trim().charAt(0);
     return `${first}${last}`.toUpperCase() || "SH";
   }, [user?.firstName, user?.lastName]);
+  useEffect(() => {
+    console.log(user);
+  }, [user]);
 
   useEffect(() => {
     const handleScroll = () => {
