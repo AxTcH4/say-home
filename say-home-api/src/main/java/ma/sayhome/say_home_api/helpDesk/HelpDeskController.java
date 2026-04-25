@@ -113,7 +113,7 @@ public class HelpDeskController extends ControllerBase {
 
     // create ticket
     @PostMapping("/tickets/new")
-    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
+//    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
     public ResponseEntity<ApiResponse<TicketDTO>> createTicket(@Valid @RequestBody TicketRequest ticketRequest) {
         User authenticatedUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (authenticatedUser == null) throw new UnauthorizedException("User is not logged in");

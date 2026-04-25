@@ -124,7 +124,7 @@ export default function ProfileForm() {
 
   return (
     <>
-      <div className="flex flex-row justify-evenly items-center mb-1">
+      <div className="flex flex-row justify-center items-center mb-1">
         <div className="flex items-center gap-7">
           {" "}
           <div className="w-20 h-20 rounded-full bg-[#F5F5F5] cursor-pointer hover:brightness-90  flex items-center justify-center text-2xl text-bold font-medium uppercase opacity-70 hover:opacity-90">
