@@ -9,7 +9,7 @@ export default function TopBar() {
                  <div className="w-[10px] "></div>
                 <div className="w-[35%] h-10 rounded-[2px] bg-[#f5f5f3] px-2 flex flex-row gap-3 align-center px-4 py-2">
                     <img src="/search.svg" alt="" />
-                <input type="search" placeholder="Rechercher" className="bg-transparent outline-none"  />
+                <input type="search" placeholder="Rechercher des prospets, propriétés tickets,..." className="bg-transparent w-full outline-none text-sm"  />
 
                 </div>
                 <div className=" relative flex justify-between items-center gap-6">
