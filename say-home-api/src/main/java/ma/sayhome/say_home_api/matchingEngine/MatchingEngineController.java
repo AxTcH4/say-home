@@ -41,10 +41,6 @@ public class MatchingEngineController extends ControllerBase {
             throw new ResourceNotFoundException("Aucun resultat");
         }
 
-
-
-
-
         return ok(result);
 
     }

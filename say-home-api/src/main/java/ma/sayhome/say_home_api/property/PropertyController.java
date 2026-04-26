@@ -16,7 +16,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/properties")
-@CrossOrigin(origins = "http://localhost:3000")
 public class PropertyController extends ControllerBase {
 
     @Autowired

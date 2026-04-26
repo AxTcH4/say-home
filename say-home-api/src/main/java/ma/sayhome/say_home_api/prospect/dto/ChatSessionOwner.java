@@ -12,6 +12,7 @@ import ma.sayhome.say_home_api.helpDesk.ticket.Ticket;
 import ma.sayhome.say_home_api.leadScore.LeadScore;
 import ma.sayhome.say_home_api.matchingEngine.matchRun.MatchRun;
 import ma.sayhome.say_home_api.pipeline.PipelineStage;
+import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.shared.enums.ProspectStatus;
 
 import java.util.ArrayList;
@@ -37,4 +38,14 @@ public class ChatSessionOwner {
 //    private List<LeadScore> leadScores = new ArrayList<>();
 
 //    private List<MatchRun> matchRuns = new ArrayList<>();
+
+
+    public static ChatSessionOwner toDTO(Prospect prospect) {
+        ChatSessionOwner chatSessionOwner = new ChatSessionOwner();
+        chatSessionOwner.setId(prospect.getId());
+        chatSessionOwner.setUser(UserDTO.toDTO(prospect.getUser()));
+        chatSessionOwner.setStatus(prospect.getStatus());
+
+        return chatSessionOwner;
+    }
 }

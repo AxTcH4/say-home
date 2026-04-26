@@ -9,8 +9,10 @@ import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSessionRepository;
 import ma.sayhome.say_home_api.helpDesk.dto.*;
 import ma.sayhome.say_home_api.helpDesk.ticket.Ticket;
 import ma.sayhome.say_home_api.helpDesk.ticket.TicketRepository;
+import ma.sayhome.say_home_api.notification.NotificationService;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.prospect.ProspectRepository;
+import ma.sayhome.say_home_api.shared.enums.Role;
 import ma.sayhome.say_home_api.shared.enums.Sender;
 import ma.sayhome.say_home_api.shared.enums.TicketStatus;
 import ma.sayhome.say_home_api.shared.exceptions.ForbiddenException;
@@ -46,9 +48,12 @@ public class HelpDeskServiceImp implements HelpDeskService {
     @Autowired
     private TicketRepository ticketRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     //order food (returns if order placed [boolean])
     @Override
-    public boolean handleSendingMessage(User authenticatedUser, ChatMessageRequest messageRequest) {
+    public MessageResponse handleSendingMessage(User authenticatedUser, ChatMessageRequest messageRequest) {
 
         Prospect prospect = prospectRepository.findByUser(authenticatedUser);
         if  (prospect == null) {
@@ -70,7 +75,10 @@ public class HelpDeskServiceImp implements HelpDeskService {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        return true;
+
+
+
+        return MessageResponse.toDTO(message);
     }
 
     //kitchen tools (used by bot in function calling)
@@ -81,6 +89,8 @@ public class HelpDeskServiceImp implements HelpDeskService {
         String botReply = "test bot reply"; // replace with real AI call later
         ChatMessageResponse botMessage = sendBotMessage(messageRequest.getSession(), botReply);
         System.out.println("Bot reply: " + botReply);
+        String msg = "You got a reply: " + botReply;
+        notificationService.createNotification(msg , prospect.getUser());
         messagingTemplate.convertAndSend(
                 "/topic/session/" + messageRequest.getSession().getId(),
                 botMessage
@@ -107,11 +117,12 @@ public class HelpDeskServiceImp implements HelpDeskService {
 
         //get active sessions
 
-        Optional<ChatSession> resuts = chatSessionRepository.findActiveSession(prospect, LocalDateTime.now());
+        ChatSession resuts = chatSessionRepository.findActiveSession(prospect, LocalDateTime.now())
+                .orElseThrow(() -> new ResourceNotFoundException("Not found"));;
         //map results
 
 
-        return ChatSessionDTO.toDTO(resuts.get());
+        return ChatSessionDTO.toDTO(resuts);
         }
 
 
@@ -228,8 +239,11 @@ public TicketDTO createTicket(User authenticatedUser, TicketRequest ticketReques
     ticket.setProspect(prospect);
     ticket.setUpdatedAt(LocalDateTime.now());
     ticket.setPriority(ticketRequest.getPriority());
+    TicketDTO ticketDTO = TicketDTO.toDTO(ticketRepository.save(ticket));
+    //send notification
+    notificationService.createNotificationsForRole(" A ticket just got created by " +  ticketDTO.getProspect().getUser().getFirstName(), Role.ADMIN);
 
-    return TicketDTO.toDTO(ticketRepository.save(ticket));
+    return ticketDTO;
 }
 
     // get all tickets
@@ -301,9 +315,9 @@ public TicketDTO createTicket(User authenticatedUser, TicketRequest ticketReques
         ticket.setStatus(ticketRequest.getStatus());
         ticket.setPriority(ticketRequest.getPriority());
         ticket.setUpdatedAt(LocalDateTime.now());
-
-
-        return TicketDTO.toDTO(ticketRepository.save(ticket));
+        TicketDTO ticketDTO = TicketDTO.toDTO(ticketRepository.save(ticket));
+        notificationService.createNotificationsForRole("The ticket " + ticket.getId()  + " was updated to " + ticketDTO.getStatus() , Role.ADMIN);
+        return ticketDTO;
     }
 
     // delete ticket

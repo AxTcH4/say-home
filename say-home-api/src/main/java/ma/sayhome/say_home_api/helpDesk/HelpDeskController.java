@@ -2,10 +2,7 @@ package ma.sayhome.say_home_api.helpDesk;
 
 import jakarta.validation.Valid;
 import ma.sayhome.say_home_api.auth.User;
-import ma.sayhome.say_home_api.helpDesk.dto.ChatMessageRequest;
-import ma.sayhome.say_home_api.helpDesk.dto.TicketRequest;
-import ma.sayhome.say_home_api.helpDesk.dto.ChatSessionDTO;
-import ma.sayhome.say_home_api.helpDesk.dto.TicketDTO;
+import ma.sayhome.say_home_api.helpDesk.dto.*;
 
 import ma.sayhome.say_home_api.shared.ApiResponse;
 import ma.sayhome.say_home_api.shared.ControllerBase;
@@ -30,7 +27,7 @@ public class HelpDeskController extends ControllerBase {
     //************************CHATBOT ENDPOINTS***********************************
     @PostMapping("/new")
     @PreAuthorize("hasRole('CLIENT')")
-    public ResponseEntity<ApiResponse<Boolean>> create(@Valid @RequestBody ChatMessageRequest messageRequest) throws InterruptedException {
+    public ResponseEntity<ApiResponse<MessageResponse>> create(@Valid @RequestBody ChatMessageRequest messageRequest) throws InterruptedException {
         System.out.println("Hit the endpoint!!");
 
         User authenticatedUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -41,9 +38,9 @@ public class HelpDeskController extends ControllerBase {
         System.out.println("user is authenticated");
 
         System.out.println("Request approved. forwarding to service...");
-        boolean isSent = helpDeskService.handleSendingMessage(authenticatedUser, messageRequest);
+        MessageResponse response = helpDeskService.handleSendingMessage(authenticatedUser, messageRequest);
 
-        return ok(isSent);
+        return ok(response);
     }
 
     //get sessions by userId

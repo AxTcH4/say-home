@@ -46,6 +46,7 @@ public class TicketDTO {
                         ticket.getProspect().getStatus(),
                         UserDTO.toDTO(ticket.getProspect().getUser())
                 )
-        );        return ticketDTO;
+        );
+        return ticketDTO;
     }
 }

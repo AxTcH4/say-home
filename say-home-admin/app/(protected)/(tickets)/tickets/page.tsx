@@ -20,7 +20,6 @@ const priorityColors: Record<string, string> = {
   MEDIUM: "text-orange-400 font-semibold",
   LOW: "text-gray-400 font-semibold",
 };
-
 export type Ticket = {
   id: number;
   subject: string;
@@ -39,7 +38,9 @@ export default function Tickets() {
   const [allTickets, setAllTickets] = useState<any[]>([]);
   const [tickets, setTickets] = useState<any[]>([]);
   const [prospectModal, setProspectModal] = useState(null);
-
+  const [isTicketClosing, setIsTicketClosing] = useState(false);
+  const [isProspectClosing, setIsProspectClosing] = useState(false);
+  const [isConfirmationClosing, setIsConfirmationClosing] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [editStatus, setEditStatus] = useState("");
   const [editPriority, setEditPriority] = useState("");
@@ -56,7 +57,32 @@ export default function Tickets() {
     setEditPriority(ticket.priority);
   };
 
-  const closeModal = () => setSelectedTicket(null);
+  useEffect(() => {
+    console.log("prospectModal state:", prospectModal);
+  });
+
+  const closeModal = () => {
+    setIsTicketClosing(true);
+    setTimeout(() => {
+      setSelectedTicket(null);
+      setIsTicketClosing(false);
+    }, 200);
+  };
+  const closeConfirmationModal = () => {
+    setIsConfirmationClosing(true);
+    setTimeout(() => {
+      setConfirmationModalOpen(null);
+      setIsConfirmationClosing(false);
+    }, 200);
+  };
+
+  const closeProspectModal = () => {
+    setIsProspectClosing(true);
+    setTimeout(() => {
+      setProspectModal(null);
+      setIsProspectClosing(false);
+    }, 200);
+  };
   const getStatus = (status: string) => {
     return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
   };
@@ -89,11 +115,7 @@ export default function Tickets() {
       console.error("Error fetching tickets:", error);
     }
   };
-useEffect (() => {
-  if (prospectModal) { 
-    closeModal();
-  }
-})
+
   useEffect(() => {
     fetchAllTickets();
   }, []);
@@ -127,7 +149,7 @@ useEffect (() => {
     }
   };
 
-  const handleFilter = (e:any) => {
+  const handleFilter = (e: any) => {
     const filter = e.target.value;
     console.log("filter", filter);
     const usedFilter = filter.trim().toUpperCase().replace(/\s/g, "_");
@@ -221,7 +243,14 @@ useEffect (() => {
                     {ticket.subject}
                   </td>
                   <td className="px-6 py-4 text-gray-700 font-medium ">
-                    <div className=" hover:text-[#2c1a0e]" onClick={()=>setProspectModal(ticket.prospect)}>
+                    <div
+                      className=" hover:text-[#2c1a0e]"
+                      onClick={(e: any) => {
+                        e.stopPropagation();
+                        console.log("clicked");
+                        setProspectModal(ticket.prospect);
+                      }}
+                    >
                       {ticket.prospect.firstName} {ticket.prospect.lastName}
                     </div>
                   </td>
@@ -323,7 +352,8 @@ useEffect (() => {
                       {confirmationModalOpen === ticket.id && (
                         <ConfirmationModal
                           selectedItem={ticket}
-                          onClose={() => setConfirmationModalOpen(null)}
+                          onClose={closeConfirmationModal}
+                          isClosing={isConfirmationClosing}
                           onConfirm={() => {
                             handleDelete(ticket.id);
                             setConfirmationModalOpen(null);
@@ -338,14 +368,13 @@ useEffect (() => {
           </table>
         )}
       </div>
-      {
-        prospectModal && (
-          <ProspectModal
-            prospect={prospectModal}
-            onClose={() => setProspectModal(null)}
-          />
-        )
-      }
+      {prospectModal && (
+        <ProspectModal
+          prospect={prospectModal}
+          onClose={closeProspectModal}
+          isClosing={isProspectClosing}
+        />
+      )}
 
       {/* Modal */}
       {selectedTicket && (
@@ -353,6 +382,7 @@ useEffect (() => {
           selectedTicket={selectedTicket}
           onClose={closeModal}
           onConfirm={handleSave}
+          isClosing={isTicketClosing}
           editStatus={editStatus}
           setEditStatus={setEditStatus}
           editPriority={editPriority}

@@ -3,6 +3,7 @@ package ma.sayhome.say_home_api.property;
 import jakarta.transaction.Transactional;
 import ma.sayhome.say_home_api.auth.User;
 import ma.sayhome.say_home_api.auth.UserRepository;
+import ma.sayhome.say_home_api.notification.NotificationService;
 import ma.sayhome.say_home_api.property.dto.PropertyDTO;
 import ma.sayhome.say_home_api.property.dto.PropertyReqDTO;
 import ma.sayhome.say_home_api.property.propertyMedia.PropertyMediaServiceImp;
@@ -25,6 +26,8 @@ public class PropertyServiceImp {
     private PropertyMediaServiceImp propertyMediaService;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private NotificationService notificationService;
 
     public PropertyDTO create(PropertyReqDTO dto, List<MultipartFile> files) throws IOException {
         //convert to entity
@@ -46,7 +49,9 @@ public class PropertyServiceImp {
         List <String> medias = propertyMediaService.uploadAll(files, saved);
         PropertyDTO resultDTO = PropertyDTO.toDTO(saved);
         assingMedia(resultDTO);
-        //Map to DTO (with urls)
+        String msg = "You just got assigned to the property " + resultDTO.getTitle();
+        notificationService.createNotification(msg , agent);
+
         return resultDTO;
 
 }

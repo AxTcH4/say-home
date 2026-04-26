@@ -35,7 +35,7 @@ export default function ChatBubble() {
       console.log("session result:", result.data);
 
       if (result?.data) {
-        const session = result.data; // ← get first session from array
+        const session = result.data;
         setActiveSessionId(session.id);
 
         // map messages to your Message interface
@@ -94,6 +94,7 @@ export default function ChatBubble() {
             sender: "BOT",
             timestamp: new Date(raw.createdAt ?? Date.now()),
           };
+          console.log("botMessage", botMessage);
           setMessages((prev) => [...prev, botMessage]);
         });
       },
@@ -123,24 +124,32 @@ export default function ChatBubble() {
     setInputValue("");
 
     console.log("1 - sending message...");
-    await chatbotService.sendMessage(userMessage);
+    const res = await chatbotService.sendMessage(userMessage);
+    console.log("resp", res);
+    const id = res.data.data.session.id;
     console.log("2 - message sent");
 
     if (!stompClient.current?.active) {
+      connectWebSocket(id);
+
       // wait for bot reply then fetch again
       setTimeout(async () => {
         const latest = await chatbotService.getActiveSessions();
-        if (latest?.data && latest.data.length > 0) {
-          const latestMessages = latest.data[0].messages.map((m: any) => ({
+        console.log("latest", latest);
+        if (latest.data) {
+          const latestMessages = latest.data.messages.map((m: any) => ({
             content: m.content,
             sender: m.sender,
             timestamp: new Date(m.createdAt),
           }));
+          console.log("latestMessages", latestMessages);
           setMessages((prev) => [prev[0], ...latestMessages]);
         }
-      }, 1500); // 2s — after bot reply is saved
+      }, 2000); // 2s — after bot reply is saved
     } else {
       console.log("3 - websocket already active, skipping");
+      console.log("stompClient", stompClient);
+
     }
   };
 
