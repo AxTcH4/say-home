@@ -8,5 +8,8 @@ import java.util.List;
 public interface PropertyRepository extends JpaRepository<Property, Integer> {
     List<Property> findTop3ByOrderByCreatedAtDesc();
     List<Property> findByTypeOrderByCreatedAtDesc(String type);
+
+    List<Property> findByTitleContainingIgnoreCase(String q);
+    List<Property> findByDescriptionContainingIgnoreCase(String q);
 }
 

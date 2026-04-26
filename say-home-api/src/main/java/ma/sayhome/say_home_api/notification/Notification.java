@@ -1,9 +1,13 @@
 package ma.sayhome.say_home_api.notification;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import ma.sayhome.say_home_api.auth.User;
 import ma.sayhome.say_home_api.shared.EntityBase;
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "notifications")
 public class Notification extends EntityBase {
@@ -22,5 +26,4 @@ public class Notification extends EntityBase {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // getters + setters
 }

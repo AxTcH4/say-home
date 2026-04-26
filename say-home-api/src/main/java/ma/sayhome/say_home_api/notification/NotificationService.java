@@ -1,24 +1,15 @@
 package ma.sayhome.say_home_api.notification;
 
-import ma.sayhome.say_home_api.appointment.Appointment;
-import ma.sayhome.say_home_api.shared.ServiceBase;
-import org.springframework.stereotype.Service;
+import ma.sayhome.say_home_api.auth.User;
+import ma.sayhome.say_home_api.notification.dto.NotificationResponse;
+import ma.sayhome.say_home_api.shared.enums.Role;
 
 import java.util.List;
 
-public interface NotificationService extends ServiceBase <Notification, Integer> {
-    @Override
-    public Notification create(Notification entity);
-
-    @Override
-    public Notification findById(Integer integer);
-
-    @Override
-    public List<Notification> findAll();
-
-    @Override
-    public Notification update(Integer integer, Notification entity);
-
-    @Override
-    public void delete(Integer integer);
+public interface NotificationService {
+    void createNotification(String message, User user);
+    void createNotificationsForRole(String message, Role role);
+    List<NotificationResponse> getNotificationsForUser(User user);
+    void markAsRead(Integer notificationId);
+    void deleteOldNotifications();
 }
