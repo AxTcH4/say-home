@@ -1,5 +1,4 @@
 export const APP_ROUTES = {
-<<<<<<< HEAD
     HOME: "/dashboard",
     PROSPECTS: "/prospects",
     PROPERTIES: "/properties",
@@ -18,18 +17,3 @@ export const APP_ROUTES = {
 //   { href: "/tickets", label: "Support Tickets", icon: "/ticket.svg" },
 //   { href: "/agents", label: "Agents", icon: "/agent.svg" },
 // ];
-=======
-  HOME: "/",
-  LOGIN: "/auth/login",
-  // SIGNUP: "/auth/signup",
-  // VERIFY_EMAIL: "/auth/verify-email",
-  FORGOT_PASSWORD: "/auth/forgot-password",
-  RESET_PASSWORD: "/auth/reset-password",
-  // CONTACT: "/contact",
-
-  // DASHBOARD: "/dashboard",
-  PROFILE: "/user/profile",
-  REAL_ESTATE: "/real-estate",
-  // TICKETS: "/tickets",
-} as const;
->>>>>>> 4ac654f (chore: backoffice front end init)
