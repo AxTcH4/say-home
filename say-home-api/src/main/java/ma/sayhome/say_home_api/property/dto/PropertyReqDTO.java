@@ -23,6 +23,7 @@ public class PropertyReqDTO {
     private Integer surface;
     private Integer rooms;
     private String agentName;
+    private String status;
 
 
 
@@ -35,6 +36,7 @@ public class PropertyReqDTO {
         property.setPrice(propertyDTO.getPrice());
         property.setSurface(propertyDTO.getSurface());
         property.setRooms(propertyDTO.getRooms());
+        property.setStatus(propertyDTO.getStatus() != null ? propertyDTO.getStatus() : "AVAILABLE");
 
         return  property;
     }

@@ -7,4 +7,6 @@ public interface DashboardService {
     DashboardProfileResponse updateProfile(Integer userId, DashboardProfileUpdateRequest request);
 
     DashboardSummaryResponse getSummary(Integer userId);
+
+    DashboardStatsResponse getStats();
 }
