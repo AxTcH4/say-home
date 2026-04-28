@@ -13,6 +13,7 @@ export default function SideBar() {
 
   const { logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const isAdmin = user?.role === "ADMIN";
   const initial = useMemo(() => {
     if (!user) return "";
     const first = user?.firstName?.trim().charAt(0) ?? "";
@@ -43,6 +44,7 @@ export default function SideBar() {
               </span>
             </div>
           </div>
+          {isAdmin ? (
           <div className={`group hover:shadow-sm transition px-3 py-3 mt-1 rounded-[2px] ${pathname === APP_ROUTES.PROSPECTS ? "bg-[#2f1b10] text-white shadow-sm" : ""}`}>
             <div className="flex flex-row gap-4 items-center">
               <img src="/prospects.svg" alt="" className={`w-5 h-5 shrink-0 transition-all duration-200 group-hover:scale-115 group-hover:-rotate-6 ${pathname === APP_ROUTES.PROSPECTS ? "invert" : ""}`} />
@@ -51,22 +53,28 @@ export default function SideBar() {
               </span>
             </div>
           </div>
+          ) : null}
+          {isAdmin ? (
           <div className={`group hover:shadow-sm transition px-3 py-3 mt-1 rounded-[2px] ${pathname === APP_ROUTES.PROPERTIES ? "bg-[#2f1b10] text-white shadow-sm" : ""}`}>
             <div className="flex flex-row gap-4 items-center">
-              <img src="/property.svg" alt="" className={`w-5 h-5 shrink-0 transition-all duration-200 group-hover:scale-115 group-hover:-rotate-6 ${pathname === APP_ROUTES.PROPERTIES ? "invert" : ""}`} />
+              <img src="/file.svg" alt="" className={`w-5 h-5 shrink-0 transition-all duration-200 group-hover:scale-115 group-hover:-rotate-6 ${pathname === APP_ROUTES.PROPERTIES ? "invert" : ""}`} />
               <span className={`font-medium text-sm whitespace-nowrap transition-all duration-200 ${expanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"}`}>
                 <Link href={APP_ROUTES.PROPERTIES}>Properties</Link>
               </span>
             </div>
           </div>
-          <div className="group hover:shadow-sm transition px-3 py-3 mt-1 rounded-[2px]">
+          ) : null}
+          {isAdmin ? (
+          <div className={`group hover:shadow-sm transition px-3 py-3 mt-1 rounded-[2px] ${pathname === APP_ROUTES.PIPELINE ? "bg-[#2f1b10] text-white shadow-sm" : ""}`}>
             <div className="flex flex-row gap-4 items-center">
-              <img src="/pipeline.svg" alt="" className="w-5 h-5 shrink-0 transition-all duration-200 group-hover:scale-115 group-hover:-rotate-6" />
+              <img src="/pipeline.svg" alt="" className={`w-5 h-5 shrink-0 transition-all duration-200 group-hover:scale-115 group-hover:-rotate-6 ${pathname === APP_ROUTES.PIPELINE ? "invert" : ""}`} />
               <span className={`font-medium text-sm whitespace-nowrap transition-all duration-200 ${expanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"}`}>
-                <Link href="#">Pipeline</Link>
+                <Link href={APP_ROUTES.PIPELINE}>Pipeline</Link>
               </span>
             </div>
           </div>
+          ) : null}
+          {isAdmin ? (
           <div className={`group hover:shadow-sm transition px-3 py-3 mt-1 rounded-[2px] ${pathname === APP_ROUTES.AI_MATCHING ? "bg-[#2f1b10] text-white shadow-sm" : ""}`}>
             <div className="flex flex-row items-center gap-4">
               <img src="/ai.svg" alt="" className={`w-5 h-5 shrink-0 transition-all duration-200 group-hover:scale-115 group-hover:-rotate-6 ${pathname === APP_ROUTES.AI_MATCHING ? "invert" : ""}`} />
@@ -75,14 +83,16 @@ export default function SideBar() {
               </span>
             </div>
           </div>
-          <div className="group hover:shadow-sm transition px-3 py-3 mt-1 rounded-[2px]">
+          ) : null}
+          <div className={`group hover:shadow-sm transition px-3 py-3 mt-1 rounded-[2px] ${pathname === APP_ROUTES.APPOINTMENTS ? "bg-[#2f1b10] text-white shadow-sm" : ""}`}>
             <div className="flex flex-row items-center gap-4">
-              <img src="/apt.svg" alt="" className="w-5 h-5 shrink-0 transition-all duration-200 group-hover:scale-115 group-hover:-rotate-6" />
+              <img src="/apt.svg" alt="" className={`w-5 h-5 shrink-0 transition-all duration-200 group-hover:scale-115 group-hover:-rotate-6 ${pathname === APP_ROUTES.APPOINTMENTS ? "invert" : ""}`} />
               <span className={`font-medium text-sm whitespace-nowrap transition-all duration-200 ${expanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"}`}>
-                <Link href="#">Appointments</Link>
+                <Link href={APP_ROUTES.APPOINTMENTS}>Appointments</Link>
               </span>
             </div>
           </div>
+          {isAdmin ? (
           <div className={`group hover:shadow-sm transition px-3 py-3 mt-1 rounded-[2px] ${pathname === APP_ROUTES.TICKETS || pathname === APP_ROUTES.CHATS ? "bg-[#2f1b10] text-white shadow-sm" : ""}`}>
             <div className="flex flex-row gap-4 items-center justify-start">
               <img src="/ticket.svg" alt="" className={`w-5 h-5 shrink-0 transition-all duration-200 group-hover:scale-115 group-hover:-rotate-6 ${pathname === APP_ROUTES.TICKETS || pathname === APP_ROUTES.CHATS ? "invert" : ""}`} />
@@ -91,7 +101,8 @@ export default function SideBar() {
               </span>
             </div>
           </div>
-          {user?.role === "ADMIN" && (
+          ) : null}
+          {isAdmin && (
             <div className={`group hover:shadow-sm transition px-3 py-3 mt-1 rounded-[2px] ${pathname === APP_ROUTES.AGENTS ? "bg-[#2f1b10] text-white shadow-sm" : ""}`}>
               <div className="flex flex-row gap-4 items-center">
                 <img src="/agent.svg" alt="" className={`w-5 h-5 shrink-0 transition-all duration-200 group-hover:scale-115 group-hover:-rotate-6 ${pathname === APP_ROUTES.AGENTS ? "invert" : ""}`} />

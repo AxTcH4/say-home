@@ -9,85 +9,16 @@ import ConfirmationModal from "@/shared/components/ConfirmationModal";
 import { Span } from "next/dist/trace";
 import { toast} from "sonner";
 import { calculateTimeAgo } from "@/shared/lib/utils";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { isAdminRole } from "@/shared/lib/auth";
 type Message = {
   sender: "BOT" | "PROSPECT";
   content: string;
   time: string;
 };
 
-const mockSessions = [
-  {
-    id: "#TK-1082",
-    subject: "Wants to visit Loft Marais",
-    status: "Active",
-    lastMessage: "Yes, please book it.",
-    time: "10:48 AM",
-    prospect: {
-      firstName: "Alice",
-      lastName: "Smith",
-      email: "9H2a2@example.com",
-    },
-    messages: [
-      {
-        sender: "bot",
-        text: "Hello Alice! I see you're interested in the Loft Marais property. How can I help you today?",
-        time: "10:45 AM",
-      },
-      {
-        sender: "user",
-        text: "I saw the loft in Marais, it looks amazing! Can I schedule a visit this Saturday afternoon around 2 PM?",
-        time: "10:46 AM",
-      },
-      {
-        sender: "bot",
-        text: "Excellent choice! Checking the availability for Saturday at 2 PM... One moment please.",
-        time: "10:46 AM",
-      },
-      {
-        sender: "bot",
-        text: "Saturday at 2 PM is available! Would you like me to book this for you? I'll just need to confirm your phone number.",
-        time: "10:47 AM",
-      },
-      {
-        sender: "user",
-        text: "Yes, please book it. My number is +33 6 12 34 56 78. Also, is there an elevator in the building?",
-        time: "10:48 AM",
-      },
-    ],
-  },
-  {
-    id: "#TK-1075",
-    subject: "Pricing Inquiry: Bastille",
-    status: "Resolved",
-    lastMessage: "Thank you for the info.",
-    time: "9:30 AM",
-    prospect: {
-      firstName: "John",
-      lastName: "Doe",
-      email: "9H2a2@example.com",
-    },
-    messages: [
-      {
-        sender: "bot",
-        text: "Hello! How can I help you today?",
-        time: "9:28 AM",
-      },
-      {
-        sender: "user",
-        text: "What is the price for the Bastille apartment?",
-        time: "9:29 AM",
-      },
-      {
-        sender: "bot",
-        text: "The Bastille apartment is listed at €450,000. Would you like to schedule a visit?",
-        time: "9:30 AM",
-      },
-      { sender: "user", text: "Thank you for the info.", time: "9:30 AM" },
-    ],
-  },
-];
-
 export default function ChatSessions() {
+  const { user, isLoading } = useAuth();
   const [sessions, setSessions] = useState<any[]>([]);
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -152,6 +83,16 @@ export default function ChatSessions() {
   useEffect(() => {
     fetchChatSessions();
   }, []);
+
+  if (!isLoading && !isAdminRole(user?.role)) {
+    return (
+      <main className="flex-1 overflow-auto p-8">
+        <div className="rounded-[18px] border border-[#e7edf5] bg-white px-6 py-8 shadow-[0_12px_35px_rgba(20,32,60,0.06)]">
+          <p className="text-sm text-[#70819a]">This section is reserved for administrators.</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 overflow-hidden p-8 flex flex-col">

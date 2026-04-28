@@ -16,15 +16,6 @@ export interface LogoutPayload {
   token: string;
 }
 
-export interface SignupPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  password: string;
-  confirmPassword: string;
-}
-
 export interface ForgotPasswordPayload {
   email: string;
 }

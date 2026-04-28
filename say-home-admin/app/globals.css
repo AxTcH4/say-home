@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -145,5 +144,37 @@
 }
 .bell-ring-normal:hover {
   animation: bell 0.4s ease-in-out;
+}
+
+.crm-date-input,
+.crm-time-input {
+  color-scheme: light;
+}
+
+.crm-date-input::-webkit-calendar-picker-indicator,
+.crm-time-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.crm-date-input::-webkit-calendar-picker-indicator:hover,
+.crm-time-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.crm-date-input::-webkit-datetime-edit,
+.crm-time-input::-webkit-datetime-edit {
+  color: #172033;
+}
+
+.crm-date-input::-webkit-datetime-edit-fields-wrapper,
+.crm-time-input::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+
+.crm-date-input::-webkit-date-and-time-value,
+.crm-time-input::-webkit-date-and-time-value {
+  text-align: left;
 }
 }

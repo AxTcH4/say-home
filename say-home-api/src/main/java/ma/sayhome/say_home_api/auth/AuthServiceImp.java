@@ -145,7 +145,7 @@ public class AuthServiceImp implements AuthService {
         user.setPhone(pendingRegistration.getPhone());
         user.setPassword(pendingRegistration.getPassword());
 
-        user.setRole(Role.ADMIN);
+        user.setRole(Role.CLIENT);
 
         String authToken = UUID.randomUUID().toString();
         user.setToken(authToken);

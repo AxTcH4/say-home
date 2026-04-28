@@ -42,6 +42,10 @@ public class Prospect extends EntityBase {
 
     private String phone;
 
+    private String city;
+
+    private String source;
+
     private Float budget;
 
     @Enumerated(EnumType.STRING)
@@ -52,6 +56,10 @@ public class Prospect extends EntityBase {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = true)
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_agent_id", nullable = true)
+    private User assignedAgent;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "stage_id", nullable = false)
