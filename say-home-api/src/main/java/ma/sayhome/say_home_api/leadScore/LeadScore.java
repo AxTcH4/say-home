@@ -19,5 +19,8 @@ public class LeadScore extends EntityBase {
     @JoinColumn(name = "prospect_id", nullable = false)
     private Prospect prospect;
 
-    // getters + setters
+    public Float getScore() { return score; }
+    public void setScore(Float score) { this.score = score; }
+    public Prospect getProspect() { return prospect; }
+    public void setProspect(Prospect prospect) { this.prospect = prospect; }
 }

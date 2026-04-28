@@ -41,6 +41,9 @@ public class Property extends EntityBase {
     @Column(nullable = false)
     private Float price;
 
+    @Column(nullable = false)
+    private String status = "AVAILABLE";
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agent_id", nullable = false)
     private User agent;
