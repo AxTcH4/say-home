@@ -54,6 +54,20 @@ export const meetingService = {
     if (!response.ok) throw new Error(await readErrorMessage(response, "Unable to create meeting"));
   },
 
+  async approveRequest(id: number) {
+    const response = await apiFetch(`${API_BASE_URL}/appointments/${id}/approve`, {
+      method: "PATCH",
+    });
+    if (!response.ok) throw new Error(await readErrorMessage(response, "Unable to accept request"));
+  },
+
+  async refuseRequest(id: number) {
+    const response = await apiFetch(`${API_BASE_URL}/appointments/${id}/refuse`, {
+      method: "PATCH",
+    });
+    if (!response.ok) throw new Error(await readErrorMessage(response, "Unable to refuse request"));
+  },
+
   async getAppointment(id: number): Promise<AppointmentDetail> {
     const response = await apiFetch(`${API_BASE_URL}/appointments/${id}`, { cache: "no-store" });
     if (!response.ok) throw new Error("Unable to load meeting");

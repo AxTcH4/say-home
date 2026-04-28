@@ -7,6 +7,10 @@ public record MeetingRequestResponse(
         String city,
         String budgetLabel,
         String requestedDate,
-        String message
+        String requestedTime,
+        String message,
+        Integer propertyId,
+        String propertyTitle,
+        String status
 ) {
 }

@@ -40,6 +40,6 @@ public class Appointment extends EntityBase {
     private Property property;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "agent_id", nullable = false)
+    @JoinColumn(name = "agent_id", nullable = true)
     private User agent;
 }

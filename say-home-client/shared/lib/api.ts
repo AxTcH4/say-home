@@ -1,71 +1,124 @@
-import { ok } from "assert";
-import { error } from "console";
-const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
-//TODO: fix NEXT_PUBLIC_API_URL
+function buildUrl(path: string) {
+  return `${API_BASE_URL}${path}`;
+}
 
-// Récupérer les derniers biens - Home Page
-export const getLatestProperties = async () => {
-  const res = await fetch(`${NEXT_PUBLIC_API_URL}/properties/latest`, {  method: "GET", credentials: "include",
+async function readJson(response: Response) {
+  return response.json().catch(() => null);
+}
+
+async function readError(response: Response, fallback: string) {
+  const error = await readJson(response);
+  return error?.message ?? error?.error ?? fallback;
+}
+
+export async function getLatestProperties() {
+  const res = await fetch(buildUrl("/properties/latest"), {
+    method: "GET",
+    credentials: "include",
   });
-  console.log(`RESPONSE STATUS CODE: ${res.status}`);
+
   if (res.status === 404) return null;
-  const data = await res.json();
-  return data;
-};
+  return await res.json();
+}
 
-
-
-export const searchProperties = async (data: any) => {
-
-
-    const urlParams = new URLSearchParams({
+export async function searchProperties(data: {
+  title?: string;
+  type?: string;
+  secteur?: string;
+  minPrice?: number | string;
+  maxPrice?: number | string;
+}) {
+  const urlParams = new URLSearchParams({
     title: data.title || "",
     type: data.type || "",
     secteur: data.secteur || "",
-    minPrice: String(data.minPrice),
-    maxPrice: String(data.maxPrice),
+    minPrice: String(data.minPrice ?? ""),
+    maxPrice: String(data.maxPrice ?? ""),
   }).toString();
 
-  console.log("urlParams", urlParams);
-
-  const url = `${NEXT_PUBLIC_API_URL}/properties/search?${urlParams}`;
-  const res = await fetch(url,  {  method: "GET", credentials: "include",
+  const res = await fetch(buildUrl(`/properties/search?${urlParams}`), {
+    method: "GET",
+    credentials: "include",
   });
 
   if (!res.ok) {
     return {
       ok: false,
       status: res.status,
-      error: await res.text(),
-    }
+      error: await readError(res, "Unable to search properties"),
+    };
   }
 
-  const result = await res.json();
-  return result;
-  
-};
+  return await res.json();
+}
 
-export const getAllProperties = async (filters?: {
+export async function getAllProperties(filters?: {
   minPrice?: string;
   maxPrice?: string;
-}) => {
-  const params = new URLSearchParams(filters as any).toString();
-  const res = await fetch(`${NEXT_PUBLIC_API_URL}/properties?${params}`, {  method: "GET", credentials: "include",
+}) {
+  const params = new URLSearchParams(filters as Record<string, string>).toString();
+  const res = await fetch(buildUrl(`/properties${params ? `?${params}` : ""}`), {
+    method: "GET",
+    credentials: "include",
   });
-  console.log(`RESPONSE STATUS CODE: ${res.status}`);
+
   if (res.status === 404) return null;
   const data = await res.json();
   return data.data;
-  return [];
-};
+}
 
-// Récupérer un bien par ID - Détail
-export const getPropertyById = async (id: string) => {
-  const res = await fetch(`${NEXT_PUBLIC_API_URL}/properties/${id}`,  {  method: "GET", credentials: "include",
+export async function getPropertyById(id: string) {
+  const res = await fetch(buildUrl(`/properties/${id}`), {
+    method: "GET",
+    credentials: "include",
   });
-    console.log(`RESPONSE STATUS CODE: ${res.status}`);
+
   if (res.status === 404) return null;
   const data = await res.json();
   return { property: data.data, similar: data.similar };
-};
+}
+
+export async function createVisitRequest(payload: {
+  propertyId: number;
+  date: string;
+  time: string;
+  message: string;
+}) {
+  const res = await fetch(buildUrl("/appointments/requests"), {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await readError(res, "Unable to create visit request"));
+  }
+
+  const data = await res.json();
+  return data.data;
+}
+
+export async function getMyVisitRequests() {
+  const res = await fetch(buildUrl("/appointments/requests/me"), {
+    method: "GET",
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    return [];
+  }
+
+  if (!res.ok) {
+    throw new Error(await readError(res, "Unable to load visit requests"));
+  }
+
+  const data = await res.json();
+  return data.data ?? [];
+}

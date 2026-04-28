@@ -1,8 +1,12 @@
 "use client";
 
-import { useAuth } from "@/features/auth/hooks/useAuth";
-import { hasManagementAccess } from "@/shared/lib/auth";
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { meetingService } from "@/features/meetings/services/meeting.service";
+import { hasManagementAccess } from "@/shared/lib/auth";
 import type { MeetingRequestItem } from "../types/meeting.types";
 
 interface MeetingRequestsProps {
@@ -11,7 +15,35 @@ interface MeetingRequestsProps {
 
 export function MeetingRequests({ requests }: MeetingRequestsProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const canManage = hasManagementAccess(user?.role);
+  const [loadingRequestId, setLoadingRequestId] = useState<number | null>(null);
+
+  const handleApprove = async (requestId: number) => {
+    try {
+      setLoadingRequestId(requestId);
+      await meetingService.approveRequest(requestId);
+      toast.success("Meeting request accepted.");
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to accept request");
+    } finally {
+      setLoadingRequestId(null);
+    }
+  };
+
+  const handleRefuse = async (requestId: number) => {
+    try {
+      setLoadingRequestId(requestId);
+      await meetingService.refuseRequest(requestId);
+      toast.success("Meeting request refused.");
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to refuse request");
+    } finally {
+      setLoadingRequestId(null);
+    }
+  };
 
   return (
     <section className="rounded-[18px] border border-[#e7edf5] bg-white p-5 shadow-[0_12px_35px_rgba(20,32,60,0.06)]">
@@ -19,7 +51,7 @@ export function MeetingRequests({ requests }: MeetingRequestsProps) {
         <div>
           <h2 className="text-lg font-semibold text-[#172033]">Meeting Requests</h2>
           <p className="mt-1 text-sm text-[#70819a]">
-            Prospect requests waiting for review and assignment.
+            Client requests waiting for admin review and confirmation.
           </p>
         </div>
       </div>
@@ -39,13 +71,14 @@ export function MeetingRequests({ requests }: MeetingRequestsProps) {
                     <p className="font-semibold text-[#172033]">{request.prospectName}</p>
                     <span className="text-sm text-[#70819a]">{request.city}</span>
                   </div>
+                  <p className="text-sm font-medium text-[#2c1a0e]">{request.propertyTitle}</p>
                   <p className="text-sm text-[#61728b]">
-                    {request.budgetLabel} · Requested for {request.requestedDate}
+                    {request.budgetLabel} · Requested for {request.requestedDate} at {request.requestedTime}
                   </p>
-                  <p className="text-sm text-[#70819a]">{request.message}</p>
+                  <p className="text-sm text-[#70819a]">{request.message || "No additional message."}</p>
                 </div>
 
-                <div className="flex flex-wrap justify-end gap-2 lg:max-w-[420px]">
+                <div className="flex flex-wrap justify-end gap-2 lg:max-w-[460px]">
                   <Link
                     href={`/prospects/${request.prospectId}`}
                     className="rounded-[10px] border border-[#e4eaf4] px-3 py-2 text-sm font-semibold text-[#172033]"
@@ -54,11 +87,27 @@ export function MeetingRequests({ requests }: MeetingRequestsProps) {
                   </Link>
                   {canManage ? (
                     <>
-                      <button className="inline-flex min-h-10 items-center justify-center rounded-[10px] border border-[#e4eaf4] px-4 py-2 text-sm font-semibold text-[#172033]">
-                        <Link href={`/appointments/new?prospectId=${request.prospectId}`} className="inline-flex items-center">Assign Agent</Link>
+                      <button
+                        type="button"
+                        disabled={loadingRequestId === request.id}
+                        onClick={() => handleApprove(request.id)}
+                        className="inline-flex min-h-10 items-center justify-center rounded-[10px] border border-[#2c1a0e] px-4 py-2 text-sm font-semibold text-[#2c1a0e] disabled:opacity-60"
+                      >
+                        Accept
                       </button>
-                      <Link href={`/appointments/new?prospectId=${request.prospectId}`} className="inline-flex min-h-10 items-center justify-center rounded-[10px] bg-[#2c1a0e] px-4 py-2 text-sm font-semibold text-white">
-                        Plan Meeting
+                      <button
+                        type="button"
+                        disabled={loadingRequestId === request.id}
+                        onClick={() => handleRefuse(request.id)}
+                        className="inline-flex min-h-10 items-center justify-center rounded-[10px] border border-[#e4eaf4] px-4 py-2 text-sm font-semibold text-[#172033] disabled:opacity-60"
+                      >
+                        Refuse
+                      </button>
+                      <Link
+                        href={`/appointments/${request.id}/edit`}
+                        className="inline-flex min-h-10 items-center justify-center rounded-[10px] bg-[#2c1a0e] px-4 py-2 text-sm font-semibold text-white"
+                      >
+                        Review & Plan
                       </Link>
                     </>
                   ) : null}

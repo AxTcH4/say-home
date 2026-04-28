@@ -1,6 +1,7 @@
 package ma.sayhome.say_home_api.appointment;
 
 import ma.sayhome.say_home_api.appointment.dto.CreateAppointmentRequest;
+import ma.sayhome.say_home_api.appointment.dto.CreateVisitRequest;
 import ma.sayhome.say_home_api.shared.ControllerBase;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -37,9 +38,30 @@ public class AppointmentController extends ControllerBase {
         return created(appointmentService.createAppointment(request));
     }
 
+    @PostMapping("/requests")
+        public ResponseEntity<?> createVisitRequest(@RequestBody CreateVisitRequest request) {
+            System.out.println("Landed in the controller");
+            return created(appointmentService.createVisitRequest(request));
+    }
+
+    @GetMapping("/requests/me")
+    public ResponseEntity<?> getMyVisitRequests() {
+        return ok(appointmentService.getMyVisitRequests());
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAppointment(@PathVariable Integer id, @RequestBody CreateAppointmentRequest request) {
         return ok(appointmentService.updateAppointment(id, request));
+    }
+
+    @PatchMapping("/{id}/approve")
+    public ResponseEntity<?> approveAppointmentRequest(@PathVariable Integer id) {
+        return ok(appointmentService.approveRequest(id));
+    }
+
+    @PatchMapping("/{id}/refuse")
+    public ResponseEntity<?> refuseAppointmentRequest(@PathVariable Integer id) {
+        return ok(appointmentService.refuseRequest(id));
     }
 
     @PatchMapping("/{id}/cancel")

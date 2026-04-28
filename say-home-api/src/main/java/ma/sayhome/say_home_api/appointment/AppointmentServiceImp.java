@@ -2,11 +2,16 @@ package ma.sayhome.say_home_api.appointment;
 
 import ma.sayhome.say_home_api.appointment.dto.AppointmentDetailResponse;
 import ma.sayhome.say_home_api.appointment.dto.AppointmentsBoardResponse;
+import ma.sayhome.say_home_api.appointment.dto.ClientVisitRequestResponse;
 import ma.sayhome.say_home_api.appointment.dto.CreateAppointmentRequest;
+import ma.sayhome.say_home_api.appointment.dto.CreateVisitRequest;
 import ma.sayhome.say_home_api.appointment.dto.MeetingEventResponse;
 import ma.sayhome.say_home_api.appointment.dto.MeetingRequestResponse;
 import ma.sayhome.say_home_api.auth.User;
 import ma.sayhome.say_home_api.auth.UserRepository;
+import ma.sayhome.say_home_api.notification.NotificationService;
+import ma.sayhome.say_home_api.pipeline.PipelineStage;
+import ma.sayhome.say_home_api.pipeline.PipelineStageRepository;
 import ma.sayhome.say_home_api.property.Property;
 import ma.sayhome.say_home_api.property.PropertyRepository;
 import ma.sayhome.say_home_api.prospect.Prospect;
@@ -36,51 +41,42 @@ public class AppointmentServiceImp implements AppointmentService {
     private final ProspectRepository prospectRepository;
     private final UserRepository userRepository;
     private final PropertyRepository propertyRepository;
+    private final PipelineStageRepository pipelineStageRepository;
+    private final NotificationService notificationService;
 
     public AppointmentServiceImp(
             AppointmentRepository appointmentRepository,
             ProspectRepository prospectRepository,
             UserRepository userRepository,
-            PropertyRepository propertyRepository
+            PropertyRepository propertyRepository,
+            PipelineStageRepository pipelineStageRepository,
+            NotificationService notificationService
     ) {
         this.appointmentRepository = appointmentRepository;
         this.prospectRepository = prospectRepository;
         this.userRepository = userRepository;
         this.propertyRepository = propertyRepository;
+        this.pipelineStageRepository = pipelineStageRepository;
+        this.notificationService = notificationService;
     }
 
     public AppointmentsBoardResponse getBoard() {
         User currentUser = getCurrentUser();
         boolean isAdmin = currentUser.getRole() == Role.ADMIN;
 
-        List<Appointment> scopedAppointments = appointmentRepository.findAll().stream()
+        List<Appointment> allAppointments = appointmentRepository.findAll();
+
+        List<Appointment> scopedAppointments = allAppointments.stream()
+                .filter(appointment -> appointment.getStatus() != AppointmentStatus.REQUESTED)
+                .filter(appointment -> appointment.getStatus() != AppointmentStatus.REFUSED)
                 .filter(appointment -> isAdmin || isOwnedBy(appointment, currentUser))
                 .toList();
 
-        List<Integer> plannedProspectIds = scopedAppointments.stream()
-                .filter(appointment -> appointment.getProspect() != null)
-                .filter(appointment -> appointment.getStatus() != AppointmentStatus.CANCELLED)
-                .map(appointment -> appointment.getProspect().getId())
-                .distinct()
-                .toList();
-
         List<MeetingRequestResponse> requests = isAdmin
-                ? prospectRepository.findAll().stream()
-                    .filter(prospect -> prospect.getStatus() == ProspectStatus.NEW
-                            || prospect.getStatus() == ProspectStatus.CONTACTED
-                            || prospect.getStatus() == ProspectStatus.QUALIFIED)
-                    .filter(prospect -> !plannedProspectIds.contains(prospect.getId()))
-                    .sorted(Comparator.comparing(Prospect::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
-                    .limit(6)
-                    .map(prospect -> new MeetingRequestResponse(
-                            prospect.getId(),
-                            prospect.getId(),
-                            prospect.getFirstName() + " " + prospect.getLastName(),
-                            prospect.getCity() == null ? "" : prospect.getCity(),
-                            formatBudget(prospect.getBudget()),
-                            prospect.getCreatedAt() != null ? DATE_FORMATTER.format(prospect.getCreatedAt()) : "",
-                            prospect.getSource() == null ? "" : prospect.getSource()
-                    ))
+                ? allAppointments.stream()
+                    .filter(appointment -> appointment.getStatus() == AppointmentStatus.REQUESTED)
+                    .sorted(Comparator.comparing(Appointment::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                    .map(this::toMeetingRequest)
                     .toList()
                 : List.of();
 
@@ -115,7 +111,76 @@ public class AppointmentServiceImp implements AppointmentService {
         assertAdmin();
         Appointment appointment = getRequiredAppointment(id);
         applyRequest(appointment, request);
+        appointment.setStatus(AppointmentStatus.SCHEDULED);
         Appointment saved = appointmentRepository.save(appointment);
+        notifyClientForStatus(saved, "Votre demande de rendez-vous a ete acceptee et planifiee.");
+        return toDetail(saved);
+    }
+
+    public ClientVisitRequestResponse createVisitRequest(CreateVisitRequest request) {
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole() != Role.CLIENT) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only clients can send visit requests");
+        }
+
+        if (request.propertyId == null || request.date == null || request.date.isBlank() || request.time == null || request.time.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Property, date and time are required");
+        }
+
+        Property property = propertyRepository.findById(request.propertyId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Property not found"));
+
+        Prospect prospect = getOrCreateProspectForUser(currentUser, property);
+        LocalDateTime appointmentDateTime = parseAppointmentDateTime(request.date, request.time);
+
+        if (appointmentDateTime.isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot request a meeting in the past");
+        }
+
+        Appointment appointment = new Appointment();
+        appointment.setProspect(prospect);
+        appointment.setProperty(property);
+        appointment.setAgent(property.getAgent());
+        appointment.setDate(appointmentDateTime);
+        appointment.setMeetingType("Visit");
+        appointment.setNotes(request.message == null ? "" : request.message.trim());
+        appointment.setStatus(AppointmentStatus.REQUESTED);
+
+        Appointment saved = appointmentRepository.save(appointment);
+        notificationService.createNotificationsForRole(
+                currentUser.getFullName() + " requested a visit for " + property.getTitle(),
+                Role.ADMIN
+        );
+
+        return toClientRequest(saved);
+    }
+
+    public List<ClientVisitRequestResponse> getMyVisitRequests() {
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole() != Role.CLIENT) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only clients can view their visit requests");
+        }
+
+        return appointmentRepository.findByProspectUserIdOrderByCreatedAtDesc(currentUser.getId()).stream()
+                .map(this::toClientRequest)
+                .toList();
+    }
+
+    public AppointmentDetailResponse approveRequest(Integer id) {
+        assertAdmin();
+        Appointment appointment = getRequiredAppointment(id);
+        appointment.setStatus(AppointmentStatus.SCHEDULED);
+        Appointment saved = appointmentRepository.save(appointment);
+        notifyClientForStatus(saved, "Votre demande de rendez-vous a ete acceptee.");
+        return toDetail(saved);
+    }
+
+    public AppointmentDetailResponse refuseRequest(Integer id) {
+        assertAdmin();
+        Appointment appointment = getRequiredAppointment(id);
+        appointment.setStatus(AppointmentStatus.REFUSED);
+        Appointment saved = appointmentRepository.save(appointment);
+        notifyClientForStatus(saved, "Votre demande de rendez-vous a ete refusee.");
         return toDetail(saved);
     }
 
@@ -124,6 +189,7 @@ public class AppointmentServiceImp implements AppointmentService {
         Appointment appointment = getRequiredAppointment(id);
         appointment.setStatus(AppointmentStatus.CANCELLED);
         Appointment saved = appointmentRepository.save(appointment);
+        notifyClientForStatus(saved, "Votre rendez-vous a ete annule.");
         return toDetail(saved);
     }
 
@@ -198,9 +264,7 @@ public class AppointmentServiceImp implements AppointmentService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Prospect, agent, date and time are required");
         }
 
-        LocalDate appointmentDate = LocalDate.parse(request.date);
-        LocalTime appointmentTime = LocalTime.parse(request.time);
-        LocalDateTime appointmentDateTime = LocalDateTime.of(appointmentDate, appointmentTime);
+        LocalDateTime appointmentDateTime = parseAppointmentDateTime(request.date, request.time);
 
         if (appointmentDateTime.isBefore(LocalDateTime.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot schedule a meeting in the past");
@@ -228,11 +292,17 @@ public class AppointmentServiceImp implements AppointmentService {
         }
     }
 
+    private LocalDateTime parseAppointmentDateTime(String date, String time) {
+        LocalDate appointmentDate = LocalDate.parse(date);
+        LocalTime appointmentTime = LocalTime.parse(time);
+        return LocalDateTime.of(appointmentDate, appointmentTime);
+    }
+
     private AppointmentDetailResponse toDetail(Appointment appointment) {
         return new AppointmentDetailResponse(
                 appointment.getId(),
                 appointment.getProspect() != null ? appointment.getProspect().getId() : null,
-                appointment.getProspect() != null ? appointment.getProspect().getFirstName() + " " + appointment.getProspect().getLastName() : "",
+                appointment.getProspect() != null ? effectiveProspectName(appointment.getProspect()) : "",
                 appointment.getAgent() != null ? appointment.getAgent().getId() : null,
                 appointment.getAgent() != null ? appointment.getAgent().getFirstName() + " " + appointment.getAgent().getLastName() : "",
                 appointment.getProperty() != null ? appointment.getProperty().getId() : null,
@@ -244,6 +314,39 @@ public class AppointmentServiceImp implements AppointmentService {
         );
     }
 
+    private MeetingRequestResponse toMeetingRequest(Appointment appointment) {
+        Prospect prospect = appointment.getProspect();
+        Property property = appointment.getProperty();
+
+        return new MeetingRequestResponse(
+                appointment.getId(),
+                prospect != null ? prospect.getId() : null,
+                prospect != null ? effectiveProspectName(prospect) : "Prospect",
+                prospect != null && prospect.getCity() != null ? prospect.getCity() : "",
+                prospect != null ? formatBudget(prospect.getBudget()) : "Not specified",
+                DATE_FORMATTER.format(appointment.getDate()),
+                TIME_FORMATTER.format(appointment.getDate()),
+                appointment.getNotes() == null ? "" : appointment.getNotes(),
+                property != null ? property.getId() : null,
+                property != null ? property.getTitle() : "",
+                appointment.getStatus().name()
+        );
+    }
+
+    private ClientVisitRequestResponse toClientRequest(Appointment appointment) {
+        Property property = appointment.getProperty();
+        return new ClientVisitRequestResponse(
+                appointment.getId(),
+                property != null ? property.getId() : null,
+                property != null ? property.getTitle() : "Bien indisponible",
+                DATE_FORMATTER.format(appointment.getDate()),
+                TIME_FORMATTER.format(appointment.getDate()),
+                appointment.getNotes() == null ? "" : appointment.getNotes(),
+                appointment.getStatus().name(),
+                appointment.getAgent() != null ? appointment.getAgent().getFullName() : ""
+        );
+    }
+
     private MeetingEventResponse toMeetingEvent(Appointment appointment) {
         String type = appointment.getMeetingType() == null ? "Call" : appointment.getMeetingType();
         String startTime = TIME_FORMATTER.format(appointment.getDate());
@@ -251,7 +354,7 @@ public class AppointmentServiceImp implements AppointmentService {
         return new MeetingEventResponse(
                 appointment.getId(),
                 appointment.getProspect() != null ? appointment.getProspect().getId() : null,
-                appointment.getProspect() != null ? appointment.getProspect().getFirstName() + " " + appointment.getProspect().getLastName() : "Meeting",
+                appointment.getProspect() != null ? effectiveProspectName(appointment.getProspect()) : "Meeting",
                 appointment.getAgent() != null ? appointment.getAgent().getFirstName() + " " + appointment.getAgent().getLastName() : "",
                 appointment.getProperty() != null ? appointment.getProperty().getTitle() : "No property",
                 type,
@@ -277,5 +380,74 @@ public class AppointmentServiceImp implements AppointmentService {
         if (budget == null) return "Not specified";
         if (budget >= 1_000_000) return String.format("%.1fM", budget / 1_000_000f);
         return String.format("%.0fk", budget / 1_000f);
+    }
+
+    private Prospect getOrCreateProspectForUser(User currentUser, Property property) {
+        Prospect existingProspect = prospectRepository.findByUser(currentUser);
+        if (existingProspect != null) {
+            if (existingProspect.getAssignedAgent() == null) {
+                existingProspect.setAssignedAgent(property.getAgent());
+            }
+            if (existingProspect.getStage() == null) {
+                existingProspect.setStage(getOrCreateDefaultStage());
+            }
+            if (existingProspect.getSource() == null || existingProspect.getSource().isBlank()) {
+                existingProspect.setSource("Property Visit Request");
+            }
+            return prospectRepository.save(existingProspect);
+        }
+
+        Prospect prospect = new Prospect();
+        prospect.setFirstName(currentUser.getFirstName());
+        prospect.setLastName(currentUser.getLastName());
+        prospect.setEmail(currentUser.getEmail());
+        prospect.setPhone(currentUser.getPhone());
+        prospect.setUser(currentUser);
+        prospect.setAssignedAgent(property.getAgent());
+        prospect.setBudget(property.getPrice());
+        prospect.setSource("Property Visit Request");
+        prospect.setStatus(ProspectStatus.NEW);
+        prospect.setStage(getOrCreateDefaultStage());
+        return prospectRepository.save(prospect);
+    }
+
+    private PipelineStage getOrCreateDefaultStage() {
+        return pipelineStageRepository.findAll().stream()
+                .filter(stage -> "New Lead".equalsIgnoreCase(stage.getName()) || "NEW".equalsIgnoreCase(stage.getName()))
+                .findFirst()
+                .orElseGet(() -> {
+                    PipelineStage stage = new PipelineStage();
+                    stage.setName("New Lead");
+                    return pipelineStageRepository.save(stage);
+                });
+    }
+
+    private void notifyClientForStatus(Appointment appointment, String message) {
+        Prospect prospect = appointment.getProspect();
+        if (prospect != null && prospect.getUser() != null) {
+            notificationService.createNotification(message, prospect.getUser());
+        }
+    }
+
+    private String effectiveProspectName(Prospect prospect) {
+        String firstName = firstNonBlank(
+                prospect.getFirstName(),
+                prospect.getUser() != null ? prospect.getUser().getFirstName() : null
+        );
+        String lastName = firstNonBlank(
+                prospect.getLastName(),
+                prospect.getUser() != null ? prospect.getUser().getLastName() : null
+        );
+        return (firstName + " " + lastName).trim();
+    }
+
+    private String firstNonBlank(String primary, String fallback) {
+        if (primary != null && !primary.isBlank()) {
+            return primary;
+        }
+        if (fallback != null && !fallback.isBlank()) {
+            return fallback;
+        }
+        return "";
     }
 }

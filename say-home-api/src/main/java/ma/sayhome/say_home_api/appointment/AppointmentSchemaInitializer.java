@@ -15,5 +15,7 @@ public class AppointmentSchemaInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         jdbcTemplate.execute("ALTER TABLE appointments MODIFY COLUMN property_id INT NULL");
+        jdbcTemplate.execute("ALTER TABLE appointments MODIFY COLUMN agent_id INT NULL");
+        jdbcTemplate.execute("ALTER TABLE appointments MODIFY COLUMN status VARCHAR(50) NOT NULL");
     }
 }

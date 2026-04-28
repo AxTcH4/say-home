@@ -5,7 +5,11 @@ export interface MeetingRequestItem {
   city: string;
   budgetLabel: string;
   requestedDate: string;
+  requestedTime: string;
   message: string;
+  propertyId?: number | null;
+  propertyTitle: string;
+  status: string;
 }
 
 export interface MeetingEvent {

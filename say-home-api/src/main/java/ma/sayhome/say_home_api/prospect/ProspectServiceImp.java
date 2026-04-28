@@ -93,9 +93,9 @@ public class ProspectServiceImp implements ProspectService {
 
         return new ProspectDetailResponse(
                 prospect.getId(),
-                prospect.getFirstName() + " " + prospect.getLastName(),
-                prospect.getEmail(),
-                safeValue(prospect.getPhone()),
+                effectiveFullName(prospect),
+                effectiveEmail(prospect),
+                effectivePhone(prospect),
                 safeValue(prospect.getCity()),
                 formatBudgetLabel(prospect.getBudget()),
                 prospect.getBudget(),
@@ -211,9 +211,9 @@ public class ProspectServiceImp implements ProspectService {
     private ProspectListItemResponse toListItem(Prospect prospect) {
         return new ProspectListItemResponse(
                 prospect.getId(),
-                prospect.getFirstName() + " " + prospect.getLastName(),
-                prospect.getEmail(),
-                safeValue(prospect.getPhone()),
+                effectiveFullName(prospect),
+                effectiveEmail(prospect),
+                effectivePhone(prospect),
                 safeValue(prospect.getCity()),
                 formatBudgetLabel(prospect.getBudget()),
                 prospect.getStatus().name(),
@@ -292,5 +292,42 @@ public class ProspectServiceImp implements ProspectService {
 
     private String safeValue(String value) {
         return value == null ? "" : value;
+    }
+
+    private String effectiveFullName(Prospect prospect) {
+        String firstName = firstNonBlank(
+                prospect.getFirstName(),
+                prospect.getUser() != null ? prospect.getUser().getFirstName() : null
+        );
+        String lastName = firstNonBlank(
+                prospect.getLastName(),
+                prospect.getUser() != null ? prospect.getUser().getLastName() : null
+        );
+
+        return (firstName + " " + lastName).trim();
+    }
+
+    private String effectiveEmail(Prospect prospect) {
+        return firstNonBlank(
+                prospect.getEmail(),
+                prospect.getUser() != null ? prospect.getUser().getEmail() : null
+        );
+    }
+
+    private String effectivePhone(Prospect prospect) {
+        return firstNonBlank(
+                prospect.getPhone(),
+                prospect.getUser() != null ? prospect.getUser().getPhone() : null
+        );
+    }
+
+    private String firstNonBlank(String primary, String fallback) {
+        if (primary != null && !primary.isBlank()) {
+            return primary;
+        }
+        if (fallback != null && !fallback.isBlank()) {
+            return fallback;
+        }
+        return "";
     }
 }
