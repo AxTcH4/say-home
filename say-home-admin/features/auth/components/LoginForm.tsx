@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-// import { APP_ROUTES } from "@/shared/lib/routes";
 import { useAuth } from "../hooks/useAuth";
 
 export default function LoginForm() {
@@ -14,16 +12,14 @@ export default function LoginForm() {
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  useEffect(() => {
-    if (showPassword) {
-      document.getElementById("password")!.setAttribute("type", "text");
-    } else {
-      document.getElementById("password")!.setAttribute("type", "password");
-    }
-  });
-
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const input = document.getElementById("password");
+    if (!input) return;
+    input.setAttribute("type", showPassword ? "text" : "password");
+  }, [showPassword]);
 
   const handleChange =
     (field: keyof typeof formData) =>
@@ -47,9 +43,9 @@ export default function LoginForm() {
       setIsLoading(true);
       setError("");
       await login(formData);
-    } catch (error) {
+    } catch (loginError) {
       setError("Email ou mot de passe incorrect.");
-      console.error(error);
+      console.error(loginError);
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +60,7 @@ export default function LoginForm() {
           </label>
           <input
             type="email"
-            placeholder="yourname@example.com"
+            placeholder="admin@gmail.com"
             value={formData.email}
             onChange={handleChange("email")}
             className="h-12 w-full rounded-[2px] border border-[#d8d8d8] px-4 text-sm text-[#222222] outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
@@ -87,10 +83,10 @@ export default function LoginForm() {
             <button
               type="button"
               className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9a9a9a] hover:text-[#222222]"
-              onClick={()=> setShowPassword(!showPassword)}
+              onClick={() => setShowPassword((prev) => !prev)}
             >
               <svg
-                xmlns="http://w3.org"
+                xmlns="http://www.w3.org/2000/svg"
                 width="24"
                 height="24"
                 viewBox="0 0 24 24"
@@ -100,8 +96,8 @@ export default function LoginForm() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
               </svg>
             </button>
           </div>
@@ -120,22 +116,6 @@ export default function LoginForm() {
         >
           {isLoading ? "Connexion..." : "Connexion"}
         </button>
-
-        <div className="flex items-center justify-between text-sm text-[#666666]">
-          <Link 
-          href="#"
-          // href={APP_ROUTES.FORGOT_PASSWORD} 
-          className="hover:underline">
-            Mot de passe oublié ?
-          </Link>
-
-          <Link 
-          href="#"
-          // href={APP_ROUTES.SIGNUP} 
-          className="hover:underline">
-            Créer un compte
-          </Link>
-        </div>
       </form>
     </div>
   );

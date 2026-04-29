@@ -47,11 +47,14 @@ public class User extends EntityBase implements UserDetails  {
     private boolean active = true;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private Role role;
 
     @Column(unique = true)
     private String token;
+
+    @Column(nullable = false)
+    private Boolean active = true;
 
     @OneToMany(mappedBy = "agent", cascade = CascadeType.ALL)
     private List<Property> properties = new ArrayList<>();

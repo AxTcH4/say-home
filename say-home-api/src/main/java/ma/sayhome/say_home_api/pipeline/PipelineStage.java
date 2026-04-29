@@ -1,6 +1,7 @@
 package ma.sayhome.say_home_api.pipeline;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.shared.EntityBase;
 
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Data
 @Table(name = "pipeline_stages")
 public class PipelineStage extends EntityBase {
 
@@ -20,6 +22,4 @@ public class PipelineStage extends EntityBase {
 
     @OneToMany(mappedBy = "stage", cascade = CascadeType.ALL)
     private List<Prospect> prospects = new ArrayList<>();
-
-    // getters + setters
 }

@@ -1,5 +1,6 @@
 package ma.sayhome.say_home_api.appointment;
 import jakarta.persistence.*;
+import lombok.Data;
 import ma.sayhome.say_home_api.auth.User;
 import ma.sayhome.say_home_api.property.Property;
 import ma.sayhome.say_home_api.prospect.Prospect;
@@ -8,6 +9,7 @@ import ma.sayhome.say_home_api.shared.enums.AppointmentStatus;
 
 import java.time.LocalDateTime;
 
+@Data
 @Entity
 @Table(name = "appointments")
 public class Appointment extends EntityBase {
@@ -19,6 +21,12 @@ public class Appointment extends EntityBase {
     @Column(nullable = false)
     private LocalDateTime date;
 
+    @Column(name = "meeting_type")
+    private String meetingType;
+
+    @Column(length = 2000)
+    private String notes;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AppointmentStatus status;
@@ -28,12 +36,10 @@ public class Appointment extends EntityBase {
     private Prospect prospect;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "property_id", nullable = false)
+    @JoinColumn(name = "property_id", nullable = true)
     private Property property;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "agent_id", nullable = false)
+    @JoinColumn(name = "agent_id", nullable = true)
     private User agent;
-
-    // getters + setters
 }

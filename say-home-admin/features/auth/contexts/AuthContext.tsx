@@ -3,7 +3,7 @@
 import { createContext, useEffect, useMemo, useState } from "react";
 import { storage } from "@/shared/lib/storage";
 import { authService } from "../services/auth.service";
-import type { AuthUser, LoginPayload, LogoutPayload, SignupPayload } from "../types/auth.types";
+import type { AuthUser, LoginPayload } from "../types/auth.types";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { APP_ROUTES } from "@/shared/lib/routes";
@@ -15,7 +15,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (payload: LoginPayload) => Promise<void>;
-  signup: (payload: SignupPayload) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   setCurrentUser: (user: AuthUser) => void;
@@ -68,15 +67,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
   };
 
-  const signup = async (payload: SignupPayload) => {
-    try{
-    await authService.signup(payload);
-
-    } catch (error: any) {
-      toast.error(error.response.data.message, {duration: 3000,position: "bottom-center"});
-    }
-  };
-
   const logout = async () => {
     await authService.logout();;
 
@@ -114,7 +104,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!user,
       isLoading,
       login,
-      signup,
       logout,
       refreshUser,
       setCurrentUser,

@@ -16,7 +16,7 @@ const [isSearchOpened, setIsSearchOpened] = useState(false);
         isSearchOpened={isSearchOpened}
         setIsSearchOpened={setIsSearchOpened}
          />
-        <main className="flex-1 overflow-hidden p-4 ">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4">{children}</main>
       </div>
     </div>
   );

@@ -1,19 +1,66 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { Calendar, Clock3, MapPin, User } from "lucide-react";
+import { toast } from "sonner";
 import Navbar from "../../../shared/components/Navbar";
-import PropertyCard from "../../../features/properties/components/PropertyCard";
-import { MapPin, Calendar, User } from "lucide-react";
-import { FaInstagram, FaTwitter, FaFacebookF, FaYoutube } from "react-icons/fa";
-import { getPropertyById } from "@/shared/lib/api";
 import Footer from "../../../shared/components/Footer";
+import PropertyCard from "../../../features/properties/components/PropertyCard";
+import { createVisitRequest, getMyVisitRequests, getPropertyById } from "@/shared/lib/api";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+
+type VisitRequestStatus = "REQUESTED" | "SCHEDULED" | "REFUSED" | "CANCELLED" | "COMPLETED";
+
+interface VisitRequestItem {
+  id: number;
+  propertyId: number;
+  propertyTitle: string;
+  requestedDate: string;
+  requestedTime: string;
+  message: string;
+  status: VisitRequestStatus;
+  agentName: string;
+}
+
+const statusCopy: Record<VisitRequestStatus, { label: string; classes: string }> = {
+  REQUESTED: {
+    label: "En attente",
+    classes: "bg-[#fff5db] text-[#8d6510] border-[#f0dba2]",
+  },
+  SCHEDULED: {
+    label: "Acceptee",
+    classes: "bg-[#e9f7ef] text-[#1d7f4f] border-[#bfe1ce]",
+  },
+  REFUSED: {
+    label: "Refusee",
+    classes: "bg-[#fdecec] text-[#bb4343] border-[#f0c3c3]",
+  },
+  CANCELLED: {
+    label: "Annulee",
+    classes: "bg-[#eef2f7] text-[#607080] border-[#d7dde6]",
+  },
+  COMPLETED: {
+    label: "Terminee",
+    classes: "bg-[#edf4ff] text-[#3967c4] border-[#cfdcf7]",
+  },
+};
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const [property, setProperty] = useState<any>(null);
   const [similar, setSimilar] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [requests, setRequests] = useState<VisitRequestItem[]>([]);
+  const [requestLoading, setRequestLoading] = useState(false);
+  const [form, setForm] = useState({
+    date: "",
+    time: "",
+    message: "",
+  });
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -31,115 +78,151 @@ export default function PropertyDetailPage() {
     fetchProperty();
   }, [id]);
 
-  if (loading)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setRequests([]);
+      return;
+    }
+
+    const loadRequests = async () => {
+      try {
+        const result = await getMyVisitRequests();
+        setRequests(result);
+      } catch (error) {
+        console.error("Unable to load requests", error);
+      }
+    };
+
+    loadRequests();
+  }, [isAuthenticated]);
+
+  const propertyRequests = useMemo(
+    () =>
+      requests.filter((request) => String(request.propertyId) === String(property?.id)),
+    [requests, property?.id]
+  );
+
+  const handleRequestVisit = async () => {
+    if (!property?.id) return;
+
+    if (!isAuthenticated) {
+      toast.error("Connectez-vous pour envoyer une demande de visite.");
+      router.push("/auth/login");
+      return;
+    }
+
+    if (!form.date || !form.time) {
+      toast.error("Choisissez une date et une heure pour la visite.");
+      return;
+    }
+
+    try {
+      setRequestLoading(true);
+      const created = await createVisitRequest({
+        propertyId: property.id,
+        date: form.date,
+        time: form.time,
+        message: form.message,
+      });
+      setRequests((current) => [created, ...current]);
+      setForm({ date: "", time: "", message: "" });
+      toast.success("Votre demande a bien ete envoyee au back-office.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossible d'envoyer la demande.");
+    } finally {
+      setRequestLoading(false);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex h-screen items-center justify-center">
         <p className="text-gray-500">Chargement...</p>
       </div>
     );
+  }
 
-  if (!property)
+  if (!property) {
     return (
-      <div style={{}} className="w-full h-screen">
+      <div className="h-screen w-full">
         <Navbar onHero={false} />
-        <div className="flex flex-col items-center justify-center h-screen ">
-          <Image  src="/err-404.png" alt="error 404" width={750} height={50} />
-
-          <p className=" relative mt-[-5vw] text-2xl font-bold text-gray-500">Bien non trouvé</p>
+        <div className="flex h-screen flex-col items-center justify-center">
+          <Image src="/err-404.png" alt="error 404" width={750} height={50} />
+          <p className="relative mt-[-5vw] text-2xl font-bold text-gray-500">Bien non trouve</p>
         </div>
-
-        <div />
       </div>
     );
+  }
 
   return (
     <main className="bg-white">
       <Navbar onHero={false} />
-      <div className="pt-20 px-10 max-w-7xl mx-auto">
-        {/* Galerie */}
-        <div className="flex gap-3 mt-6 mb-8">
-          <div className="w-1/2 h-80 " 
-          style = {{
-            backgroundImage: `url(${property.medias?.[0] || '/placeholder.jpg'})`, backgroundRepeat: 'no-repeat',
-            backgroundSize: 'cover', backgroundPosition: 'center', }}
+      <div className="mx-auto max-w-7xl px-6 pb-16 pt-20 lg:px-10">
+        <div className="mb-8 mt-6 grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
+          <div
+            className="h-80 rounded-[2px] bg-[#f2f2f2] lg:h-[420px]"
+            style={{
+              backgroundImage: `url(${property.medias?.[0] || "/placeholder.jpg"})`,
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
           />
-          <div className="w-1/2 grid grid-cols-2 gap-3">
-            {[1,2,3,4].map((i) => (
-            <div
-              key={i}
-              className="h-[150px]"
-              style={{
-                backgroundImage: `url(${property.medias?.[i] || '/placeholder.jpg'})`, backgroundRepeat: 'no-repeat',
-            backgroundSize: 'cover', backgroundPosition: 'center',
-              }}
-            />
-          ))}
+          <div className="grid grid-cols-2 gap-3">
+            {[1, 2, 3, 4].map((index) => (
+              <div
+                key={index}
+                className="h-[150px] rounded-[2px] bg-[#f2f2f2] lg:h-[203px]"
+                style={{
+                  backgroundImage: `url(${property.medias?.[index] || "/placeholder.jpg"})`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              />
+            ))}
           </div>
         </div>
 
-        <div className="flex gap-8">
-          {/* Contenu principal */}
-          <div className="flex-1">
-            <div className="flex items-start justify-between mb-2">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div>
+            <div className="mb-2 flex items-start justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {property.title}
-                </h1>
-                <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                  <MapPin size={12} />3
-                  <span>Marrakech, Maroc</span>
+                <h1 className="text-3xl font-semibold text-gray-900">{property.title}</h1>
+                <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                  <MapPin size={15} />
+                  <span>{property.secteur || "Marrakech, Maroc"}</span>
                 </div>
               </div>
-              <p className="text-2xl font-bold text-gray-900">
-                {property.price} MAD
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{property.price} MAD</p>
             </div>
 
-            {/* Caractéristiques */}
-            <div className="flex flex-row justify-start align-center gap-15 my-6 border-y border-gray-100 py-4">
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-2xl"><Image src="/chambres.svg" width={35} height={35} alt="" /></span>
-                <span className="text-xs font-medium">{property.rooms} Chambres</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <span className="text-2xl"><Image src="/shower.svg" width={30} height={30}  alt="" /></span>
-                <span className="text-xs font-medium">4 Salles de bain</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <span className="text-2xl"><Image src="/surface.svg" width={30} height={30} alt="" /></span>
-                <span className="text-xs font-medium">{property.surface} m2</span>
-              </div>
+            <div className="my-8 flex flex-wrap gap-8 border-y border-gray-100 py-5">
+              <Metric icon="/chambres.svg" label={`${property.rooms} chambres`} />
+              <Metric icon="/shower.svg" label="4 salles de bain" />
+              <Metric icon="/surface.svg" label={`${property.surface} m2`} />
             </div>
 
-            {/* Description */}
-            <div className="mb-6">
-              <h2 className="text-base font-bold text-gray-900 mb-3">
-                Description de la propriété
-              </h2>
-              <p className="text-xs text-gray-600 leading-relaxed">
+            <div className="mb-8">
+              <h2 className="mb-3 text-lg font-semibold text-gray-900">Description de la propriete</h2>
+              <p className="text-sm leading-7 text-gray-600">
                 {property.description || "Aucune description disponible."}
               </p>
             </div>
 
-            {/* Équipements */}
             <div className="mb-8">
-              <h2 className="text-base font-bold text-gray-900 mb-3">
-                Équipements & Caractéristiques
-              </h2>
-              <div className="grid grid-cols-2 gap-2">
+              <h2 className="mb-3 text-lg font-semibold text-gray-900">Equipements & caracteristiques</h2>
+              <div className="grid gap-3 md:grid-cols-2">
                 {[
-                  "Climatisation réversible",
-                  "Piscine à débordement chauffée",
-                  "Système domotique complet",
-                  "Cave à vin climatisée",
-                  "Salle de sport privée",
-                  "Sécurité 24/7 et alarme",
+                  "Climatisation reversible",
+                  "Piscine a debordement chauffee",
+                  "Systeme domotique complet",
+                  "Cave a vin climatisee",
+                  "Salle de sport privee",
+                  "Securite 24/7 et alarme",
                 ].map((item) => (
-                  <div
-                    key={item}
-                    className="flex items-center gap-2 text-xs text-gray-600"
-                  >
-                    <span className="text-gray-400">◎</span>
+                  <div key={item} className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="text-gray-400">•</span>
                     <span>{item}</span>
                   </div>
                 ))}
@@ -147,43 +230,65 @@ export default function PropertyDetailPage() {
             </div>
           </div>
 
-          {/* Sidebar Réservation */}
-          <div className="w-64 flex-shrink-0">
-            <div className="border border-gray-200 rounded p-5 shadow-sm">
-              <h3 className="text-sm font-bold text-gray-900 mb-4">
-                Réserver une visite
-              </h3>
-              <div className="mb-3">
-                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">
-                  Date souhaitée
+          <aside className="space-y-4">
+            <div className="rounded-[2px] border border-gray-200 p-5 shadow-sm">
+              <h3 className="mb-4 text-base font-semibold text-gray-900">Reserver une visite</h3>
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Date souhaitee
+                  </span>
+                  <input
+                    type="date"
+                    value={form.date}
+                    min={new Date().toISOString().split("T")[0]}
+                    onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
+                    className="w-full rounded-[2px] border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-[#2C1A0E]"
+                  />
                 </label>
-                <input
-                  type="date"
-                  className="w-full border border-gray-200 rounded px-3 py-2 text-xs outline-none text-gray-500"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">
-                  Votre message
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Heure souhaitee
+                  </span>
+                  <div className="flex items-center rounded-[2px] border border-gray-200 px-3">
+                    <Clock3 className="h-4 w-4 text-gray-400" />
+                    <input
+                      type="time"
+                      value={form.time}
+                      onChange={(event) => setForm((current) => ({ ...current, time: event.target.value }))}
+                      className="w-full px-2 py-2.5 text-sm outline-none"
+                    />
+                  </div>
                 </label>
-                <textarea
-                  rows={3}
-                  placeholder="Je souhaiterais visiter cette propriété..."
-                  className="w-full border border-gray-200 rounded px-3 py-2 text-xs outline-none resize-none text-gray-500 placeholder-gray-400"
-                />
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Votre message
+                  </span>
+                  <textarea
+                    rows={4}
+                    value={form.message}
+                    onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
+                    placeholder="Je souhaiterais visiter cette propriete..."
+                    className="w-full resize-none rounded-[2px] border border-gray-200 px-3 py-2.5 text-sm outline-none placeholder:text-gray-400 focus:border-[#2C1A0E]"
+                  />
+                </label>
+                <button
+                  type="button"
+                  disabled={requestLoading}
+                  onClick={handleRequestVisit}
+                  className="flex w-full items-center justify-center gap-2 rounded-[2px] bg-[#2C1A0E] py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
+                >
+                  <Calendar size={14} /> {requestLoading ? "Envoi en cours..." : "Reserver maintenant"}
+                </button>
               </div>
-              <button className="w-full flex items-center justify-center gap-2 bg-[#2C1A0E] text-white text-xs py-3 rounded hover:opacity-90 transition mb-4">
-                <Calendar size={12} /> Réserver maintenant
-              </button>
-              <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
-                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                  <User size={14} className="text-gray-500" />
+
+              <div className="mt-5 flex items-center gap-3 border-t border-gray-100 pt-4">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-300">
+                  <User size={15} className="text-gray-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">
-                    Agent responsable
-                  </p>
-                  <p className="text-xs font-semibold text-gray-700">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">Agent responsable</p>
+                  <p className="text-sm font-semibold text-gray-700">
                     {property.agent
                       ? `${property.agent.firstName} ${property.agent.lastName}`
                       : "N/A"}
@@ -191,90 +296,83 @@ export default function PropertyDetailPage() {
                 </div>
               </div>
             </div>
-          </div>
+
+            {isAuthenticated ? (
+              <div className="rounded-[2px] border border-gray-200 bg-[#faf8f5] p-5 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900">Etat de mes demandes</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Vos demandes de visite pour ce bien apparaissent ici.
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#2C1A0E]">
+                    {propertyRequests.length}
+                  </span>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {propertyRequests.length === 0 ? (
+                    <div className="rounded-[2px] border border-dashed border-gray-300 bg-white px-4 py-5 text-sm text-gray-500">
+                      Aucune demande envoyee pour cette propriete pour le moment.
+                    </div>
+                  ) : (
+                    propertyRequests.map((request) => {
+                      const status = statusCopy[request.status] ?? statusCopy.REQUESTED;
+                      return (
+                        <div key={request.id} className="rounded-[2px] border border-[#e8e3dc] bg-white p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-semibold text-gray-900">
+                              {request.requestedDate} a {request.requestedTime}
+                            </p>
+                            <span
+                              className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${status.classes}`}
+                            >
+                              {status.label}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-sm text-gray-600">
+                            {request.message || "Aucun message complementaire."}
+                          </p>
+                          {request.agentName ? (
+                            <p className="mt-2 text-xs font-medium text-gray-500">
+                              Agent: {request.agentName}
+                            </p>
+                          ) : null}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </aside>
         </div>
 
-        {/* Propriétés similaires */}
-        {similar.length > 0 && (
-          <div className="mt-4 mb-10">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">
-              Propriétés similaires
-            </h2>
-              <div className="grid grid-cols-3 gap-6">
-                 {similar.map((item: any, index: number) => (
-                    <PropertyCard key={index} {...item} />
-               ))}
-             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Footer
-      <div className="flex w-full">
-        <div className="w-1/2 bg-gray-100 px-10 py-8 flex items-center">
-          <div className="flex items-center gap-2">
-            <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
-              <path
-                d="M14 3L2 13H5V24H11V17H17V24H23V13H26L14 3Z"
-                fill="#2C1A0E"
-              />
-            </svg>
-            <span className="text-lg font-bold tracking-widest text-[#2C1A0E]">
-              SAY HOME
-            </span>
-          </div>
-        </div>
-        <div className="w-1/2 bg-[#1a1a1a] px-10 py-8 flex items-center justify-center">
-          <div className="border border-gray-700 p-6 w-[60%]">
-            <div className="flex flex-col gap-2 text-xs text-gray-300 mb-4">
-              <div className="flex items-center gap-2">
-                <MapPin size={10} /> Marrakech, Maroc
-              </div>
-              <div className="flex items-center gap-2">
-                <span>📞</span> 0687654321
-              </div>
-              <div className="flex items-center gap-2">
-                <span>✉️</span> sayhome.app@gmail.com
-              </div>
-            </div>
-            <div className="flex gap-3 text-gray-400">
-              <FaInstagram
-                size={12}
-                className="cursor-pointer hover:text-white"
-              />
-              <FaTwitter
-                size={12}
-                className="cursor-pointer hover:text-white"
-              />
-              <FaFacebookF
-                size={12}
-                className="cursor-pointer hover:text-white"
-              />
-              <FaYoutube
-                size={12}
-                className="cursor-pointer hover:text-white"
-              />
+        {similar.length > 0 ? (
+          <div className="mb-10 mt-16">
+            <h2 className="mb-6 text-2xl font-semibold text-gray-900">Proprietes similaires</h2>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {similar.map((item: any, index: number) => (
+                <PropertyCard key={index} {...item} />
+              ))}
             </div>
           </div>
-        </div>
+        ) : null}
       </div>
 
-      <div className="flex items-center justify-between px-10 py-4 bg-[#1a1a1a] border-t border-gray-700">
-        <div className="text-white font-bold text-lg">SAY HOME</div>
-        <div className="flex gap-6 text-xs text-gray-400">
-          <a href="#" className="hover:text-white">
-            À propos
-          </a>
-          <a href="#" className="hover:text-white">
-            Services
-          </a>
-          <a href="#" className="hover:text-white">
-            Contact
-          </a>
-        </div> 
-      </div>*/}
-        <Footer />
-
+      <Footer />
     </main>
+  );
+}
+
+function Metric({ icon, label }: { icon: string; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <span className="text-2xl">
+        <Image src={icon} width={30} height={30} alt="" />
+      </span>
+      <span className="text-sm font-medium text-gray-700">{label}</span>
+    </div>
   );
 }
