@@ -30,4 +30,9 @@ public class DashboardController extends ControllerBase {
     public ResponseEntity<?> getSummary(@PathVariable Integer userId) {
         return ok(dashboardService.getSummary(userId));
     }
+
+    @GetMapping("/stats")
+    public ResponseEntity<?> getStats() {
+        return ok(dashboardService.getStats());
+    }
 }

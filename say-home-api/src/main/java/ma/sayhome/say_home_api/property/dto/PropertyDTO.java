@@ -24,6 +24,7 @@ public class PropertyDTO {
     private Float price;
     private Integer surface;
     private Integer rooms;
+    private String status;
     private UserDTO agent;
     private List<String> medias;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -39,6 +40,7 @@ public class PropertyDTO {
         dto.setPrice(property.getPrice());
         dto.setSurface(property.getSurface());
         dto.setRooms(property.getRooms());
+        dto.setStatus(property.getStatus());
         //dto.setAgent(property.getAgent());
         dto.setAgent(UserDTO.toDTO(property.getAgent()));
 //        dto.setMedias(files);

@@ -13,8 +13,9 @@ public interface TicketRepository extends JpaRepository<Ticket,Integer> {
     List<Ticket> findAllByProspect(Prospect prospect);
     List<Ticket> findAllByStatus(TicketStatus status);
     Optional<Ticket> findByTitle(String title);
-
-
     List<Ticket> findByTitleContainingIgnoreCase(String keyword);
     List<Ticket> findByDescriptionContainingIgnoreCase(String keyword);
+
+    long countByStatus(TicketStatus status);
+    List<Ticket> findTop3ByOrderByUpdatedAtDesc();
 }
