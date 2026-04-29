@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { title } from "process";
 import { calculateTimeAgo } from "@/shared/lib/utils";
 import ProspectModal from "@/features/tickets/components/ProspectModal";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { isAdminRole } from "@/shared/lib/auth";
 
 const statusColors: Record<string, string> = {
   CLOSED: "bg-green-100 text-green-700",
@@ -35,6 +37,7 @@ export type Ticket = {
 };
 
 export default function Tickets() {
+  const { user, isLoading } = useAuth();
   const [allTickets, setAllTickets] = useState<any[]>([]);
   const [tickets, setTickets] = useState<any[]>([]);
   const [prospectModal, setProspectModal] = useState(null);
@@ -119,6 +122,16 @@ export default function Tickets() {
   useEffect(() => {
     fetchAllTickets();
   }, []);
+
+  if (!isLoading && !isAdminRole(user?.role)) {
+    return (
+      <main className="flex-1 overflow-auto p-8">
+        <div className="rounded-[18px] border border-[#e7edf5] bg-white px-6 py-8 shadow-[0_12px_35px_rgba(20,32,60,0.06)]">
+          <p className="text-sm text-[#70819a]">This section is reserved for administrators.</p>
+        </div>
+      </main>
+    );
+  }
   const handleSave = async () => {
     try {
       const ticket = {

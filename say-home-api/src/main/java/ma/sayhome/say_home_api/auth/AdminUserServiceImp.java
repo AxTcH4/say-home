@@ -1,0 +1,143 @@
+package ma.sayhome.say_home_api.auth;
+
+import ma.sayhome.say_home_api.auth.dto.AdminUserListItemResponse;
+import ma.sayhome.say_home_api.auth.dto.AdminUserRequest;
+import ma.sayhome.say_home_api.auth.dto.AdminUsersResponse;
+import ma.sayhome.say_home_api.prospect.ProspectRepository;
+import ma.sayhome.say_home_api.shared.enums.Role;
+import ma.sayhome.say_home_api.shared.exceptions.BadRequestException;
+import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+
+@Service
+public class AdminUserServiceImp implements AdminUserService {
+    private final UserRepository userRepository;
+    private final ProspectRepository prospectRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public AdminUserServiceImp(UserRepository userRepository, ProspectRepository prospectRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.prospectRepository = prospectRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @Override
+    public AdminUsersResponse getUsers() {
+        assertAdmin();
+        List<AdminUserListItemResponse> items = userRepository.findAll().stream()
+                .filter(user -> user.getRole() != Role.CLIENT)
+                .map(this::toResponse)
+                .toList();
+
+        return new AdminUsersResponse(items, items.size());
+    }
+
+    @Override
+    public AdminUserListItemResponse getUserById(Integer id) {
+        assertAdmin();
+        return toResponse(findUser(id));
+    }
+
+    @Override
+    public AdminUserListItemResponse createUser(AdminUserRequest request) {
+        assertAdmin();
+        validateRequest(request, true);
+        if (userRepository.findByEmail(request.email).isPresent()) {
+            throw new BadRequestException("Email already in use");
+        }
+
+        User user = new User();
+        user.setFirstName(request.firstName.trim());
+        user.setLastName(request.lastName.trim());
+        user.setEmail(request.email.trim());
+        user.setPhone(request.phone == null ? null : request.phone.trim());
+        user.setRole(parseRole(request.role));
+        user.setActive(true);
+        user.setPassword(passwordEncoder.encode(request.password));
+
+        return toResponse(userRepository.save(user));
+    }
+
+    @Override
+    public AdminUserListItemResponse updateUser(Integer id, AdminUserRequest request) {
+        assertAdmin();
+        validateRequest(request, false);
+        User user = findUser(id);
+        user.setFirstName(request.firstName.trim());
+        user.setLastName(request.lastName.trim());
+        user.setEmail(request.email.trim());
+        user.setPhone(request.phone == null ? null : request.phone.trim());
+        user.setRole(parseRole(request.role));
+        return toResponse(userRepository.save(user));
+    }
+
+    @Override
+    public AdminUserListItemResponse toggleUserActive(Integer id) {
+        assertAdmin();
+        User user = findUser(id);
+        user.setActive(!Boolean.TRUE.equals(user.getActive()));
+        return toResponse(userRepository.save(user));
+    }
+
+    private String mapRole(Role role) {
+        return switch (role) {
+            case ADMIN -> "Admin";
+            case AGENT -> "Agent";
+            case CLIENT -> "Client";
+        };
+    }
+
+    private AdminUserListItemResponse toResponse(User user) {
+        return new AdminUserListItemResponse(
+                user.getId(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getPhone(),
+                mapRole(user.getRole()),
+                prospectRepository.findAll().stream()
+                        .filter(prospect -> prospect.getAssignedAgent() != null)
+                        .filter(prospect -> prospect.getAssignedAgent().getId().equals(user.getId()))
+                        .count(),
+                Boolean.TRUE.equals(user.getActive())
+        );
+    }
+
+    private User findUser(Integer id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    private void validateRequest(AdminUserRequest request, boolean requirePassword) {
+        if (request.firstName == null || request.firstName.isBlank()) throw new BadRequestException("First name is required");
+        if (request.lastName == null || request.lastName.isBlank()) throw new BadRequestException("Last name is required");
+        if (request.email == null || request.email.isBlank()) throw new BadRequestException("Email is required");
+        if (request.role == null || request.role.isBlank()) throw new BadRequestException("Role is required");
+        if (requirePassword && (request.password == null || request.password.isBlank())) {
+            throw new BadRequestException("Password is required");
+        }
+    }
+
+    private Role parseRole(String role) {
+        try {
+            if ("AGENT_SENIOR".equals(role) || "AGENT_JUNIOR".equals(role)) {
+                return Role.AGENT;
+            }
+            return Role.valueOf(role);
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Invalid role");
+        }
+    }
+
+    private void assertAdmin() {
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (currentUser.getRole() != Role.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can manage users");
+        }
+    }
+}

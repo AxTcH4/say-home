@@ -5,7 +5,6 @@ import type {
   ForgotPasswordPayload,
   LoginPayload,
   ResetPasswordPayload,
-  SignupPayload,
 } from "../types/auth.types";
 
 export const authService = {
@@ -27,12 +26,6 @@ export const authService = {
     }
 
   },
-
-async signup(payload: SignupPayload) {
-  const { data } = await apiClient.post("/auth/signup", payload);
-  return data;
-},
-
   async verifyRegistration(token: string) {
     const { data } = await apiClient.get<AuthResponse>("/auth/verify-registration", {
       params: { token },

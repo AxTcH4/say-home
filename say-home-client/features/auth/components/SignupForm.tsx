@@ -23,16 +23,10 @@ export default function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
 const [showPassword, setShowPassword] = useState(false);
   useEffect(() => {
-    if (showPassword) {
-      document.getElementById("password")!.setAttribute("type", "text")
-      document.getElementById("confirmPassword")!.setAttribute("type", "text");
-      ;
-    } else {
-      document.getElementById("password")!.setAttribute("type", "password")
-      document.getElementById("confirmPassword")!.setAttribute("type", "text");
-      ;
-    }
-  });
+    const type = showPassword ? "text" : "password";
+    document.getElementById("password")!.setAttribute("type", type);
+    document.getElementById("confirmPassword")!.setAttribute("type", type);
+  }, [showPassword]);
 
   const handleChange =
     (field: keyof typeof formData) =>
