@@ -43,9 +43,6 @@ public class User extends EntityBase implements UserDetails  {
     @Column
     private String phone;
 
-    @Column(nullable = false)
-    private boolean active = true;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private Role role;
