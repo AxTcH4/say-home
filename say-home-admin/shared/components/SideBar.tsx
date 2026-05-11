@@ -8,10 +8,8 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 export default function SideBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [expanded, setExpanded] = useState(false);
-
-  const { logout } = useAuth();
   const [open, setOpen] = useState(false);
   const isAdmin = user?.role === "ADMIN";
   const initial = useMemo(() => {
@@ -25,7 +23,10 @@ export default function SideBar() {
     <div
       className={`h-screen transition-all duration-200 ease-in-out ${expanded ? "w-[14%]" : "w-[60px]"} border border-black shadow-[0_5px_2px_-3px_rgba(0,0,0,0.05)] flex flex-col justify-between items-center text-black overflow-hidden`}
       onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => { setExpanded(false); setOpen(false); }}
+      onMouseLeave={() => {
+        setExpanded(false);
+        setOpen(false);
+      }}
     >
       <div className="w-full">
         <div className="flex items-center justify-center py-4 ">
@@ -138,7 +139,7 @@ export default function SideBar() {
         {open && expanded && (
           <div className="absolute min-w-[200px] bottom-[7%] left-[12.5%] bg-white border shadow p-3 rounded text-sm z-50">
             <p className="py-1 hover:bg-[#F5F5F5] transition cursor-pointer" onClick={() => router.push("/user/profile")}>Mon Profile</p>
-            <p className="py-1 hover:bg-[#F5F5F5] transition cursor-pointer" onClick={async () => { await logout(); router.push("/"); }}>Déconnexion</p>
+            <p className="py-1 hover:bg-[#F5F5F5] transition cursor-pointer" onClick={logout}>Deconnexion</p>
           </div>
         )}
       </div>

@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
 import ma.sayhome.say_home_api.appointment.Appointment;
-import ma.sayhome.say_home_api.auth.User;
+import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.matchingEngine.matchResult.MatchResult;
 import ma.sayhome.say_home_api.property.propertyMedia.PropertyMedia;
 import ma.sayhome.say_home_api.shared.EntityBase;

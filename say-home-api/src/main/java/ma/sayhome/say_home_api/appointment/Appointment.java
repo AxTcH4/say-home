@@ -1,7 +1,7 @@
 package ma.sayhome.say_home_api.appointment;
 import jakarta.persistence.*;
 import lombok.Data;
-import ma.sayhome.say_home_api.auth.User;
+import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.property.Property;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.shared.EntityBase;

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { APP_ROUTES } from "@/shared/lib/routes";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useAccount } from "../hooks/useAccount";
+import MeetingRequestsPanel from "./MeetingRequestsPanel";
 
 const tabs = [
   {
@@ -29,12 +30,12 @@ const tabs = [
   },
   {
     key: "negotiating",
-    label: "Negotiations",
-    title: "En negociation",
-    description: "Suivez vos discussions en cours avec les proprietaires.",
+    label: "Negociations",
+    title: "Mes negotiations",
+    description: "Retrouvez simplement vos rendez-vous et visites en cours.",
     emptyTitle: "Aucune negotiation en cours",
     emptyDescription:
-      "Lorsqu'une discussion demarre autour d'un bien, elle apparaitra dans cet espace.",
+      "Quand vous demanderez une visite, elle apparaitra ici avec son statut.",
     summaryKey: "negotiatingProperties",
   },
 ] as const;
@@ -88,58 +89,62 @@ export default function RealEstateTabs() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-[2px] border border-[#ded8d1] bg-white shadow-[0_14px_35px_rgba(0,0,0,0.08)]">
-        <div className="bg-[#f8f6f2] px-8 py-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#88786c]">
-            Mon espace immobilier
-          </p>
-          <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h2 className="text-[28px] font-semibold text-[#222222]">
-                {activeTab.title}
-              </h2>
-              <p className="mt-2 text-sm text-[#666666]">
-                {activeTab.description}
-              </p>
-            </div>
-            <div className="rounded-[2px] bg-white px-4 py-3 text-sm font-semibold text-[#2f1b10]">
-              {loading
-                ? "Chargement..."
-                : `${activeCount} element${activeCount > 1 ? "s" : ""}`}
-            </div>
-          </div>
-        </div>
-
-        <div className="px-8 py-10">
-          <div className="flex flex-col items-center justify-center rounded-[2px] border border-dashed border-[#cfc7bf] bg-[#fbfaf8] px-6 py-12 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#2f1b10] text-xl font-semibold text-white">
-              SH
-            </div>
-            <h3 className="mt-5 text-xl font-semibold text-[#222222]">
-              {activeCount > 0 ? activeTab.title : activeTab.emptyTitle}
-            </h3>
-            <p className="mt-2 max-w-[540px] text-sm leading-6 text-[#666666]">
-              {activeCount > 0
-                ? activeTab.description
-                : activeTab.emptyDescription}
+      {activeKey === "negotiating" ? (
+        <MeetingRequestsPanel compact />
+      ) : (
+        <div className="overflow-hidden rounded-[2px] border border-[#ded8d1] bg-white shadow-[0_14px_35px_rgba(0,0,0,0.08)]">
+          <div className="bg-[#f8f6f2] px-8 py-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#88786c]">
+              Mon espace immobilier
             </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/properties"
-                className="rounded-[2px] bg-[#2f1b10] px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-95"
-              >
-                Explorer les biens
-              </Link>
-              <Link
-                href={APP_ROUTES.CONTACT}
-                className="rounded-[2px] border border-[#cfc7bf] px-5 py-2.5 text-sm font-medium text-[#444444] transition hover:bg-[#f5f5f3]"
-              >
-                Contacter Say Home
-              </Link>
+            <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="text-[28px] font-semibold text-[#222222]">
+                  {activeTab.title}
+                </h2>
+                <p className="mt-2 text-sm text-[#666666]">
+                  {activeTab.description}
+                </p>
+              </div>
+              <div className="rounded-[2px] bg-white px-4 py-3 text-sm font-semibold text-[#2f1b10]">
+                {loading
+                  ? "Chargement..."
+                  : `${activeCount} element${activeCount > 1 ? "s" : ""}`}
+              </div>
+            </div>
+          </div>
+
+          <div className="px-8 py-10">
+            <div className="flex flex-col items-center justify-center rounded-[2px] border border-dashed border-[#cfc7bf] bg-[#fbfaf8] px-6 py-12 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#2f1b10] text-xl font-semibold text-white">
+                SH
+              </div>
+              <h3 className="mt-5 text-xl font-semibold text-[#222222]">
+                {activeCount > 0 ? activeTab.title : activeTab.emptyTitle}
+              </h3>
+              <p className="mt-2 max-w-[540px] text-sm leading-6 text-[#666666]">
+                {activeCount > 0
+                  ? activeTab.description
+                  : activeTab.emptyDescription}
+              </p>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/properties"
+                  className="rounded-[2px] bg-[#2f1b10] px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-95"
+                >
+                  Explorer les biens
+                </Link>
+                <Link
+                  href={APP_ROUTES.CONTACT}
+                  className="rounded-[2px] border border-[#cfc7bf] px-5 py-2.5 text-sm font-medium text-[#444444] transition hover:bg-[#f5f5f3]"
+                >
+                  Contacter Say Home
+                </Link>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

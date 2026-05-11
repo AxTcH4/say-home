@@ -5,117 +5,106 @@ import ma.sayhome.say_home_api.property.dto.PropertyReqDTO;
 import ma.sayhome.say_home_api.shared.ApiResponse;
 import ma.sayhome.say_home_api.shared.ControllerBase;
 import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/properties")
 public class PropertyController extends ControllerBase {
+    private final PropertyRepository propertyRepository;
+    private final PropertyServiceImpl propertyService;
 
-    @Autowired
-    private PropertyRepository propertyRepository;
+    public PropertyController(PropertyRepository propertyRepository, PropertyServiceImpl propertyService) {
+        this.propertyRepository = propertyRepository;
+        this.propertyService = propertyService;
+    }
 
-    @Autowired
-    private PropertyServiceImp propertyService;
-
-    // GET /api/properties/latest - Home Page
     @GetMapping("/latest")
     public ResponseEntity<ApiResponse<List<PropertyDTO>>> getLatestProperties(@RequestParam(required = false) String type) {
-        System.out.println("Hits the endpoint");
-        List<Property> properties = new ArrayList<>();
-
-        if (type != null && !type.isEmpty()) {
-            properties = propertyRepository.findByTypeOrderByCreatedAtDesc(type);
-        } else {
-            properties = propertyRepository.findTop3ByOrderByCreatedAtDesc();
-        }
+        List<Property> properties = (type != null && !type.isEmpty())
+                ? propertyRepository.findByTypeOrderByCreatedAtDesc(type)
+                : propertyRepository.findTop3ByOrderByCreatedAtDesc();
 
         List<PropertyDTO> results = new ArrayList<>();
-
-//        //find Media and Map properties with DTO
         for (Property property : properties) {
-            System.out.println("Property id: " + property.getId());
-            System.out.println("Title: " + property.getTitle());
-
             PropertyDTO propertyDTO = PropertyDTO.toDTO(property);
             propertyService.assingMedia(propertyDTO);
             results.add(propertyDTO);
         }
 
-        System.out.println("Latest properties: " + results.toString());
         return ok(results);
-}
+    }
 
-    // GET /api/properties - Liste des biens
     @GetMapping
     public ResponseEntity<ApiResponse<List<PropertyDTO>>> getAllProperties(
             @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice) {
-
-        List<Property> properties = propertyRepository.findAll();
+            @RequestParam(required = false) Double maxPrice
+    ) {
         List<PropertyDTO> results = new ArrayList<>();
-
-//        //find Media and Map properties with DTO
-        for (Property property : properties) {
-            System.out.println("Property id: " + property.getId());
-            System.out.println("Title: " + property.getTitle());
-
+        for (Property property : propertyRepository.findAll()) {
             PropertyDTO propertyDTO = PropertyDTO.toDTO(property);
             propertyService.assingMedia(propertyDTO);
             results.add(propertyDTO);
         }
 
-        System.out.println("Latest properties: " + results.toString());
         return ok(results);
     }
 
-    // GET /api/properties/:id - Détail d'un bien
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PropertyDTO>> getPropertyById(@PathVariable Integer id) {
         Optional<Property> property = propertyRepository.findById(id);
-//        Map<String, Object> response = new HashMap<>();
-        if (property.isPresent()) {
-            //      find Media and Map properties with DTO
-
-            PropertyDTO propertyDTO = PropertyDTO.toDTO(property.get());
-
-            System.out.println("Property id: " + propertyDTO.getId());
-            System.out.println("Title: " + propertyDTO.getTitle());
-
-            propertyService.assingMedia(propertyDTO);
-
-            return ok(propertyDTO);
+        if (property.isEmpty()) {
+            throw new ResourceNotFoundException("Property with id " + id + " not found");
         }
-        else {
-            throw  new ResourceNotFoundException("Property with id " + id + " not found");
-        }
-//
-//            List<Property> similar = propertyRepository.findTop3ByOrderByCreatedAtDesc();
-//            response.put("success", true);
-//            response.put("data", property.get());
-//            response.put("similar", similar);
-//            return ResponseEntity.ok(response);
-//        } else {
-//            response.put("success", false);
-//            response.put("message", "Bien non trouvé");
-//            return ResponseEntity.status(404).body(response);
 
+        PropertyDTO propertyDTO = PropertyDTO.toDTO(property.get());
+        propertyService.assingMedia(propertyDTO);
+        return ok(propertyDTO);
     }
 
-    // POST /api/properties - Créer un bienu
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<PropertyDTO>> createProperty(@RequestPart("property") PropertyReqDTO property,
-                                                                   @RequestPart("files") List<MultipartFile> files) throws IOException {
+    public ResponseEntity<ApiResponse<PropertyDTO>> createProperty(
+            @RequestPart("property") PropertyReqDTO property,
+            @RequestPart("files") List<MultipartFile> files
+    ) throws IOException {
+        return ok(propertyService.create(property, files));
+    }
 
-        //forward post request to service
-        PropertyDTO saved = propertyService.create(property, files);
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<PropertyDTO>> updateProperty(
+            @PathVariable Integer id,
+            @RequestBody PropertyReqDTO property
+    ) {
+        return ok(propertyService.update(id, property));
+    }
 
-        return ok(saved);
+    @PostMapping(path = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<PropertyDTO>> replacePropertyImages(
+            @PathVariable Integer id,
+            @RequestPart("files") List<MultipartFile> files
+    ) throws IOException {
+        return ok(propertyService.replaceImages(id, files));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteProperty(@PathVariable Integer id) {
+        propertyService.delete(id);
+        return ok(null);
     }
 }

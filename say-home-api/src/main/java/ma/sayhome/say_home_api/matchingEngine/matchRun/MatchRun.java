@@ -1,6 +1,6 @@
 package ma.sayhome.say_home_api.matchingEngine.matchRun;
 import jakarta.persistence.*;
-import ma.sayhome.say_home_api.auth.User;
+import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.matchingEngine.matchResult.MatchResult;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.shared.EntityBase;

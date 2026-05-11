@@ -59,15 +59,29 @@ export async function getAllProperties(filters?: {
   minPrice?: string;
   maxPrice?: string;
 }) {
-  const params = new URLSearchParams(filters as Record<string, string>).toString();
+  const params = new URLSearchParams(
+    Object.entries(filters ?? {}).filter(([, value]) => value != null && value !== "")
+  ).toString();
   const res = await fetch(buildUrl(`/properties${params ? `?${params}` : ""}`), {
     method: "GET",
     credentials: "include",
   });
 
   if (res.status === 404) return null;
-  const data = await res.json();
-  return data.data;
+  if (!res.ok) {
+    const errorMessage = await readError(
+      res,
+      `Unable to load properties (HTTP ${res.status})`
+    );
+    throw new Error(errorMessage);
+  }
+
+  const data = await readJson(res);
+  if (!data) {
+    throw new Error("Invalid properties response");
+  }
+
+  return data.data ?? [];
 }
 
 export async function getPropertyById(id: string) {

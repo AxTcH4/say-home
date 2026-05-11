@@ -1,13 +1,13 @@
 package ma.sayhome.say_home_api.auth;
 
-import ma.sayhome.say_home_api.auth.dto.*;
+import ma.sayhome.say_home_api.auth.dto.AuthDTO;
 
 public interface AuthService {
-    AuthResponse login(LoginRequest request);
+    AuthDTO.AuthResponse login(AuthDTO.LoginRequest request);
     Integer logout (String request);
-    AuthResponse signup(RegisterRequest request);
-    AuthResponse verifyRegistration(String token);
-    AuthResponse.UserDto getCurrentUser(String token);
-    void forgotPassword(ForgotPasswordRequest request);
-    void resetPassword(ResetPasswordRequest request);
+    AuthDTO.AuthResponse signup(AuthDTO.RegisterRequest request);
+    AuthDTO.AuthResponse verifyRegistration(String token);
+    AuthDTO.AuthResponse.UserDto getCurrentUser(ma.sayhome.say_home_api.user.User user);
+    void forgotPassword(AuthDTO.ForgotPasswordRequest request);
+    void resetPassword(AuthDTO.ResetPasswordRequest request);
 }

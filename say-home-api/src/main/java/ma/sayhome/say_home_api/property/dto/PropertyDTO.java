@@ -3,13 +3,10 @@ package ma.sayhome.say_home_api.property.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-import ma.sayhome.say_home_api.auth.User;
-import ma.sayhome.say_home_api.auth.dto.UserDTO;
+import ma.sayhome.say_home_api.user.dto.UserDTO;
 import ma.sayhome.say_home_api.property.Property;
-import ma.sayhome.say_home_api.property.propertyMedia.PropertyMedia;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.Data;
 
 @Data

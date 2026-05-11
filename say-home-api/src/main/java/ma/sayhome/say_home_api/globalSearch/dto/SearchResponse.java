@@ -3,8 +3,7 @@ package ma.sayhome.say_home_api.globalSearch.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
-import ma.sayhome.say_home_api.helpDesk.dto.TicketDTO;
+import ma.sayhome.say_home_api.helpDesk.ticket.dto.TicketDTO;
 import ma.sayhome.say_home_api.helpDesk.ticket.Ticket;
 import ma.sayhome.say_home_api.property.Property;
 import ma.sayhome.say_home_api.property.dto.PropertyDTO;
@@ -13,7 +12,6 @@ import ma.sayhome.say_home_api.prospect.dto.ChatSessionOwner;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 @Data

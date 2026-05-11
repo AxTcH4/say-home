@@ -3,7 +3,7 @@ package ma.sayhome.say_home_api.property.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ma.sayhome.say_home_api.auth.UserRepository;
+import ma.sayhome.say_home_api.user.UserRepository;
 import ma.sayhome.say_home_api.property.Property;
 import ma.sayhome.say_home_api.property.propertyMedia.PropertyMedia;
 import org.springframework.beans.factory.annotation.Autowired;

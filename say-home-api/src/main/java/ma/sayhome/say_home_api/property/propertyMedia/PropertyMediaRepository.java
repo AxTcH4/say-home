@@ -13,5 +13,7 @@ public interface PropertyMediaRepository  extends JpaRepository<PropertyMedia,In
     void delete(PropertyMedia entity);
     PropertyMedia findById(int id);
     PropertyMedia findByUrl(String url);
+    List<PropertyMedia> findAllByPropertyId(Integer propertyId);
+    void deleteAllByPropertyId(Integer propertyId);
 
 }
