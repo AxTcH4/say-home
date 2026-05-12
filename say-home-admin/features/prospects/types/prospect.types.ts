@@ -81,6 +81,16 @@ export type ProspectPropertyRelationStatus =
   | "BOUGHT"
   | "RENTED";
 
+export type ProspectPropertyInteractionType =
+  | "FAVORITED"
+  | "VISIT_REQUESTED"
+  | "VISIT_COMPLETED"
+  | "NEGOTIATION_STARTED"
+  | "NEGOTIATION_CANCELLED"
+  | "PURCHASE_COMPLETED"
+  | "RENT_COMPLETED"
+  | "NOTE_ADDED";
+
 export type ProspectPropertyDocumentType =
   | "RECEIPT"
   | "CONTRACT"
@@ -94,6 +104,13 @@ export interface ProspectPropertyDocument {
   url: string;
   type: ProspectPropertyDocumentType;
   uploadedAt: string;
+}
+
+export interface ProspectPropertyInteraction {
+  id: number;
+  type: ProspectPropertyInteractionType;
+  comment: string;
+  createdAt: string;
 }
 
 export interface ProspectPropertyRecord {
@@ -111,6 +128,7 @@ export interface ProspectPropertyRecord {
   updatedAt: string;
   medias: string[];
   documents: ProspectPropertyDocument[];
+  interactions: ProspectPropertyInteraction[];
 }
 
 export interface ProspectDetail {
@@ -137,5 +155,24 @@ export interface ProspectDetail {
 
 export interface CreateInteractionPayload {
   type: string;
+  comment: string;
+}
+
+export interface AssignProspectPropertyPayload {
+  prospectId: number;
+  propertyId: number;
+  status: ProspectPropertyRelationStatus;
+  finalPrice?: number | null;
+  notes?: string | null;
+}
+
+export interface UpdateProspectPropertyPayload {
+  status: ProspectPropertyRelationStatus;
+  finalPrice?: number | null;
+  notes?: string | null;
+}
+
+export interface CreateProspectPropertyInteractionPayload {
+  type: ProspectPropertyInteractionType;
   comment: string;
 }

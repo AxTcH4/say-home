@@ -1,11 +1,15 @@
 import { apiFetch } from "@/shared/lib/api-fetch";
 import type {
+  AssignProspectPropertyPayload,
+  CreateProspectPropertyInteractionPayload,
   CreateProspectPayload,
   ProspectDetail,
   ProspectListResponse,
   ProspectQueryParams,
-  UpdateProspectPayload,
+  ProspectPropertyRecord,
   CreateInteractionPayload,
+  UpdateProspectPayload,
+  UpdateProspectPropertyPayload,
 } from "../types/prospect.types";
 
 const API_BASE_URL =
@@ -112,6 +116,83 @@ export const prospectService = {
 
     const result = await response.json();
     return result.data as ProspectDetail;
+  },
+
+  async assignProperty(payload: AssignProspectPropertyPayload) {
+    const response = await apiFetch(`${API_BASE_URL}/prospect-properties`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message ?? "Unable to assign property");
+    }
+
+    const result = await response.json();
+    return result.data as ProspectPropertyRecord;
+  },
+
+  async updatePropertyRecord(
+    recordId: number,
+    payload: UpdateProspectPropertyPayload,
+  ) {
+    const response = await apiFetch(
+      `${API_BASE_URL}/prospect-properties/${recordId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message ?? "Unable to update property record");
+    }
+
+    const result = await response.json();
+    return result.data as ProspectPropertyRecord;
+  },
+
+  async addPropertyInteraction(
+    recordId: number,
+    payload: CreateProspectPropertyInteractionPayload,
+  ) {
+    const response = await apiFetch(
+      `${API_BASE_URL}/prospect-properties/${recordId}/interactions`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message ?? "Unable to add property interaction");
+    }
+
+    const result = await response.json();
+    return result.data as ProspectPropertyRecord;
+  },
+
+  async deletePropertyRecord(recordId: number) {
+    const response = await apiFetch(`${API_BASE_URL}/prospect-properties/${recordId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message ?? "Unable to delete property record");
+    }
   },
 
   async deleteProspect(id: number) {

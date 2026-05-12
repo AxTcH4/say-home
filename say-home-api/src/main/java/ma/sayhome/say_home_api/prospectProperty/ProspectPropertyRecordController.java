@@ -1,6 +1,7 @@
 package ma.sayhome.say_home_api.prospectProperty;
 
 import ma.sayhome.say_home_api.prospectProperty.dto.CreateProspectPropertyRecordRequest;
+import ma.sayhome.say_home_api.prospectProperty.dto.CreateProspectPropertyInteractionRequest;
 import ma.sayhome.say_home_api.prospectProperty.dto.ProspectPropertyRecordResponse;
 import ma.sayhome.say_home_api.prospectProperty.dto.UpdateProspectPropertyRecordRequest;
 import ma.sayhome.say_home_api.shared.ApiResponse;
@@ -69,6 +70,14 @@ public class ProspectPropertyRecordController extends ControllerBase {
             @RequestPart("files") List<MultipartFile> files
     ) throws IOException {
         return ok(recordService.addDocuments(recordId, type, files));
+    }
+
+    @PostMapping("/{recordId}/interactions")
+    public ResponseEntity<ApiResponse<ProspectPropertyRecordResponse>> addInteraction(
+            @PathVariable Integer recordId,
+            @RequestBody CreateProspectPropertyInteractionRequest request
+    ) {
+        return ok(recordService.addInteraction(recordId, request));
     }
 
     @DeleteMapping("/{recordId}/documents/{documentId}")

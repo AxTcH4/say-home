@@ -7,6 +7,7 @@ import lombok.ToString;
 import ma.sayhome.say_home_api.property.Property;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.prospectProperty.document.ProspectPropertyDocument;
+import ma.sayhome.say_home_api.prospectProperty.interaction.ProspectPropertyInteraction;
 import ma.sayhome.say_home_api.shared.EntityBase;
 import ma.sayhome.say_home_api.shared.enums.ProspectPropertyStatus;
 
@@ -21,7 +22,7 @@ import java.util.List;
         name = "prospect_property_records",
         uniqueConstraints = @UniqueConstraint(columnNames = {"prospect_id", "property_id"})
 )
-@ToString(exclude = {"prospect", "property", "documents"})
+@ToString(exclude = {"prospect", "property", "documents", "interactions"})
 public class ProspectPropertyRecord extends EntityBase {
 
     @Id
@@ -50,6 +51,9 @@ public class ProspectPropertyRecord extends EntityBase {
 
     @OneToMany(mappedBy = "record", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProspectPropertyDocument> documents = new ArrayList<>();
+
+    @OneToMany(mappedBy = "record", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProspectPropertyInteraction> interactions = new ArrayList<>();
 
     @PrePersist
     public void onCreate() {

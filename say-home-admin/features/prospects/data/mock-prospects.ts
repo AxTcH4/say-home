@@ -113,6 +113,14 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
             uploadedAt: "2026-04-28T16:32:00",
           },
         ],
+        interactions: [
+          {
+            id: 9001,
+            type: "NEGOTIATION_STARTED",
+            comment: "Echange avance avec le prospect sur les conditions de vente.",
+            createdAt: "2026-04-28T16:20:00",
+          },
+        ],
       },
       {
         id: 102,
@@ -129,6 +137,14 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
         updatedAt: "2026-04-20T11:00:00",
         medias: ["/placeholder.jpg"],
         documents: [],
+        interactions: [
+          {
+            id: 9002,
+            type: "FAVORITED",
+            comment: "Le bien a ete ajoute a la shortlist du prospect.",
+            createdAt: "2026-04-20T11:00:00",
+          },
+        ],
       },
     ],
   },
@@ -184,6 +200,14 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
             url: "#",
             type: "CONTRACT",
             uploadedAt: "2026-04-27T18:18:00",
+          },
+        ],
+        interactions: [
+          {
+            id: 9003,
+            type: "PURCHASE_COMPLETED",
+            comment: "Transaction confirmee et dossier archive.",
+            createdAt: "2026-04-27T18:10:00",
           },
         ],
       },
@@ -264,6 +288,14 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
             url: "#",
             type: "PAYMENT_PROOF",
             uploadedAt: "2026-05-01T09:50:00",
+          },
+        ],
+        interactions: [
+          {
+            id: 9004,
+            type: "RENT_COMPLETED",
+            comment: "Location annuelle finalisee avec contrat signe.",
+            createdAt: "2026-05-01T09:45:00",
           },
         ],
       },

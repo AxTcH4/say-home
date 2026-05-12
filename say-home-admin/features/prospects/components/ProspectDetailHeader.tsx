@@ -77,9 +77,6 @@ export function ProspectDetailHeader({ prospect }: ProspectDetailHeaderProps) {
                 Delete
               </button>
             ) : null}
-            <button className="rounded-[10px] border border-[#e4eaf4] px-4 py-2 text-sm font-semibold text-[#172033]">
-              Add Interaction
-            </button>
             <button className="rounded-[10px] bg-[#2c1a0e] px-4 py-2 text-sm font-semibold text-white">
               Add Meeting
             </button>

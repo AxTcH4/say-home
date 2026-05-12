@@ -8,10 +8,14 @@ import ma.sayhome.say_home_api.prospect.ProspectRepository;
 import ma.sayhome.say_home_api.prospectProperty.document.ProspectPropertyDocument;
 import ma.sayhome.say_home_api.prospectProperty.document.ProspectPropertyDocumentRepository;
 import ma.sayhome.say_home_api.prospectProperty.document.ProspectPropertyDocumentService;
+import ma.sayhome.say_home_api.prospectProperty.dto.CreateProspectPropertyInteractionRequest;
 import ma.sayhome.say_home_api.prospectProperty.dto.CreateProspectPropertyRecordRequest;
 import ma.sayhome.say_home_api.prospectProperty.dto.ProspectPropertyDocumentResponse;
+import ma.sayhome.say_home_api.prospectProperty.dto.ProspectPropertyInteractionResponse;
 import ma.sayhome.say_home_api.prospectProperty.dto.ProspectPropertyRecordResponse;
 import ma.sayhome.say_home_api.prospectProperty.dto.UpdateProspectPropertyRecordRequest;
+import ma.sayhome.say_home_api.prospectProperty.interaction.ProspectPropertyInteraction;
+import ma.sayhome.say_home_api.prospectProperty.interaction.ProspectPropertyInteractionRepository;
 import ma.sayhome.say_home_api.shared.enums.PropertyStatus;
 import ma.sayhome.say_home_api.shared.enums.ProspectPropertyDocumentType;
 import ma.sayhome.say_home_api.shared.enums.ProspectPropertyStatus;
@@ -36,6 +40,7 @@ public class ProspectPropertyRecordService {
     private final ProspectRepository prospectRepository;
     private final PropertyRepository propertyRepository;
     private final ProspectPropertyDocumentRepository documentRepository;
+    private final ProspectPropertyInteractionRepository interactionRepository;
     private final ProspectPropertyDocumentService documentService;
     private final PropertyMediaServiceImpl propertyMediaService;
 
@@ -44,6 +49,7 @@ public class ProspectPropertyRecordService {
             ProspectRepository prospectRepository,
             PropertyRepository propertyRepository,
             ProspectPropertyDocumentRepository documentRepository,
+            ProspectPropertyInteractionRepository interactionRepository,
             ProspectPropertyDocumentService documentService,
             PropertyMediaServiceImpl propertyMediaService
     ) {
@@ -51,6 +57,7 @@ public class ProspectPropertyRecordService {
         this.prospectRepository = prospectRepository;
         this.propertyRepository = propertyRepository;
         this.documentRepository = documentRepository;
+        this.interactionRepository = interactionRepository;
         this.documentService = documentService;
         this.propertyMediaService = propertyMediaService;
     }
@@ -136,6 +143,24 @@ public class ProspectPropertyRecordService {
         return toResponse(getRequiredRecord(recordId));
     }
 
+    public ProspectPropertyRecordResponse addInteraction(
+            Integer recordId,
+            CreateProspectPropertyInteractionRequest request
+    ) {
+        ProspectPropertyRecord record = getRequiredRecord(recordId);
+        if (request.type == null || request.comment == null || request.comment.isBlank()) {
+            throw new BadRequestException("Interaction type and comment are required");
+        }
+
+        ProspectPropertyInteraction interaction = new ProspectPropertyInteraction();
+        interaction.setRecord(record);
+        interaction.setType(request.type);
+        interaction.setComment(request.comment.trim());
+        interactionRepository.save(interaction);
+
+        return toResponse(getRequiredRecord(recordId));
+    }
+
     private ProspectPropertyRecord getRequiredRecord(Integer recordId) {
         return recordRepository.findById(recordId)
                 .orElseThrow(() -> new ResourceNotFoundException("Prospect property record not found"));
@@ -178,6 +203,10 @@ public class ProspectPropertyRecordService {
                 .sorted(Comparator.comparing(ProspectPropertyDocument::getCreatedAt).reversed())
                 .map(this::toDocumentResponse)
                 .toList();
+        List<ProspectPropertyInteractionResponse> interactions = interactionRepository.findByRecordIdOrderByCreatedAtDesc(record.getId())
+                .stream()
+                .map(this::toInteractionResponse)
+                .toList();
 
         Property property = record.getProperty();
         return new ProspectPropertyRecordResponse(
@@ -194,12 +223,22 @@ public class ProspectPropertyRecordService {
                 formatDateTime(record.getCreatedAt()),
                 formatDateTime(record.getUpdatedAt()),
                 propertyMediaService.getByPropertyId(property.getId()),
-                documents
+                documents,
+                interactions
         );
     }
 
     private ProspectPropertyDocumentResponse toDocumentResponse(ProspectPropertyDocument document) {
         return ProspectPropertyDocumentResponse.fromEntity(document, formatDateTime(document.getCreatedAt()));
+    }
+
+    private ProspectPropertyInteractionResponse toInteractionResponse(ProspectPropertyInteraction interaction) {
+        return new ProspectPropertyInteractionResponse(
+                interaction.getId(),
+                interaction.getType().name(),
+                formatDateTime(interaction.getCreatedAt()),
+                interaction.getComment()
+        );
     }
 
     private String formatDateTime(LocalDateTime dateTime) {
