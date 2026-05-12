@@ -30,6 +30,8 @@ export async function searchProperties(data: {
   secteur?: string;
   minPrice?: number | string;
   maxPrice?: number | string;
+  minSurface?: number | string;
+  minRooms?: number | string;
 }) {
   const urlParams = new URLSearchParams({
     title: data.title || "",
@@ -37,6 +39,8 @@ export async function searchProperties(data: {
     secteur: data.secteur || "",
     minPrice: String(data.minPrice ?? ""),
     maxPrice: String(data.maxPrice ?? ""),
+    minSurface: String(data.minSurface ?? ""),
+    minRooms: String(data.minRooms ?? ""),
   }).toString();
 
   const res = await fetch(buildUrl(`/properties/search?${urlParams}`), {

@@ -16,6 +16,8 @@ const searchSchema = z.object({
   secteur: z.string().optional(),
   minPrice: z.coerce.number().optional(),
   maxPrice: z.coerce.number().optional(),
+  minSurface: z.coerce.number().optional(),
+  minRooms: z.coerce.number().optional(),
 });
 
 const defaultFilters = {
@@ -24,6 +26,8 @@ const defaultFilters = {
   secteur: "",
   minPrice: "",
   maxPrice: "",
+  minSurface: "",
+  minRooms: "",
 };
 
 const PROPERTY_TYPE_OPTIONS = [
@@ -97,6 +101,8 @@ export default function PropertiesPage() {
         secteur: filters.secteur.trim(),
         minPrice: filters.minPrice || 0,
         maxPrice: filters.maxPrice || 0,
+        minSurface: filters.minSurface || 0,
+        minRooms: filters.minRooms || 0,
       });
 
       if (Number(filters.maxPrice) !== 0 && Number(filters.minPrice) > Number(filters.maxPrice)) {
@@ -267,7 +273,7 @@ export default function PropertiesPage() {
                 </select>
               </Field>
 
-              <Field label="Budget">
+              <Field label="Budget (MAD)">
                 <div className="grid grid-cols-2 gap-3">
                   <input
                     type="number"
@@ -284,6 +290,26 @@ export default function PropertiesPage() {
                     className="rounded-[2px] border border-[#d8d1c8] bg-[#fbfaf8] px-3 py-3 text-sm outline-none"
                   />
                 </div>
+              </Field>
+
+              <Field label="Surface minimum (m²)">
+                <input
+                  type="number"
+                  value={filters.minSurface}
+                  onChange={(event) => setFilters((current) => ({ ...current, minSurface: event.target.value }))}
+                  placeholder="Ex: 80"
+                  className="w-full rounded-[2px] border border-[#d8d1c8] bg-[#fbfaf8] px-3 py-3 text-sm outline-none"
+                />
+              </Field>
+
+              <Field label="Chambres minimum">
+                <input
+                  type="number"
+                  value={filters.minRooms}
+                  onChange={(event) => setFilters((current) => ({ ...current, minRooms: event.target.value }))}
+                  placeholder="Ex: 3"
+                  className="w-full rounded-[2px] border border-[#d8d1c8] bg-[#fbfaf8] px-3 py-3 text-sm outline-none"
+                />
               </Field>
             </div>
 

@@ -21,6 +21,12 @@ public class SearchRequest {
     @DecimalMin(value = "0.0", inclusive = true,  message = "Max price cannot be negative")
     private Float maxPrice;
 
+    @DecimalMin(value = "0.0", inclusive = true, message = "Min surface cannot be negative")
+    private Float minSurface;
+
+    @DecimalMin(value = "0.0", inclusive = true, message = "Min rooms cannot be negative")
+    private Float minRooms;
+
     public String getTitle() {
         return title;
     }
@@ -54,6 +60,20 @@ public class SearchRequest {
     }
     public void setMaxPrice(Float maxPrice) {
         this.maxPrice = maxPrice;
+    }
+
+    public Float getMinSurface() {
+        return minSurface;
+    }
+    public void setMinSurface(Float minSurface) {
+        this.minSurface = minSurface;
+    }
+
+    public Float getMinRooms() {
+        return minRooms;
+    }
+    public void setMinRooms(Float minRooms) {
+        this.minRooms = minRooms;
     }
 
 }
