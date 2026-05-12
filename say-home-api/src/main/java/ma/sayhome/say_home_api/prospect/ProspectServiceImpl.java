@@ -15,6 +15,7 @@ import ma.sayhome.say_home_api.prospect.dto.ProspectListResponse;
 import ma.sayhome.say_home_api.prospect.dto.ProspectMeetingResponse;
 import ma.sayhome.say_home_api.prospect.interaction.ProspectInteraction;
 import ma.sayhome.say_home_api.prospect.interaction.ProspectInteractionRepository;
+import ma.sayhome.say_home_api.prospectProperty.ProspectPropertyRecordService;
 import ma.sayhome.say_home_api.shared.enums.ProspectStatus;
 import ma.sayhome.say_home_api.shared.enums.Role;
 import org.springframework.http.HttpStatus;
@@ -35,17 +36,20 @@ public class ProspectServiceImpl implements ProspectService {
     private final UserRepository userRepository;
     private final PipelineStageRepository pipelineStageRepository;
     private final ProspectInteractionRepository prospectInteractionRepository;
+    private final ProspectPropertyRecordService prospectPropertyRecordService;
 
     public ProspectServiceImpl(
             ProspectRepository prospectRepository,
             UserRepository userRepository,
             PipelineStageRepository pipelineStageRepository,
-            ProspectInteractionRepository prospectInteractionRepository
+            ProspectInteractionRepository prospectInteractionRepository,
+            ProspectPropertyRecordService prospectPropertyRecordService
     ) {
         this.prospectRepository = prospectRepository;
         this.userRepository = userRepository;
         this.pipelineStageRepository = pipelineStageRepository;
         this.prospectInteractionRepository = prospectInteractionRepository;
+        this.prospectPropertyRecordService = prospectPropertyRecordService;
     }
 
     public ProspectListResponse getProspects(String search, String status, String assignedAgent, String source) {
@@ -109,7 +113,8 @@ public class ProspectServiceImpl implements ProspectService {
                 "COLD",
                 interactions,
                 List.<ProspectMeetingResponse>of(),
-                List.<ProspectFeedbackResponse>of()
+                List.<ProspectFeedbackResponse>of(),
+                prospectPropertyRecordService.getRecordsByProspectId(id)
         );
     }
 

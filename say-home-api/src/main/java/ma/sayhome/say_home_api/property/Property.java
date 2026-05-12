@@ -8,6 +8,7 @@ import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.matchingEngine.matchResult.MatchResult;
 import ma.sayhome.say_home_api.property.propertyMedia.PropertyMedia;
 import ma.sayhome.say_home_api.shared.EntityBase;
+import ma.sayhome.say_home_api.shared.enums.PropertyStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,8 +42,9 @@ public class Property extends EntityBase {
     @Column(nullable = false)
     private Float price;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status = "AVAILABLE";
+    private PropertyStatus status = PropertyStatus.AVAILABLE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agent_id", nullable = false)

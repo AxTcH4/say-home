@@ -70,6 +70,20 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
+    public List<TicketDTO> getMyTickets(User authenticatedUser) {
+        Prospect prospect = prospectRepository.findByUser(authenticatedUser);
+        if (prospect == null) {
+            throw new ForbiddenException("Visitors are not allowed to access tickets");
+        }
+
+        List<TicketDTO> results = new ArrayList<>();
+        for (Ticket ticket : ticketRepository.findAllByProspect(prospect)) {
+            results.add(TicketDTO.toDTO(ticket));
+        }
+        return results;
+    }
+
+    @Override
     public List<TicketDTO> getTicketsByProspectId(Integer prospectId) {
         Prospect prospect = prospectRepository.findById(prospectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Prospect not found"));

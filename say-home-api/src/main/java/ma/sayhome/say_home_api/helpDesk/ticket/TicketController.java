@@ -49,6 +49,16 @@ public class TicketController extends ControllerBase {
         return ok(ticketService.getAllTickets());
     }
 
+    @GetMapping("/tickets/me")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<ApiResponse<List<TicketDTO>>> getMyTickets() {
+        User authenticatedUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (authenticatedUser == null) {
+            throw new UnauthorizedException("User is not logged in");
+        }
+        return ok(ticketService.getMyTickets(authenticatedUser));
+    }
+
     @GetMapping("/tickets/prospect/{prospectId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'AGENT', 'CLIENT')")
     public ResponseEntity<ApiResponse<List<TicketDTO>>> getTicketsByProspectId(@PathVariable Integer prospectId) {

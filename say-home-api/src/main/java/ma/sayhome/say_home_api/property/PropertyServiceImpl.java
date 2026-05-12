@@ -5,6 +5,7 @@ import ma.sayhome.say_home_api.notification.NotificationService;
 import ma.sayhome.say_home_api.property.dto.PropertyDTO;
 import ma.sayhome.say_home_api.property.dto.PropertyReqDTO;
 import ma.sayhome.say_home_api.property.propertyMedia.PropertyMediaServiceImpl;
+import ma.sayhome.say_home_api.shared.enums.PropertyStatus;
 import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
 import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.user.UserRepository;
@@ -67,7 +68,7 @@ public class PropertyServiceImpl {
         property.setSurface(dto.getSurface());
         property.setRooms(dto.getRooms());
 
-        if (dto.getStatus() != null && !dto.getStatus().isBlank()) {
+        if (dto.getStatus() != null) {
             property.setStatus(dto.getStatus());
         }
 

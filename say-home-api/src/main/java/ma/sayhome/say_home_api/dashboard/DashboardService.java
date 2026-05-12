@@ -4,6 +4,9 @@ import ma.sayhome.say_home_api.dashboard.dto.DashboardProfileResponse;
 import ma.sayhome.say_home_api.dashboard.dto.DashboardProfileUpdateRequest;
 import ma.sayhome.say_home_api.dashboard.dto.DashboardStatsResponse;
 import ma.sayhome.say_home_api.dashboard.dto.DashboardSummaryResponse;
+import ma.sayhome.say_home_api.prospectProperty.dto.ProspectPropertyRecordResponse;
+
+import java.util.List;
 
 public interface DashboardService {
 
@@ -12,6 +15,8 @@ public interface DashboardService {
     DashboardProfileResponse updateProfile(Integer userId, DashboardProfileUpdateRequest request);
 
     DashboardSummaryResponse getSummary(Integer userId);
+
+    List<ProspectPropertyRecordResponse> getRealEstateRecords(Integer userId);
 
     DashboardStatsResponse getStats();
 }

@@ -25,7 +25,7 @@ public class AuthController extends ControllerBase {
     @PostMapping("/login")
     public ResponseEntity<AuthDTO.AuthResponse> login(@RequestBody AuthDTO.LoginRequest request, HttpServletResponse response) {
         AuthDTO.AuthResponse auth = authService.login(request);
-        response.addCookie(buildAuthCookie(auth.getToken(), 7 * 24 * 60 * 60));
+        response.addCookie(buildSessionAuthCookie(auth.getToken()));
         return ResponseEntity.ok(new AuthDTO.AuthResponse("Login successful", null, auth.getUser()));
     }
 
@@ -33,7 +33,7 @@ public class AuthController extends ControllerBase {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Integer> logout(HttpServletRequest request, HttpServletResponse response) {
         String token = extractTokenFromCookies(request);
-        response.addCookie(buildAuthCookie("", 0));
+        response.addCookie(buildExpiredAuthCookie());
         return ResponseEntity.ok(authService.logout(token));
     }
 
@@ -45,7 +45,7 @@ public class AuthController extends ControllerBase {
     @GetMapping("/verify-registration")
     public ResponseEntity<AuthDTO.AuthResponse> verifyRegistration(@RequestParam String token, HttpServletResponse response) {
         AuthDTO.AuthResponse auth = authService.verifyRegistration(token);
-        response.addCookie(buildAuthCookie(auth.getToken(), 7 * 24 * 60 * 60));
+        response.addCookie(buildSessionAuthCookie(auth.getToken()));
         return ResponseEntity.ok(new AuthDTO.AuthResponse(auth.getMessage(), null, auth.getUser()));
     }
 
@@ -82,11 +82,19 @@ public class AuthController extends ControllerBase {
         throw new UnauthorizedException("Authentication token is required");
     }
 
-    private Cookie buildAuthCookie(String token, int maxAge) {
+    private Cookie buildSessionAuthCookie(String token) {
         Cookie cookie = new Cookie("token", token);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
-        cookie.setMaxAge(maxAge);
+        cookie.setMaxAge(-1);
+        return cookie;
+    }
+
+    private Cookie buildExpiredAuthCookie() {
+        Cookie cookie = new Cookie("token", "");
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
         return cookie;
     }
 }

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import ma.sayhome.say_home_api.user.dto.UserDTO;
 import ma.sayhome.say_home_api.property.Property;
+import ma.sayhome.say_home_api.shared.enums.PropertyStatus;
 
 import java.util.List;
 import lombok.Data;
@@ -21,7 +22,7 @@ public class PropertyDTO {
     private Float price;
     private Integer surface;
     private Integer rooms;
-    private String status;
+    private PropertyStatus status;
     private UserDTO agent;
     private List<String> medias;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)

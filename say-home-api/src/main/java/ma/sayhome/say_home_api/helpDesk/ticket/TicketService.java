@@ -10,6 +10,7 @@ import java.util.List;
 public interface TicketService {
     TicketDTO createTicket(User authenticatedUser, TicketRequest ticketRequest);
     List<TicketDTO> getAllTickets();
+    List<TicketDTO> getMyTickets(User authenticatedUser);
     List<TicketDTO> getTicketsByProspectId(Integer prospectId);
     List<TicketDTO> getTicketsByProspectName(String prospectName);
     List<TicketDTO> getTicketsByStatus(TicketStatus status);

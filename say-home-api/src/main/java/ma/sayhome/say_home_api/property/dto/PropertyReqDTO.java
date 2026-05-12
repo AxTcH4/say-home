@@ -3,12 +3,8 @@ package ma.sayhome.say_home_api.property.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ma.sayhome.say_home_api.user.UserRepository;
 import ma.sayhome.say_home_api.property.Property;
-import ma.sayhome.say_home_api.property.propertyMedia.PropertyMedia;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.stream.Collectors;
+import ma.sayhome.say_home_api.shared.enums.PropertyStatus;
 
 @Data
 @NoArgsConstructor
@@ -23,7 +19,7 @@ public class PropertyReqDTO {
     private Integer surface;
     private Integer rooms;
     private String agentName;
-    private String status;
+    private PropertyStatus status;
 
 
 
@@ -36,7 +32,7 @@ public class PropertyReqDTO {
         property.setPrice(propertyDTO.getPrice());
         property.setSurface(propertyDTO.getSurface());
         property.setRooms(propertyDTO.getRooms());
-        property.setStatus(propertyDTO.getStatus() != null ? propertyDTO.getStatus() : "AVAILABLE");
+        property.setStatus(propertyDTO.getStatus() != null ? propertyDTO.getStatus() : PropertyStatus.AVAILABLE);
 
         return  property;
     }

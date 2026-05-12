@@ -75,6 +75,44 @@ export interface ProspectFeedback {
   comment: string;
 }
 
+export type ProspectPropertyRelationStatus =
+  | "FAVORITE"
+  | "NEGOTIATING"
+  | "BOUGHT"
+  | "RENTED";
+
+export type ProspectPropertyDocumentType =
+  | "RECEIPT"
+  | "CONTRACT"
+  | "PAYMENT_PROOF"
+  | "ID_COPY"
+  | "OTHER";
+
+export interface ProspectPropertyDocument {
+  id: number;
+  name: string;
+  url: string;
+  type: ProspectPropertyDocumentType;
+  uploadedAt: string;
+}
+
+export interface ProspectPropertyRecord {
+  id: number;
+  propertyId: number;
+  propertyTitle: string;
+  propertyType: string;
+  propertySector: string;
+  propertyPrice: number;
+  propertyStatus: string;
+  relationStatus: ProspectPropertyRelationStatus;
+  finalPrice?: number | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  medias: string[];
+  documents: ProspectPropertyDocument[];
+}
+
 export interface ProspectDetail {
   id: number;
   fullName: string;
@@ -94,6 +132,7 @@ export interface ProspectDetail {
   interactions: ProspectInteraction[];
   meetings: ProspectMeeting[];
   feedback: ProspectFeedback[];
+  propertyRecords: ProspectPropertyRecord[];
 }
 
 export interface CreateInteractionPayload {

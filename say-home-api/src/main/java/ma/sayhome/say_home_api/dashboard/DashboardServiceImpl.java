@@ -11,7 +11,13 @@ import ma.sayhome.say_home_api.helpDesk.ticket.TicketRepository;
 import ma.sayhome.say_home_api.leadScore.LeadScore;
 import ma.sayhome.say_home_api.leadScore.LeadScoreRepository;
 import ma.sayhome.say_home_api.property.PropertyRepository;
+import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.prospect.ProspectRepository;
+import ma.sayhome.say_home_api.prospectProperty.ProspectPropertyRecordRepository;
+import ma.sayhome.say_home_api.prospectProperty.ProspectPropertyRecordService;
+import ma.sayhome.say_home_api.prospectProperty.dto.ProspectPropertyRecordResponse;
+import ma.sayhome.say_home_api.shared.enums.PropertyStatus;
+import ma.sayhome.say_home_api.shared.enums.ProspectPropertyStatus;
 import ma.sayhome.say_home_api.shared.enums.TicketStatus;
 import ma.sayhome.say_home_api.shared.exceptions.BadRequestException;
 import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
@@ -19,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,17 +38,23 @@ public class DashboardServiceImpl implements DashboardService {
     private final PropertyRepository propertyRepository;
     private final TicketRepository ticketRepository;
     private final LeadScoreRepository leadScoreRepository;
+    private final ProspectPropertyRecordRepository prospectPropertyRecordRepository;
+    private final ProspectPropertyRecordService prospectPropertyRecordService;
 
     public DashboardServiceImpl(UserRepository userRepository,
                                 ProspectRepository prospectRepository,
                                 PropertyRepository propertyRepository,
                                 TicketRepository ticketRepository,
-                                LeadScoreRepository leadScoreRepository) {
+                                LeadScoreRepository leadScoreRepository,
+                                ProspectPropertyRecordRepository prospectPropertyRecordRepository,
+                                ProspectPropertyRecordService prospectPropertyRecordService) {
         this.userRepository = userRepository;
         this.prospectRepository = prospectRepository;
         this.propertyRepository = propertyRepository;
         this.ticketRepository = ticketRepository;
         this.leadScoreRepository = leadScoreRepository;
+        this.prospectPropertyRecordRepository = prospectPropertyRecordRepository;
+        this.prospectPropertyRecordService = prospectPropertyRecordService;
     }
 
     @Override
@@ -87,7 +100,29 @@ public class DashboardServiceImpl implements DashboardService {
     public DashboardSummaryResponse getSummary(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        return new DashboardSummaryResponse(0, 0, 0, 0);
+        Prospect prospect = prospectRepository.findByUser(user);
+        if (prospect == null) {
+            return new DashboardSummaryResponse(0, 0, 0, 0);
+        }
+
+        return new DashboardSummaryResponse(
+                prospectPropertyRecordRepository.countByProspectIdAndStatus(prospect.getId(), ProspectPropertyStatus.BOUGHT),
+                prospectPropertyRecordRepository.countByProspectIdAndStatus(prospect.getId(), ProspectPropertyStatus.RENTED),
+                prospectPropertyRecordRepository.countByProspectIdAndStatus(prospect.getId(), ProspectPropertyStatus.NEGOTIATING),
+                prospect.getTickets() != null ? prospect.getTickets().size() : 0
+        );
+    }
+
+    @Override
+    public List<ProspectPropertyRecordResponse> getRealEstateRecords(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Prospect prospect = prospectRepository.findByUser(user);
+        if (prospect == null) {
+            return Collections.emptyList();
+        }
+
+        return prospectPropertyRecordService.getRecordsByProspectId(prospect.getId());
     }
 
     @Override
@@ -96,9 +131,9 @@ public class DashboardServiceImpl implements DashboardService {
 
         // ── Counts ──────────────────────────────────────────────────────────
         stats.setTotalProspects(prospectRepository.count());
-        stats.setAvailableProperties(propertyRepository.countByStatus("AVAILABLE"));
-        stats.setReservedProperties(propertyRepository.countByStatus("RESERVED"));
-        stats.setSoldProperties(propertyRepository.countByStatus("SOLD"));
+        stats.setAvailableProperties(propertyRepository.countByStatus(PropertyStatus.AVAILABLE));
+        stats.setReservedProperties(propertyRepository.countByStatus(PropertyStatus.RESERVED));
+        stats.setSoldProperties(propertyRepository.countByStatus(PropertyStatus.SOLD));
         stats.setTotalProperties(propertyRepository.count());
         stats.setTotalTickets(ticketRepository.count());
         stats.setOpenTickets(ticketRepository.countByStatus(TicketStatus.OPEN));
