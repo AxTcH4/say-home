@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { prospectService } from "../services/prospect.service";
 
 interface ProspectActionsMenuProps {
@@ -16,6 +17,7 @@ export function ProspectActionsMenu({
 }: ProspectActionsMenuProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -33,9 +35,21 @@ export function ProspectActionsMenu({
     if (!confirm(`Delete ${prospectName}?`)) {
       return;
     }
-    await prospectService.deleteProspect(prospectId);
-    router.push("/prospects");
-    router.refresh();
+
+    setIsDeleting(true);
+    try {
+      await prospectService.deleteProspect(prospectId);
+      toast.success("Prospect deleted successfully.");
+      setOpen(false);
+      router.push("/prospects");
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to delete prospect.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -60,9 +74,10 @@ export function ProspectActionsMenu({
           <button
             type="button"
             onClick={handleDelete}
-            className="block w-full rounded-[8px] px-3 py-2 text-left text-sm text-[#d24a4a] hover:bg-[#fff5f5]"
+            disabled={isDeleting}
+            className="block w-full rounded-[8px] px-3 py-2 text-left text-sm text-[#d24a4a] hover:bg-[#fff5f5] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Delete
+            {isDeleting ? "Deleting..." : "Delete"}
           </button>
         </div>
       ) : null}

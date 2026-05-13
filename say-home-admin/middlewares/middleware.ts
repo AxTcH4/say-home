@@ -15,7 +15,6 @@ export const config = {
     "/prospects/:path*",
     "/properties/:path*",
     "/pipeline/:path*",
-    "/ai-matching/:path*",
     "/appointments/:path*",
     "/tickets/:path*",
     "/chats/:path*",

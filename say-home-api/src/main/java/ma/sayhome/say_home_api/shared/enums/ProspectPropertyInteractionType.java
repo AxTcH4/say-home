@@ -8,5 +8,6 @@ public enum ProspectPropertyInteractionType {
     NEGOTIATION_CANCELLED,
     PURCHASE_COMPLETED,
     RENT_COMPLETED,
+    DOCUMENT_ADDED,
     NOTE_ADDED
 }

@@ -89,9 +89,18 @@ export type ProspectPropertyInteractionType =
   | "NEGOTIATION_CANCELLED"
   | "PURCHASE_COMPLETED"
   | "RENT_COMPLETED"
+  | "DOCUMENT_ADDED"
   | "NOTE_ADDED";
 
 export type ProspectPropertyDocumentType =
+  | "SALE_DEED"
+  | "LAND_TITLE"
+  | "MORTGAGE_CONTRACT"
+  | "PAYMENT_RECEIPT"
+  | "LEASE_CONTRACT"
+  | "RENT_RECEIPT"
+  | "PROPERTY_INSPECTION_REPORT"
+  | "SECURITY_DEPOSIT_RECEIPT"
   | "RECEIPT"
   | "CONTRACT"
   | "PAYMENT_PROOF"
@@ -104,6 +113,14 @@ export interface ProspectPropertyDocument {
   url: string;
   type: ProspectPropertyDocumentType;
   uploadedAt: string;
+}
+
+export interface ProspectPropertyExpectedDocument {
+  type: ProspectPropertyDocumentType;
+  title: string;
+  description: string;
+  sampleContent: string;
+  uploaded: boolean;
 }
 
 export interface ProspectPropertyInteraction {
@@ -128,6 +145,7 @@ export interface ProspectPropertyRecord {
   updatedAt: string;
   medias: string[];
   documents: ProspectPropertyDocument[];
+  expectedDocuments: ProspectPropertyExpectedDocument[];
   interactions: ProspectPropertyInteraction[];
 }
 

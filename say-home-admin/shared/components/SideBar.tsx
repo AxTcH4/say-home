@@ -75,16 +75,6 @@ export default function SideBar() {
             </div>
           </div>
           ) : null}
-          {isAdmin ? (
-          <div className={`group hover:shadow-sm transition px-3 py-3 mt-1 rounded-[2px] ${pathname === APP_ROUTES.AI_MATCHING ? "bg-[#2f1b10] text-white shadow-sm" : ""}`}>
-            <div className="flex flex-row items-center gap-4">
-              <img src="/ai.svg" alt="" className={`w-5 h-5 shrink-0 transition-all duration-200 group-hover:scale-115 group-hover:-rotate-6 ${pathname === APP_ROUTES.AI_MATCHING ? "invert" : ""}`} />
-              <span className={`font-medium text-sm whitespace-nowrap transition-all duration-200 ${expanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"}`}>
-                <Link href={APP_ROUTES.AI_MATCHING}>AI Matching</Link>
-              </span>
-            </div>
-          </div>
-          ) : null}
           <div className={`group hover:shadow-sm transition px-3 py-3 mt-1 rounded-[2px] ${pathname === APP_ROUTES.APPOINTMENTS ? "bg-[#2f1b10] text-white shadow-sm" : ""}`}>
             <div className="flex flex-row items-center gap-4">
               <img src="/apt.svg" alt="" className={`w-5 h-5 shrink-0 transition-all duration-200 group-hover:scale-115 group-hover:-rotate-6 ${pathname === APP_ROUTES.APPOINTMENTS ? "invert" : ""}`} />

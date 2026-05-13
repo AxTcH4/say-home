@@ -26,6 +26,14 @@ export type RealEstateRelationStatus =
   | "RENTED";
 
 export type RealEstateDocumentType =
+  | "SALE_DEED"
+  | "LAND_TITLE"
+  | "MORTGAGE_CONTRACT"
+  | "PAYMENT_RECEIPT"
+  | "LEASE_CONTRACT"
+  | "RENT_RECEIPT"
+  | "PROPERTY_INSPECTION_REPORT"
+  | "SECURITY_DEPOSIT_RECEIPT"
   | "RECEIPT"
   | "CONTRACT"
   | "PAYMENT_PROOF"
@@ -38,6 +46,14 @@ export interface RealEstateDocument {
   url: string;
   type: RealEstateDocumentType;
   uploadedAt: string;
+}
+
+export interface RealEstateExpectedDocument {
+  type: RealEstateDocumentType;
+  title: string;
+  description: string;
+  sampleContent: string;
+  uploaded: boolean;
 }
 
 export interface RealEstateRecord {
@@ -55,6 +71,7 @@ export interface RealEstateRecord {
   updatedAt: string;
   medias: string[];
   documents: RealEstateDocument[];
+  expectedDocuments: RealEstateExpectedDocument[];
 }
 
 export interface ApiResponse<T> {

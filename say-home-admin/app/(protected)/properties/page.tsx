@@ -5,6 +5,8 @@ import { propertyService } from "@/features/properties/services/propertyService"
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { toast } from "sonner";
 
+const MAX_PROPERTY_IMAGES = 10;
+
 const STATUS_COLORS: Record<string, string> = {
   AVAILABLE: "bg-green-100 text-green-700",
   RESERVED: "bg-yellow-100 text-yellow-700",
@@ -49,6 +51,10 @@ function AddPropertyModal({
     e.preventDefault();
     if (!form.title || !form.price || !form.surface || !form.rooms) {
       toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+    if (files && files.length > MAX_PROPERTY_IMAGES) {
+      toast.error(`Vous pouvez ajouter jusqu'a ${MAX_PROPERTY_IMAGES} images maximum.`);
       return;
     }
 
@@ -214,6 +220,9 @@ function AddPropertyModal({
                 onChange={(e) => setFiles(e.target.files)}
                 className="text-sm text-gray-500"
               />
+              <p className="mt-2 text-xs text-gray-400">
+                Jusqu'a 10 images par propriete.
+              </p>
             </div>
           </div>
 
@@ -547,6 +556,10 @@ function PropertyImagesModal({
       toast.error("Veuillez choisir au moins une image");
       return;
     }
+    if (files.length > MAX_PROPERTY_IMAGES) {
+      toast.error(`Vous pouvez ajouter jusqu'a ${MAX_PROPERTY_IMAGES} images maximum.`);
+      return;
+    }
 
     setSaving(true);
     try {
@@ -615,7 +628,7 @@ function PropertyImagesModal({
               className="text-sm text-gray-500"
             />
             <p className="mt-2 text-xs text-gray-400">
-              Cette action remplace les images visibles dans l'application pour cette propriete.
+              Cette action remplace les images visibles dans l'application pour cette propriete. Jusqu'a 10 images.
             </p>
           </div>
 

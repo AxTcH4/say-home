@@ -113,6 +113,7 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
             uploadedAt: "2026-04-28T16:32:00",
           },
         ],
+        expectedDocuments: [],
         interactions: [
           {
             id: 9001,
@@ -137,6 +138,7 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
         updatedAt: "2026-04-20T11:00:00",
         medias: ["/placeholder.jpg"],
         documents: [],
+        expectedDocuments: [],
         interactions: [
           {
             id: 9002,
@@ -202,6 +204,7 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
             uploadedAt: "2026-04-27T18:18:00",
           },
         ],
+        expectedDocuments: [],
         interactions: [
           {
             id: 9003,
@@ -290,6 +293,7 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
             uploadedAt: "2026-05-01T09:50:00",
           },
         ],
+        expectedDocuments: [],
         interactions: [
           {
             id: 9004,

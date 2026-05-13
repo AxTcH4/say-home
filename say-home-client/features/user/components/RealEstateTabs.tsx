@@ -247,6 +247,22 @@ function RealEstateRecordCard({ record }: { record: RealEstateRecord }) {
           </div>
 
           <div>
+            {record.expectedDocuments.length > 0 ? (
+              <div className="mb-5 rounded-[2px] border border-[#ded8d1] bg-white px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#88786c]">
+                  Documents attendus
+                </p>
+                <p className="mt-2 text-sm text-[#666666]">
+                  Voici les documents a preparer pour ce dossier.
+                </p>
+                <div className="mt-3 space-y-3">
+                  {record.expectedDocuments.map((document) => (
+                    <ExpectedDocumentItem key={document.type} document={document} />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#88786c]">
               Documents
             </p>
@@ -300,6 +316,37 @@ function DocumentItem({ document }: { document: RealEstateDocument }) {
   );
 }
 
+function ExpectedDocumentItem({
+  document,
+}: {
+  document: RealEstateRecord["expectedDocuments"][number];
+}) {
+  return (
+    <details className="rounded-[2px] border border-[#ded8d1] bg-[#fbfaf8]">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+        <div>
+          <p className="font-semibold text-[#222222]">{document.title}</p>
+          <p className="mt-1 text-xs text-[#666666]">{document.description}</p>
+        </div>
+        <span
+          className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${
+            document.uploaded
+              ? "bg-[#e7f6ed] text-[#22734f]"
+              : "bg-[#fff1df] text-[#a56813]"
+          }`}
+        >
+          {document.uploaded ? "Ajoute" : "Attendu"}
+        </span>
+      </summary>
+      <div className="border-t border-[#ded8d1] px-4 py-4">
+        <pre className="whitespace-pre-wrap text-xs leading-6 text-[#666666]">
+          {document.sampleContent}
+        </pre>
+      </div>
+    </details>
+  );
+}
+
 function formatRelationStatus(status: RealEstateRecord["relationStatus"]) {
   switch (status) {
     case "BOUGHT":
@@ -317,6 +364,22 @@ function formatRelationStatus(status: RealEstateRecord["relationStatus"]) {
 
 function formatDocumentType(type: RealEstateDocumentType) {
   switch (type) {
+    case "SALE_DEED":
+      return "Acte de vente";
+    case "LAND_TITLE":
+      return "Titre foncier";
+    case "MORTGAGE_CONTRACT":
+      return "Contrat de credit immobilier";
+    case "PAYMENT_RECEIPT":
+      return "Recu de paiement";
+    case "LEASE_CONTRACT":
+      return "Contrat de bail";
+    case "RENT_RECEIPT":
+      return "Quittance de loyer";
+    case "PROPERTY_INSPECTION_REPORT":
+      return "Etat des lieux";
+    case "SECURITY_DEPOSIT_RECEIPT":
+      return "Recu de caution";
     case "RECEIPT":
       return "Recu";
     case "CONTRACT":

@@ -3,6 +3,7 @@ package ma.sayhome.say_home_api.property.propertyMedia;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import ma.sayhome.say_home_api.property.Property;
+import ma.sayhome.say_home_api.shared.exceptions.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,6 +15,8 @@ import java.util.Map;
 
 @Service
 public class PropertyMediaServiceImpl {
+    private static final int MAX_IMAGES_PER_PROPERTY = 10;
+
     @Autowired
     private Cloudinary cloudinary;
 
@@ -21,6 +24,11 @@ public class PropertyMediaServiceImpl {
     private PropertyMediaRepository propertyMediaRepository;
 
     public List<String> uploadAll(List<MultipartFile> files, Property property) throws IOException {
+        long validFilesCount = files.stream().filter(file -> file != null && !file.isEmpty()).count();
+        if (validFilesCount > MAX_IMAGES_PER_PROPERTY) {
+            throw new BadRequestException("A property can contain up to 10 images");
+        }
+
         List<String> results = new ArrayList<>();
         for (MultipartFile file : files) {
             if (file == null || file.isEmpty()) {

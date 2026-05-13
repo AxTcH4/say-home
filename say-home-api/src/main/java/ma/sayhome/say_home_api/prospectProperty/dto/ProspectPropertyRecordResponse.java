@@ -17,6 +17,7 @@ public record ProspectPropertyRecordResponse(
         String updatedAt,
         List<String> medias,
         List<ProspectPropertyDocumentResponse> documents,
+        List<ProspectPropertyExpectedDocumentResponse> expectedDocuments,
         List<ProspectPropertyInteractionResponse> interactions
 ) {
 }

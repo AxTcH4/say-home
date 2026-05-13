@@ -75,6 +75,14 @@ const relationStyles: Record<ProspectPropertyRelationStatus, string> = {
 };
 
 const documentTypeLabels: Record<string, string> = {
+  SALE_DEED: "Acte de vente",
+  LAND_TITLE: "Titre foncier",
+  MORTGAGE_CONTRACT: "Contrat de credit immobilier",
+  PAYMENT_RECEIPT: "Recu de paiement",
+  LEASE_CONTRACT: "Contrat de bail",
+  RENT_RECEIPT: "Quittance de loyer",
+  PROPERTY_INSPECTION_REPORT: "Etat des lieux",
+  SECURITY_DEPOSIT_RECEIPT: "Recu de caution",
   RECEIPT: "Recu",
   CONTRACT: "Contrat",
   PAYMENT_PROOF: "Preuve de paiement",
@@ -804,6 +812,22 @@ function PropertyRecordCard({
           ) : null}
 
           <div className="mt-5">
+            {record.expectedDocuments.length > 0 ? (
+              <div className="mb-5 rounded-[14px] border border-[#e7edf5] bg-white px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7d8ca2]">
+                  Documents attendus
+                </p>
+                <p className="mt-1 text-sm text-[#70819a]">
+                  Modele des documents a preparer pour ce dossier.
+                </p>
+                <div className="mt-4 space-y-3">
+                  {record.expectedDocuments.map((document) => (
+                    <ExpectedDocumentRow key={document.type} document={document} />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7d8ca2]">
               Documents
             </p>
@@ -955,6 +979,37 @@ function InteractionRow({
   );
 }
 
+function ExpectedDocumentRow({
+  document,
+}: {
+  document: ProspectPropertyRecord["expectedDocuments"][number];
+}) {
+  return (
+    <details className="rounded-[12px] border border-[#e7edf5] bg-[#fbfcfe]">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+        <div>
+          <p className="text-sm font-semibold text-[#172033]">{document.title}</p>
+          <p className="mt-1 text-xs text-[#70819a]">{document.description}</p>
+        </div>
+        <span
+          className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] ${
+            document.uploaded
+              ? "bg-[#ecfdf5] text-[#047857]"
+              : "bg-[#fff7ed] text-[#c2410c]"
+          }`}
+        >
+          {document.uploaded ? "Ajoute" : "Attendu"}
+        </span>
+      </summary>
+      <div className="border-t border-[#e7edf5] px-4 py-4">
+        <pre className="whitespace-pre-wrap text-xs leading-6 text-[#55657d]">
+          {document.sampleContent}
+        </pre>
+      </div>
+    </details>
+  );
+}
+
 function formatAmount(value: number) {
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
@@ -1009,6 +1064,8 @@ function formatInteractionType(type: ProspectPropertyInteractionType) {
       return "Achat finalise";
     case "RENT_COMPLETED":
       return "Location finalisee";
+    case "DOCUMENT_ADDED":
+      return "Document ajoute";
     case "NOTE_ADDED":
       return "Note ajoutee";
     default:
