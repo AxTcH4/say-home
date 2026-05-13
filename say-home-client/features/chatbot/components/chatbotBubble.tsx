@@ -18,14 +18,10 @@ const CHAT_OPENED_KEY = "say_home_chat_opened_once";
 
 export default function ChatBubble() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isBotTyping, setIsBotTyping] = useState(false);
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      content: "Bonjour ! Comment puis-je vous aider ?",
-      sender: "BOT",
-      timestamp: new Date(),
-    },
-  ]);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -48,10 +44,13 @@ export default function ChatBubble() {
           timestamp: new Date(message.createdAt),
         }));
 
-        setMessages((prev) => [prev[0], ...history]);
+        setMessages(history);
 
-        const hasOpenedChat = window.localStorage.getItem(CHAT_OPENED_KEY) === "true";
-        const unseenMessages = history.filter((message: Message) => message.sender === "BOT").length;
+        const hasOpenedChat =
+          window.localStorage.getItem(CHAT_OPENED_KEY) === "true";
+        const unseenMessages = history.filter(
+          (message: Message) => message.sender === "BOT",
+        ).length;
         if (!hasOpenedChat && unseenMessages > 0) {
           setUnreadCount(unseenMessages);
         }
@@ -98,6 +97,12 @@ export default function ChatBubble() {
             timestamp: new Date(raw.createdAt ?? Date.now()),
           };
 
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+          }
+
+          setIsBotTyping(false);
+
           setMessages((prev) => [...prev, botMessage]);
 
           if (!isOpenRef.current) {
@@ -125,26 +130,73 @@ export default function ChatBubble() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+
+    const messageContent = inputValue.trim();
+
     setInputValue("");
 
-    const res = await chatbotService.sendMessage(userMessage);
-    const id = res.data.data.session.id;
-    setActiveSessionId(id);
+    // show typing immediately
+    setIsBotTyping(true);
 
-    if (!stompClient.current?.active) {
-      connectWebSocket(id);
+    // start timeout
+    timeoutRef.current = setTimeout(() => {
+      setIsBotTyping(false);
 
-      setTimeout(async () => {
-        const latest = await chatbotService.getActiveSessions();
-        if (latest.data) {
-          const latestMessages = latest.data.messages.map((message: any) => ({
-            content: message.content,
-            sender: message.sender,
-            timestamp: new Date(message.createdAt),
-          }));
-          setMessages((prev) => [prev[0], ...latestMessages]);
-        }
-      }, 2000);
+      setMessages((prev) => [
+        ...prev,
+        {
+          content: "Le serveur met trop de temps à répondre.",
+          sender: "BOT",
+          timestamp: new Date(),
+          isError: true,
+        },
+      ]);
+    }, 25000);
+
+    try {
+      const res = await chatbotService.sendMessage({
+        ...userMessage,
+        content: messageContent,
+      });
+
+      const id = res.data.data.session.id;
+      if (!stompClient.current?.active) {
+        connectWebSocket(id);
+
+        setTimeout(async () => {
+          const latest = await chatbotService.getActiveSessions();
+          if (latest.data) {
+            const latestMessages = latest.data.messages.map((message: any) => ({
+              content: message.content,
+              sender: message.sender,
+              timestamp: new Date(message.createdAt),
+            }));
+            
+            if (timeoutRef.current) {
+              clearTimeout(timeoutRef.current);
+              setIsBotTyping(false);
+              setMessages((prev) => [...latestMessages]);
+            }
+          }
+        }, 1000);
+      }
+      setActiveSessionId(id);
+    } catch (error) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      setIsBotTyping(false);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          content: "Une erreur est survenue.",
+          sender: "BOT",
+          timestamp: new Date(),
+          isError: true,
+        },
+      ]);
     }
   };
 
@@ -156,23 +208,24 @@ export default function ChatBubble() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end ">
       <div
         className={cn(
-          "mb-4 flex h-[480px] w-[360px] flex-col overflow-hidden rounded-[2px] bg-white shadow-2xl transition-all duration-300 ease-out",
+          `mb-4 flex ${
+            messages.length > 0 ? "h-[450px]" : ""
+          } w-[470px] flex-col overflow-hidden rounded-[2px] bg-white shadow-2xl transition-all duration-300 ease-out`,
           isOpen
             ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
-            : "pointer-events-none translate-y-4 scale-95 opacity-0"
+            : "pointer-events-none translate-y-4 scale-95 opacity-0",
         )}
       >
-        <div className="flex items-center justify-between bg-amber-950 px-5 py-4">
+        <div className="flex items-center justify-between bg-amber-950 px-4 py-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
-              <MessageCircle className="h-5 w-5 text-white" />
-            </div>
             <div>
-              <h3 className="font-semibold text-white">SAY Assistant</h3>
-              <p className="text-xs text-blue-100">En ligne</p>
+              <p className="font-semibold text-sm text-white">
+                Nouvelle Conversation
+              </p>
+              {/* <p className="text-xs text-blue-100">En ligne</p> */}
             </div>
           </div>
           <button
@@ -185,38 +238,68 @@ export default function ChatBubble() {
         </div>
 
         <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
-          <div className="flex flex-col gap-3">
-            {messages.map((message, index) => (
-              <div
-                key={`${message.timestamp.toISOString()}-${index}`}
-                className={cn(
-                  "flex",
-                  message.sender === "PROSPECT" ? "justify-end" : "justify-start"
-                )}
-              >
+          {messages.length === 0 && (
+            <div className="py-5">
+              <div className="flex h-15 w-15 items-center rounded-full bg-white/20 ">
+                <MessageCircle className="h-11 w-11 text-black" />
+              </div>
+              <p className=" text-base pt-2 text-black font-semibold ">
+                Comment puis-je vous aider ?
+              </p>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-3 ">
+            {messages &&
+              messages.map((message, index) => (
                 <div
+                  key={`${message.timestamp ? new Date(message.timestamp).toISOString() : Date.now()}-${index}`}
                   className={cn(
-                    "max-w-[80%] rounded-[2px] px-4 py-2.5 text-sm",
+                    "flex",
                     message.sender === "PROSPECT"
-                      ? "rounded-br-md bg-amber-950 text-white"
-                      : "rounded-bl-md bg-white text-gray-800 shadow-sm"
+                      ? "justify-end"
+                      : "justify-start",
                   )}
                 >
-                  <p>{message.content}</p>
-                  <p
+                  <div
                     className={cn(
-                      "mt-1 text-[10px]",
-                      message.sender === "PROSPECT" ? "text-blue-200" : "text-gray-400"
+                      "max-w-[80%] rounded-[2px] px-4 py-2.5 text-[14px]",
+                      message.sender === "PROSPECT"
+                        ? "rounded  bg-amber-950 text-white"
+                        : "rounded bg-white text-gray-800 shadow-sm",
                     )}
                   >
-                    {new Date(message.timestamp ?? Date.now()).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    <p
+                      className={cn(
+                        "mt-1 text-[10px]",
+                        message.sender === "PROSPECT"
+                          ? "text-blue-200"
+                          : "text-gray-400",
+                      )}
+                    >
+                      {new Date(
+                        message.timestamp ?? Date.now(),
+                      ).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+            {isBotTyping && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] rounded bg-white px-4 py-3 shadow-sm">
+                  <div className="flex items-center gap-1 py-1">
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400"></span>
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:0.2s]"></span>
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:0.4s]"></span>
+                  </div>
                 </div>
               </div>
-            ))}
+            )}
             <div ref={messagesEndRef} />
           </div>
         </div>
@@ -248,7 +331,7 @@ export default function ChatBubble() {
         onClick={() => setIsOpen((current) => !current)}
         className={cn(
           "relative flex h-14 w-14 items-center justify-center rounded-full bg-taupe-950 text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-amber-950 hover:shadow-xl active:scale-95",
-          isOpen && "rotate-90"
+          isOpen && "rotate-90",
         )}
         aria-label={isOpen ? "Close chat" : "Open chat"}
       >
@@ -257,7 +340,11 @@ export default function ChatBubble() {
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         ) : null}
-        {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+        {isOpen ? (
+          <X className="h-6 w-6" />
+        ) : (
+          <MessageCircle className="h-6 w-6" />
+        )}
       </button>
     </div>
   );

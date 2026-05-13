@@ -3,9 +3,10 @@ package ma.sayhome.say_home_api.shared;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
+import lombok.Data;
 
 import java.time.LocalDateTime;
-
+@Data
 @MappedSuperclass
 public abstract class EntityBase {
 

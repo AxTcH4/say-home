@@ -10,6 +10,7 @@ import ma.sayhome.say_home_api.auth.UserToken;
 import ma.sayhome.say_home_api.auth.UserTokenRepository;
 import ma.sayhome.say_home_api.shared.exceptions.UnauthorizedException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -25,6 +26,9 @@ public class AuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private UserTokenRepository userTokenRepository;
 
+    @Value("${sayhome.internalKey}")
+    private String internalKey;
+
     @Override
         protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
@@ -34,6 +38,22 @@ public class AuthenticationFilter extends OncePerRequestFilter {
         System.out.println("URI: " + request.getRequestURI());
         System.out.println("Method: " + request.getMethod());
         System.out.println("RemoteAddr: " + request.getRemoteAddr());
+
+        if (request.getHeader("X-Internal-Key")!=null &&  internalKey.equals(request.getHeader("X-Internal-Key"))){
+            System.out.println("X-Internal-key found");
+
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(
+                            "internal-service",
+                            null,
+                            List.of()
+                    );
+
+            SecurityContextHolder.getContext().setAuthentication(auth);
+
+            filterChain.doFilter(request, response);
+            return;
+        }
 
             Cookie[] cookies = request.getCookies();
         if (cookies == null) {

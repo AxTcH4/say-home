@@ -1,7 +1,12 @@
 package ma.sayhome.say_home_api.helpDesk;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import ma.sayhome.say_home_api.appointment.Appointment;
+import ma.sayhome.say_home_api.appointment.dto.AppointmentRequestToAgent;
 import ma.sayhome.say_home_api.auth.User;
 import ma.sayhome.say_home_api.auth.UserRepository;
+import ma.sayhome.say_home_api.auth.dto.UserDTO;
 import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessage;
 import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessageRepository;
 import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
@@ -9,19 +14,28 @@ import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSessionRepository;
 import ma.sayhome.say_home_api.helpDesk.dto.*;
 import ma.sayhome.say_home_api.helpDesk.ticket.Ticket;
 import ma.sayhome.say_home_api.helpDesk.ticket.TicketRepository;
+import ma.sayhome.say_home_api.matchingEngine.SearchEngineResult;
 import ma.sayhome.say_home_api.notification.NotificationService;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.prospect.ProspectRepository;
 import ma.sayhome.say_home_api.shared.enums.Role;
 import ma.sayhome.say_home_api.shared.enums.Sender;
 import ma.sayhome.say_home_api.shared.enums.TicketStatus;
+import ma.sayhome.say_home_api.shared.exceptions.BadRequestException;
 import ma.sayhome.say_home_api.shared.exceptions.ForbiddenException;
 import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
 import ma.sayhome.say_home_api.shared.exceptions.UnauthorizedException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.mail.MailException;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -51,7 +65,20 @@ public class HelpDeskServiceImp implements HelpDeskService {
     @Autowired
     private NotificationService notificationService;
 
-    //order food (returns if order placed [boolean])
+    @Value("${ai.server.url}")
+    private String aiServerUrl;
+
+    private final JavaMailSender mailSender;
+
+    public HelpDeskServiceImp(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
+    }
+
+    @Value("${spring.mail.username}")
+    private String SAY_HOME_EMAIL;
+
+    private final RestClient restClient = RestClient.create();
+
     @Override
     public MessageResponse handleSendingMessage(User authenticatedUser, ChatMessageRequest messageRequest) {
 
@@ -59,42 +86,90 @@ public class HelpDeskServiceImp implements HelpDeskService {
         if  (prospect == null) {
             throw new ForbiddenException("Visitors are  not allowed to use chatbot ");
         }
-
         System.out.println("Sender is a prospect");
 
         messageRequest.setSender(Sender.PROSPECT);
+
         System.out.println("Sending message...");
-        messageRequest.setSession(getOrCreateSession(prospect));
+        ChatSession currentSession = getOrCreateSession(prospect);
+        messageRequest.setSession(ChatSessionDTO.toDTO(currentSession));
+        HelpDeskAgentRequest agentRequest = new HelpDeskAgentRequest();
+
+        if (messageRequest.getSession().getMessages().isEmpty()) {
+//            session is new: pass the init data to fastAPI
+//                agentRequest.setProspectId(prospect.getId());
+//                agentRequest.setCity(prospect.getCity());
+//                agentRequest.setSource(prospect.getSource());
+//                agentRequest.setBudget(prospect.getBudget());
+//                agentRequest.setUser(UserDTO.toDTO(prospect.getUser()));
+                List <AppointmentRequestToAgent> aptsToAgent = new ArrayList<>();
+                for (Appointment apt : prospect.getAppointments()) {
+                    AppointmentRequestToAgent aptRequest = AppointmentRequestToAgent.toDTO(apt);
+                    aptsToAgent.add(aptRequest);
+                }
+                agentRequest.setAppointments(aptsToAgent);
+        }
+
+        agentRequest.setMessageRequest(messageRequest);
+//        agentRequest.setSessionId(messageRequest.getSession().getId());
+
         System.out.println("About to send message for session: " + messageRequest.getSession().getId());
         //save message to session
-        ChatMessage message = sendProspectMessage(messageRequest);
+        ChatMessage message = sendProspectMessage(messageRequest, currentSession);
+        currentSession.setExpiresAt(LocalDateTime.now().plusMinutes(30));
+        chatSessionRepository.save(currentSession);
         System.out.print("Message sent: " + message.getId() );
 
         try {
-            getBotReply(prospect, messageRequest);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            getBotReply(prospect, agentRequest, currentSession);
+        } catch (Exception e) {
+//            throw new RuntimeException(e);
+            e.printStackTrace();
         }
-
-
 
         return MessageResponse.toDTO(message);
     }
 
-    //kitchen tools (used by bot in function calling)
-    @Async
-    public void getBotReply(Prospect prospect, ChatMessageRequest messageRequest) throws InterruptedException {
+//    @Async
+    public void getBotReply(Prospect prospect, HelpDeskAgentRequest agentRequest, ChatSession currentSession) throws InterruptedException {
+
+        try {
         System.out.println("Getting bot reply...");
-        Thread.sleep(1500);
-        String botReply = "test bot reply"; // replace with real AI call later
-        ChatMessageResponse botMessage = sendBotMessage(messageRequest.getSession(), botReply);
-        System.out.println("Bot reply: " + botReply);
-        String msg = "You got a reply: " + botReply;
-        notificationService.createNotification(msg , prospect.getUser());
-        messagingTemplate.convertAndSend(
-                "/topic/session/" + messageRequest.getSession().getId(),
-                botMessage
-        );
+
+        String url = aiServerUrl + "/chatbot/reply";
+
+        System.out.println("Agent Request: " + agentRequest.toString());
+        System.out.println("Sending request to endpoint: " + url);
+
+        String res = restClient.post(
+                )
+                .uri(url)
+                .body(agentRequest)
+                .contentType(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .body(String.class);
+
+        System.out.println("ROW JSON: " + res);
+
+        ObjectMapper mapper = new ObjectMapper();
+        AgentAnswer botReply  = mapper.readValue(res, AgentAnswer.class);
+
+
+            ChatMessageResponse botMessage = sendBotMessage(currentSession, botReply.getContent().trim());
+            System.out.println("Bot reply: " + botReply);
+            String replyPreview = botReply.getContent().length() > 100
+                    ? botReply.getContent().substring(0, 100) + "..."
+                    : botReply.getContent();
+            String msg = "Nouveau message: " + replyPreview;
+            notificationService.createNotification(msg , prospect.getUser());
+            messagingTemplate.convertAndSend(
+                    "/topic/session/" + currentSession.getId(),  // use currentSession directly
+                    botMessage
+            );
+        } catch (Exception e) {
+//            throw new RuntimeException(e);
+            e.printStackTrace();
+        }
     }
 
     public ChatMessageResponse sendBotMessage (ChatSession currentSession, String botReply) {
@@ -105,6 +180,7 @@ public class HelpDeskServiceImp implements HelpDeskService {
         chatMessage.setSender(Sender.BOT);
         return ChatMessageResponse.toDTO(chatMessageRepository.save(chatMessage));
     }
+
     //get active sessions by prospectId
     public ChatSessionDTO getActiveSessionsByProspectId(User authenticatedUser) {
         //check if user is prospect
@@ -124,7 +200,6 @@ public class HelpDeskServiceImp implements HelpDeskService {
 
         return ChatSessionDTO.toDTO(resuts);
         }
-
 
     //get sessions by userId
     public List<ChatSessionDTO> getSessionsByUserId (Integer userId) {
@@ -216,21 +291,23 @@ public class HelpDeskServiceImp implements HelpDeskService {
         return chatSessionRepository.save(sesh);
     }
 
-    public ChatMessage sendProspectMessage (ChatMessageRequest messageRequest) {
-        ChatMessage message = ChatMessageRequest.toEntity(messageRequest);
-        return chatMessageRepository.save(
-                message
-        );
+    public ChatMessage sendProspectMessage(ChatMessageRequest messageRequest, ChatSession currentSession) {
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.setContent(messageRequest.getContent());
+        chatMessage.setSender(messageRequest.getSender());
+        chatMessage.setSession(currentSession);  // real session, not converted
+        return chatMessageRepository.save(chatMessage);
     }
 
 
 //    ----------------------TICKETS----------------------------
 // create ticket
-public TicketDTO createTicket(User authenticatedUser, TicketRequest ticketRequest) {
-    Prospect prospect = prospectRepository.findByUser(authenticatedUser);
-    if (prospect == null) {
-        throw new ForbiddenException("Visitors are not allowed to create tickets");
-    }
+    public TicketDTO createTicket(TicketRequest ticketRequest) {
+//        check if prospect id s valid
+        System.out.println("In create ticket...");
+    Prospect prospect = prospectRepository.findById(ticketRequest.getProspectId())
+                                            .orElseThrow(()->new ResourceNotFoundException("Prospect not found")
+    );
 
     Ticket ticket = new Ticket();
     ticket.setTitle(ticketRequest.getTitle());
@@ -267,6 +344,25 @@ public TicketDTO createTicket(User authenticatedUser, TicketRequest ticketReques
         }
         return results;
     }
+
+
+    //get lastest  active tickets by prospectId
+    public List<TicketDTO> getLatestActiveTicketsByProspectId(Integer prospectId) {
+
+        Prospect prospect = prospectRepository.findById(prospectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Prospect not found"));
+
+        LocalDateTime limit =
+                LocalDateTime.now().minusHours(1);
+
+        List<Ticket> tickets = ticketRepository.findFirstByProspectAndStatusNotAndCreatedAtAfterOrderByCreatedAtDesc(prospect, limit);
+        List<TicketDTO> results = new ArrayList<>();
+        for (Ticket ticket : tickets) {
+            results.add(TicketDTO.toDTO(ticket));
+        }
+        return results;
+    }
+
 
     // get tickets by prospect name
     public List<TicketDTO> getTicketsByProspectName(String prospectName) {
@@ -328,4 +424,67 @@ public TicketDTO createTicket(User authenticatedUser, TicketRequest ticketReques
         return true;
     }
 
+    public boolean sendComfirmationEmail(String email, String subject, String greeting, String body, String footnote ) {
+
+        try {
+            sendHtmlEmail(
+                    email,
+                    subject,
+                    buildConfirmationEmail(
+                            greeting,
+                            body,
+                            footnote
+                    )
+            );
+
+            return true;
+        } catch (MailException | MessagingException ex) {
+            throw new BadRequestException("Unable to send comfirmation email");
+        }
+    }
+
+    private void sendHtmlEmail(String to, String subject, String html) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
+        helper.setFrom(SAY_HOME_EMAIL);
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(html, true);
+        mailSender.send(message);
+    }
+
+    private String buildConfirmationEmail(String greeting, String body, String footnote) {
+        return """
+            <!doctype html>
+            <html>
+              <body style="margin:0;padding:0;background:#f5f5f3;font-family:Arial,Helvetica,sans-serif;color:#222222;">
+                <table role="presentation" width="100%%">
+                  <tr>
+                    <td align="center">
+                      <table role="presentation" width="100%%" style="max-width:620px;background:#ffffff;border:1px solid #e3ded8;">
+                        <tr>
+                          <td style="background:#2f1b10;padding:28px 32px;text-align:center;">
+                            <div style="font-size:26px;font-weight:800;color:#ffffff;text-transform:uppercase;">Say Home</div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:36px 34px 28px 34px;">
+                            <p style="font-size:16px;color:#333333;">%s</p>
+                            <p style="font-size:15px;color:#555555;">%s</p>
+                            <p style="font-size:13px;color:#777777;">%s</p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="background:#f1eee9;padding:18px 32px;text-align:center;font-size:12px;color:#777777;">
+                            Marrakech, Maroc - sayhome.app@gmail.com
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </body>
+            </html>
+            """.formatted(greeting, body, footnote);
+    }
 }

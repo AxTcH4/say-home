@@ -44,6 +44,9 @@ public class TicketDTO {
                 new ChatSessionOwner(
                         ticket.getProspect().getId(),
                         ticket.getProspect().getStatus(),
+                        ticket.getProspect().getCity(),
+                        ticket.getProspect().getSource(),
+                        ticket.getProspect().getBudget(),
                         UserDTO.toDTO(ticket.getProspect().getUser())
                 )
         );

@@ -49,6 +49,16 @@ public class AppointmentController extends ControllerBase {
         return ok(appointmentService.getMyVisitRequests());
     }
 
+    @GetMapping("/requests/prospect/{id}")
+    public ResponseEntity<?> getVisitRequestsByProspect(
+            @PathVariable Integer id
+    ) {
+        return ok(
+                appointmentService
+                        .getVisitRequestsByProspect(id)
+        );
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAppointment(@PathVariable Integer id, @RequestBody CreateAppointmentRequest request) {
         return ok(appointmentService.updateAppointment(id, request));

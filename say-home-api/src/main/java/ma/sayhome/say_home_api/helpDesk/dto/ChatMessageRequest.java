@@ -19,7 +19,7 @@ import ma.sayhome.say_home_api.shared.enums.Sender;
 
 public class ChatMessageRequest {
 
-        private Integer id;
+//        private Integer id;
 
         @NotBlank
         @Size(max = 2000)
@@ -27,13 +27,13 @@ public class ChatMessageRequest {
 
         private Sender sender; // "agent" or "prospect"
 
-        private ChatSession session;
+        private ChatSessionDTO session;
 
     public static ChatMessage toEntity(ChatMessageRequest messageRequest) {
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setContent(messageRequest.getContent());
         chatMessage.setSender(messageRequest.getSender());
-        chatMessage.setSession(messageRequest.getSession());
+        chatMessage.setSession(ChatSessionDTO.toEntity(messageRequest.getSession()));
         return chatMessage;
     }
 }
