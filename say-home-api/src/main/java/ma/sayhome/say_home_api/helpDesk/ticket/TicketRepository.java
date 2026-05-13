@@ -21,8 +21,6 @@ public interface TicketRepository extends JpaRepository<Ticket,Integer> {
 
     long countByStatus(TicketStatus status);
     List<Ticket> findTop3ByOrderByUpdatedAtDesc();
-<<<<<<< HEAD
-=======
 
     @Query("""
     SELECT t FROM Ticket t WHERE t.prospect = :prospect AND t.status <> 'CLOSED' AND t.createdAt >= :limitDate ORDER BY t.createdAt DESC""")
@@ -31,5 +29,4 @@ public interface TicketRepository extends JpaRepository<Ticket,Integer> {
             @Param("limitDate") LocalDateTime limitDate
     );
 
->>>>>>> feature/chatbot-agent
 }

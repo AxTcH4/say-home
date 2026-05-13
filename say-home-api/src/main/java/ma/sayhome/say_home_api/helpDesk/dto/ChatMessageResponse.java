@@ -1,9 +1,9 @@
-package ma.sayhome.say_home_api.helpDesk.chat.dto;
+package ma.sayhome.say_home_api.helpDesk.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ma.sayhome.say_home_api.helpDesk.chat.message.ChatMessage;
+import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessage;
 import ma.sayhome.say_home_api.shared.enums.Sender;
 
 import java.time.LocalDateTime;

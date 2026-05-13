@@ -14,11 +14,7 @@ public interface PropertyRepository extends JpaRepository<Property, Integer> {
     List<Property> findByTitleContainingIgnoreCase(String q);
     List<Property> findByDescriptionContainingIgnoreCase(String q);
 
-<<<<<<< HEAD
     long countByStatus(PropertyStatus status);
-=======
-    long countByStatus(String status);
->>>>>>> feature/chatbot-agent
 
     @Query("SELECT MONTH(p.createdAt), COUNT(p) FROM Property p WHERE YEAR(p.createdAt) = :year GROUP BY MONTH(p.createdAt) ORDER BY MONTH(p.createdAt)")
     List<Object[]> countPerMonth(@Param("year") int year);

@@ -22,11 +22,7 @@ public class PropertyDTO {
     private Float price;
     private Integer surface;
     private Integer rooms;
-<<<<<<< HEAD
     private PropertyStatus status;
-=======
-    private String status;
->>>>>>> feature/chatbot-agent
     private UserDTO agent;
     private List<String> medias;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)

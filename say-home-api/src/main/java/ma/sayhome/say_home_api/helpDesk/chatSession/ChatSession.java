@@ -1,4 +1,4 @@
-package ma.sayhome.say_home_api.helpDesk.chat.session;
+package ma.sayhome.say_home_api.helpDesk.chatSession;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import ma.sayhome.say_home_api.helpDesk.chat.message.ChatMessage;
+import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessage;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.shared.EntityBase;
 

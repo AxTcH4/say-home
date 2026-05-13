@@ -1,10 +1,10 @@
-package ma.sayhome.say_home_api.helpDesk.chat.message;
+package ma.sayhome.say_home_api.helpDesk.chatMessage;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import ma.sayhome.say_home_api.helpDesk.chat.session.ChatSession;
+import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
 import ma.sayhome.say_home_api.shared.EntityBase;
 import ma.sayhome.say_home_api.shared.enums.Sender;
 

@@ -1,7 +1,7 @@
-package ma.sayhome.say_home_api.helpDesk.chat.session;
+package ma.sayhome.say_home_api.helpDesk.chatSession;
 
-import ma.sayhome.say_home_api.helpDesk.chat.dto.ChatSessionDTO;
-import ma.sayhome.say_home_api.helpDesk.chat.message.ChatMessage;
+import ma.sayhome.say_home_api.helpDesk.dto.ChatSessionDTO;
+import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessage;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

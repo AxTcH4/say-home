@@ -1,4 +1,4 @@
-package ma.sayhome.say_home_api.helpDesk.ticket.dto;
+package ma.sayhome.say_home_api.helpDesk.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,6 +7,7 @@ import ma.sayhome.say_home_api.helpDesk.ticket.Ticket;
 import ma.sayhome.say_home_api.prospect.dto.ChatSessionOwner;
 import ma.sayhome.say_home_api.shared.enums.TicketPriority;
 import ma.sayhome.say_home_api.shared.enums.TicketStatus;
+import ma.sayhome.say_home_api.user.dto.UserDTO;
 
 import java.time.LocalDateTime;
 
@@ -41,14 +42,11 @@ public class TicketDTO {
                 new ChatSessionOwner(
                         ticket.getProspect().getId(),
                         ticket.getProspect().getStatus(),
-<<<<<<< HEAD:say-home-api/src/main/java/ma/sayhome/say_home_api/helpDesk/ticket/dto/TicketDTO.java
-                        ma.sayhome.say_home_api.user.dto.UserDTO.toDTO(ticket.getProspect().getUser())
-=======
+
                         ticket.getProspect().getCity(),
                         ticket.getProspect().getSource(),
                         ticket.getProspect().getBudget(),
                         UserDTO.toDTO(ticket.getProspect().getUser())
->>>>>>> feature/chatbot-agent:say-home-api/src/main/java/ma/sayhome/say_home_api/helpDesk/dto/TicketDTO.java
                 )
         );
         return ticketDTO;

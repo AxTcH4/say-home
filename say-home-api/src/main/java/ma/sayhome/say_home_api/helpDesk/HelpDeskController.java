@@ -1,7 +1,7 @@
 package ma.sayhome.say_home_api.helpDesk;
 
 import jakarta.validation.Valid;
-import ma.sayhome.say_home_api.auth.User;
+import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.helpDesk.dto.*;
 
 import ma.sayhome.say_home_api.shared.ApiResponse;

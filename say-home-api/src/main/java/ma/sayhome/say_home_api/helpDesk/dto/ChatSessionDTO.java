@@ -1,12 +1,13 @@
-package ma.sayhome.say_home_api.helpDesk.chat.dto;
+package ma.sayhome.say_home_api.helpDesk.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import ma.sayhome.say_home_api.helpDesk.chat.message.ChatMessage;
-import ma.sayhome.say_home_api.helpDesk.chat.session.ChatSession;
+import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessage;
+import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
 import ma.sayhome.say_home_api.prospect.dto.ChatSessionOwner;
+import ma.sayhome.say_home_api.user.dto.UserDTO;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
