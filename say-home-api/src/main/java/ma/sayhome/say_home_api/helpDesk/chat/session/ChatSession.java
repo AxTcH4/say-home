@@ -41,7 +41,7 @@ public class ChatSession extends EntityBase {
 
     public ChatSession(Prospect prospect) {
         this.prospect = prospect;
-        expiresAt = LocalDateTime.now().plusMinutes(60);
+        expiresAt = LocalDateTime.now().plusMinutes(30);
 
         isOngoing=true;
     }

@@ -47,7 +47,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     public AppointmentServiceImpl(
             AppointmentRepository appointmentRepository,
             ProspectRepository prospectRepository,
-            UserRepository userRepository,
+            UserRepository userRepository, ProspectRepository propsectRepository,
             PropertyRepository propertyRepository,
             PipelineStageRepository pipelineStageRepository,
             NotificationService notificationService
@@ -166,6 +166,21 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .toList();
     }
 
+    public List<ClientVisitRequestResponse> getVisitRequestsByProspect(int id) {
+//        User currentUser = getCurrentUser();*
+          Prospect prospect = prospectRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Prospect not found"));
+
+        List <ClientVisitRequestResponse> results =  appointmentRepository.findByProspectUserIdOrderByCreatedAtDesc(prospect.getUser().getId()).stream()
+                .map(this::toClientRequest)
+                .toList();
+
+        System.out.println("Visits requested by prospect with Id" +  prospect.getId() + ": ");
+        for (ClientVisitRequestResponse res : results) {
+            System.out.println(res);
+        }
+        return results;
+    }
+
     public AppointmentDetailResponse approveRequest(Integer id) {
         assertAdmin();
         Appointment appointment = getRequiredAppointment(id);
@@ -212,6 +227,8 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .filter(appointment -> currentUser.getRole() == Role.ADMIN || isOwnedBy(appointment, currentUser))
                 .toList();
     }
+
+
 
     @Override
     public Appointment update(Integer integer, Appointment entity) {

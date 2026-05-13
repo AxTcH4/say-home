@@ -12,5 +12,4 @@ def match(
     minPrice: float = Query(default=None),
     maxPrice: float = Query(default=None)
 ):
-    pass
     return matchingService.match(query, type, secteur, minPrice, maxPrice)

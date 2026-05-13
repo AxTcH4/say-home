@@ -19,7 +19,11 @@ public class PropertyReqDTO {
     private Integer surface;
     private Integer rooms;
     private String agentName;
+<<<<<<< HEAD
     private PropertyStatus status;
+=======
+    private String status;
+>>>>>>> feature/chatbot-agent
 
 
 
@@ -32,7 +36,11 @@ public class PropertyReqDTO {
         property.setPrice(propertyDTO.getPrice());
         property.setSurface(propertyDTO.getSurface());
         property.setRooms(propertyDTO.getRooms());
+<<<<<<< HEAD
         property.setStatus(propertyDTO.getStatus() != null ? propertyDTO.getStatus() : PropertyStatus.AVAILABLE);
+=======
+        property.setStatus(propertyDTO.getStatus() != null ? propertyDTO.getStatus() : "AVAILABLE");
+>>>>>>> feature/chatbot-agent
 
         return  property;
     }

@@ -20,4 +20,6 @@ public interface ProspectRepository extends JpaRepository<Prospect,Integer> {
             String phone
     );
     Optional<Prospect> findByEmail(String email);
+
+
 }

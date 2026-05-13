@@ -15,5 +15,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  say-qdrant:
+    image: qdrant/qdrant:latest
+    container_name: say-home-vector-db
+    restart: always
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - db_data:/qdrant/storage
+    
 volumes:
   db_data:

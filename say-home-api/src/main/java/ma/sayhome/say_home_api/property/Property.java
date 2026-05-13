@@ -42,9 +42,14 @@ public class Property extends EntityBase {
     @Column(nullable = false)
     private Float price;
 
+<<<<<<< HEAD
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PropertyStatus status = PropertyStatus.AVAILABLE;
+=======
+    @Column(nullable = false)
+    private String status = "AVAILABLE";
+>>>>>>> feature/chatbot-agent
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agent_id", nullable = false)

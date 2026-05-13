@@ -25,6 +25,8 @@ public class ChatSessionDTO {
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime expiresAt;
+
     boolean isOngoing;
 
 
@@ -36,7 +38,10 @@ public class ChatSessionDTO {
                 new ChatSessionOwner(
                         session.getProspect().getId(),
                         session.getProspect().getStatus(),
-                        ma.sayhome.say_home_api.user.dto.UserDTO.toDTO(session.getProspect().getUser())
+                        session.getProspect().getCity(),
+                        session.getProspect().getSource(),
+                        session.getProspect().getBudget(),
+                        UserDTO.toDTO(session.getProspect().getUser())
                 )
         );
         chatSessionDTO.setOngoing(session.isOngoing());
@@ -49,5 +54,15 @@ public class ChatSessionDTO {
         chatSessionDTO.setCreatedAt(session.getCreatedAt());
 
         return chatSessionDTO;
+    }
+
+
+    public static ChatSession toEntity(ChatSessionDTO sessionDTO) {
+        ChatSession session = new ChatSession();
+        session.setId(sessionDTO.getId());
+        session.setOngoing(sessionDTO.isOngoing());
+        session.setCreatedAt(sessionDTO.getCreatedAt());
+        // prospect is never set → null
+        return session;
     }
 }

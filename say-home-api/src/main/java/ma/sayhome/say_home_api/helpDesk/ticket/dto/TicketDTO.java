@@ -41,7 +41,14 @@ public class TicketDTO {
                 new ChatSessionOwner(
                         ticket.getProspect().getId(),
                         ticket.getProspect().getStatus(),
+<<<<<<< HEAD:say-home-api/src/main/java/ma/sayhome/say_home_api/helpDesk/ticket/dto/TicketDTO.java
                         ma.sayhome.say_home_api.user.dto.UserDTO.toDTO(ticket.getProspect().getUser())
+=======
+                        ticket.getProspect().getCity(),
+                        ticket.getProspect().getSource(),
+                        ticket.getProspect().getBudget(),
+                        UserDTO.toDTO(ticket.getProspect().getUser())
+>>>>>>> feature/chatbot-agent:say-home-api/src/main/java/ma/sayhome/say_home_api/helpDesk/dto/TicketDTO.java
                 )
         );
         return ticketDTO;

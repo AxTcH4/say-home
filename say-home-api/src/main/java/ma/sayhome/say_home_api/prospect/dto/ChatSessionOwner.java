@@ -14,6 +14,12 @@ public class ChatSessionOwner {
 
     private ProspectStatus status = ProspectStatus.NEW;
 
+    private String city;
+
+    private String source;
+
+    private Float budget;
+
     private UserDTO user;
 
 //    private PipelineStage stage;
@@ -34,6 +40,18 @@ public class ChatSessionOwner {
         chatSessionOwner.setId(prospect.getId());
         chatSessionOwner.setUser(UserDTO.toDTO(prospect.getUser()));
         chatSessionOwner.setStatus(prospect.getStatus());
+
+        if (prospect.getCity() != null) {
+            chatSessionOwner.setCity(prospect.getCity());
+        }
+
+        if (prospect.getSource() != null) {
+            chatSessionOwner.setSource(prospect.getSource());
+        }
+
+        if (prospect.getBudget() != null) {
+            chatSessionOwner.setBudget(prospect.getBudget());
+        }
 
         return chatSessionOwner;
     }

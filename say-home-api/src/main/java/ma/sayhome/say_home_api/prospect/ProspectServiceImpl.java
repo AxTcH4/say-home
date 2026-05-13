@@ -81,7 +81,7 @@ public class ProspectServiceImpl implements ProspectService {
     }
 
     public ProspectDetailResponse getProspectDetail(Integer id) {
-        assertAdmin();
+//        assertAdmin();
         Prospect prospect = getRequiredProspect(id);
 
         List<ProspectInteractionResponse> interactions = prospectInteractionRepository
