@@ -2,6 +2,7 @@ package ma.sayhome.say_home_api.property;
 
 import ma.sayhome.say_home_api.property.dto.PropertyDTO;
 import ma.sayhome.say_home_api.property.dto.PropertyReqDTO;
+import ma.sayhome.say_home_api.property.propertyMedia.PropertyMediaServiceImp;
 import ma.sayhome.say_home_api.shared.ApiResponse;
 import ma.sayhome.say_home_api.shared.ControllerBase;
 import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
@@ -37,6 +38,13 @@ public class PropertyController extends ControllerBase {
         this.propertyService = propertyService;
     }
 
+    @Autowired
+    private PropertyServiceImp propertyService;
+
+    @Autowired
+    private PropertyMediaServiceImp propertyMediaService;
+
+    // GET /api/properties/latest - Home Page
     @GetMapping("/latest")
     public ResponseEntity<ApiResponse<List<PropertyDTO>>> getLatestProperties(@RequestParam(required = false) String type) {
         PropertyType propertyType = (type != null && !type.isBlank())
@@ -118,3 +126,4 @@ public class PropertyController extends ControllerBase {
         return ok(null);
     }
 }
+

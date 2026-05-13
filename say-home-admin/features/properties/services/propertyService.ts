@@ -30,4 +30,11 @@ export const propertyService = {
     const res = await apiClient.delete(`/properties/${id}`);
     return res.data;
   },
+
+  async addMedia(id: number, formData: FormData) {
+    const res = await apiClient.post(`/properties/${id}/media`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
 };

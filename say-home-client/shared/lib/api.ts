@@ -14,8 +14,9 @@ async function readError(response: Response, fallback: string) {
   return error?.message ?? error?.error ?? fallback;
 }
 
-export async function getLatestProperties() {
-  const res = await fetch(buildUrl("/properties/latest"), {
+export async function getLatestProperties(type?: string) {
+  const url = type ? buildUrl(`/properties/latest?type=${encodeURIComponent(type)}`) : buildUrl("/properties/latest");
+  const res = await fetch(url, {
     method: "GET",
     credentials: "include",
   });
@@ -120,6 +121,41 @@ export async function createVisitRequest(payload: {
 
   const data = await res.json();
   return data.data;
+}
+
+interface SearchCriteria {
+  type?: string;
+  secteur?: string;
+  minPrice?: number | string;
+  maxPrice?: number | string;
+  minSurface?: number | string;
+  minRooms?: number | string;
+}
+
+export async function logShownProperties(propertyIds: number[], criteria: SearchCriteria) {
+  try {
+    await fetch(buildUrl("/interactions/shown"), {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ propertyIds, criteria }),
+    });
+  } catch {
+    // fire-and-forget — never block the UI
+  }
+}
+
+export async function logClickedProperty(propertyId: number, criteria: SearchCriteria) {
+  try {
+    await fetch(buildUrl("/interactions/clicked"), {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ propertyId, criteria }),
+    });
+  } catch {
+    // fire-and-forget — never block the UI
+  }
 }
 
 export async function getMyVisitRequests() {

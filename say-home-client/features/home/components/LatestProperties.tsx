@@ -20,6 +20,7 @@ export default function LatestProperties() {
 
   useEffect(() => {
     const fetchProperties = async () => {
+      setLoading(true);
       try {
         const result = await getLatestProperties();
 
@@ -82,7 +83,7 @@ export default function LatestProperties() {
       <div className="mb-10 flex flex-wrap justify-center gap-3">
         {filters.map((filter) => (
           <button
-            key={filter}
+            key={filter.label}
             onClick={() => setActiveFilter(filter)}
             style={{ fontSize: 'clamp(0.7rem, 1.2vw, 0.875rem)' }}
             className={`rounded-full border px-5 py-2 font-medium transition ${
@@ -91,7 +92,7 @@ export default function LatestProperties() {
                 : 'border-gray-800 bg-white text-gray-800 hover:bg-gray-100'
             }`}
           >
-            {filter}
+            {filter.label}
           </button>
         ))}
       </div>

@@ -8,7 +8,144 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 import { AxiosError } from "axios";
 import { toast } from "sonner";
 
+// <<<<<<< HEAD
 const MAX_PROPERTY_IMAGES = 10;
+// =======
+// ─── Edit Media Modal ─────────────────────────────────────────────────────────
+function EditMediaModal({ property, onClose, onUpdated }: { property: any; onClose: () => void; onUpdated: () => void }) {
+  const [files, setFiles] = useState<FileList | null>(null);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files;
+    setFiles(selected);
+    if (!selected) return;
+    const urls = Array.from(selected).map((f) => URL.createObjectURL(f));
+    setPreviews(urls);
+  };
+
+  const handleUpload = async () => {
+    if (!files || files.length === 0) {
+      toast.error("Sélectionnez au moins une photo.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const fd = new FormData();
+      for (let i = 0; i < files.length; i++) fd.append("files", files[i]);
+      await propertyService.addMedia(property.id, fd);
+      toast.success("Photos ajoutées avec succès !");
+      onUpdated();
+      onClose();
+    } catch {
+      toast.error("Erreur lors de l'upload des photos.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-[3px] shadow-xl w-[560px] max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center px-6 py-4 border-b">
+          <div>
+            <p className="font-semibold text-[#1a1a1a]">Photos — {property.title}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{property.medias?.length ?? 0} photo(s) existante(s)</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {/* Photos existantes */}
+          {property.medias && property.medias.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Photos actuelles</p>
+              <div className="grid grid-cols-3 gap-2">
+                {property.medias.map((url: string, i: number) => (
+                  <div key={i} className="relative group">
+                    <img
+                      src={url}
+                      alt={`photo-${i}`}
+                      className="w-full h-28 object-cover rounded-[2px] border border-gray-100"
+                    />
+                    {i === 0 && (
+                      <span className="absolute top-1 left-1 bg-[#2C1A0E] text-white text-[10px] px-1.5 py-0.5 rounded">
+                        Principal
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Upload nouvelles photos */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Ajouter des photos</p>
+            <div
+              onClick={() => fileRef.current?.click()}
+              className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-[2px] py-8 cursor-pointer hover:border-[#2C1A0E] hover:bg-[#faf8f5] transition"
+            >
+              <span className="text-3xl">📷</span>
+              <p className="text-sm text-gray-500">
+                Cliquez ou glissez vos photos ici
+              </p>
+              <p className="text-xs text-gray-400">JPEG · PNG · WebP · Sélection multiple</p>
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
+
+          {/* Aperçu des nouvelles photos */}
+          {previews.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
+                Aperçu ({previews.length} photo(s) sélectionnée(s))
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {previews.map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt={`preview-${i}`}
+                    className="w-full h-28 object-cover rounded-[2px] border border-[#2C1A0E]/20"
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 text-sm border border-gray-200 rounded hover:bg-gray-50 transition"
+            >
+              Fermer
+            </button>
+            <button
+              type="button"
+              disabled={saving || !files || files.length === 0}
+              onClick={handleUpload}
+              className="px-5 py-2 text-sm bg-[#2C1A0E] text-white rounded hover:bg-[#3d2416] transition disabled:opacity-50"
+            >
+              {saving ? "Upload en cours…" : `Ajouter ${previews.length > 0 ? `(${previews.length})` : ""}`}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 const STATUS_COLORS: Record<string, string> = {
   AVAILABLE: "bg-green-100 text-green-700",
@@ -1001,10 +1138,14 @@ export default function Properties() {
   const [agents, setAgents] = useState<AdminUserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+// <<<<<<< HEAD
   const [selectedProperty, setSelectedProperty] = useState<any | null>(null);
   const [editingProperty, setEditingProperty] = useState<any | null>(null);
   const [imagesProperty, setImagesProperty] = useState<any | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+// =======
+  const [editMediaProperty, setEditMediaProperty] = useState<any>(null);
+// >>>>>>> f39e34d (matching-ia)
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("All");
   const [filterSecteur, setFilterSecteur] = useState("All");
@@ -1116,6 +1257,9 @@ export default function Properties() {
           onAdded={load}
           agents={agents}
         />
+      )}
+      {editMediaProperty && (
+        <EditMediaModal property={editMediaProperty} onClose={() => setEditMediaProperty(null)} onUpdated={load} />
       )}
 
       {selectedProperty && (
@@ -1316,6 +1460,7 @@ export default function Properties() {
                         Voir
                       </button>
                       <button
+// <<<<<<< HEAD
                         title="Modifier"
                         onClick={() => handleEdit(property)}
                         className="text-gray-400 transition hover:text-[#2C1A0E]"
@@ -1333,8 +1478,16 @@ export default function Properties() {
                         title="Supprimer"
                         onClick={() => handleDelete(property)}
                         className="text-red-400 transition hover:text-red-700"
-                      >
+                      />
                         Supprimer
+{/* ======= */}
+                      <button
+                        title="Gérer les photos"
+                        onClick={() => setEditMediaProperty(p)}
+                        className="text-gray-400 hover:text-[#2C1A0E] transition"
+                      >
+                        🖼️
+{/* >>>>>>> f39e34d (matching-ia) */}
                       </button>
                     </div>
                   </td>

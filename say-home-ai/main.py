@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from matchingEngine.MatchingRouter import router as matching_engine_router
 from contextlib import asynccontextmanager
 import sys
@@ -26,6 +27,9 @@ app = FastAPI(lifespan=lifespan)
 from leadScore.router import router as lead_score_router
 
 # from chatbot.router import router as chatbot_router
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 
@@ -53,8 +57,15 @@ app.include_router(
 # Chatbot
 # ======================================================
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
 
-print(sys.executable)
+app.include_router(matching_engine_router, prefix="/search")
+
 
 # ======================================================
 # Health Check
@@ -65,3 +76,4 @@ def health():
     return {
         'status': 'ok'
     }
+

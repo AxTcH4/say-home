@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.gitignore
+
+# Training artifacts — not needed at runtime
+matchingEngine/generate_dataset.py
+matchingEngine/train_model.py
+matchingEngine/matching_dataset.csv
+matchingEngine/confusion_matrix.png
+matchingEngine/feature_importance.png
