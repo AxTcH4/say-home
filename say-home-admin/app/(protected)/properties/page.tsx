@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { propertyService } from "@/features/properties/services/propertyService";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { AxiosError } from "axios";
 import { toast } from "sonner";
 
 const MAX_PROPERTY_IMAGES = 10;
@@ -43,6 +44,23 @@ function AddPropertyModal({
   const [files, setFiles] = useState<FileList | null>(null);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const resolveErrorMessage = (error: unknown, fallback: string) => {
+    if (error instanceof AxiosError) {
+      const message = error.response?.data?.message;
+      const nestedError = error.response?.data?.error;
+
+      if (typeof message === "string" && message.trim().length > 0) {
+        return message;
+      }
+
+      if (typeof nestedError === "string" && nestedError.trim().length > 0) {
+        return nestedError;
+      }
+    }
+
+    return fallback;
+  };
 
   const set = (key: string, value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
@@ -90,8 +108,8 @@ function AddPropertyModal({
       toast.success("Propriete ajoutee avec succes");
       onAdded();
       onClose();
-    } catch {
-      toast.error("Erreur lors de l'ajout");
+    } catch (error) {
+      toast.error(resolveErrorMessage(error, "Erreur lors de l'ajout"));
     } finally {
       setSaving(false);
     }
@@ -550,6 +568,23 @@ function PropertyImagesModal({
   const [files, setFiles] = useState<FileList | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const resolveErrorMessage = (error: unknown, fallback: string) => {
+    if (error instanceof AxiosError) {
+      const message = error.response?.data?.message;
+      const nestedError = error.response?.data?.error;
+
+      if (typeof message === "string" && message.trim().length > 0) {
+        return message;
+      }
+
+      if (typeof nestedError === "string" && nestedError.trim().length > 0) {
+        return nestedError;
+      }
+    }
+
+    return fallback;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!files || files.length === 0) {
@@ -572,8 +607,8 @@ function PropertyImagesModal({
       toast.success("Images mises a jour avec succes");
       await onUpdated();
       onClose();
-    } catch {
-      toast.error("Erreur lors de la mise a jour des images");
+    } catch (error) {
+      toast.error(resolveErrorMessage(error, "Erreur lors de la mise a jour des images"));
     } finally {
       setSaving(false);
     }

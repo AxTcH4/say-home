@@ -12,9 +12,7 @@ export const propertyService = {
   },
 
   async create(formData: FormData) {
-    const res = await apiClient.post("/properties", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const res = await apiClient.post("/properties", formData);
     return res.data;
   },
 
@@ -24,9 +22,7 @@ export const propertyService = {
   },
 
   async replaceImages(id: number, formData: FormData) {
-    const res = await apiClient.post(`/properties/${id}/images`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const res = await apiClient.post(`/properties/${id}/images`, formData);
     return res.data;
   },
 
