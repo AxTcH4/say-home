@@ -27,6 +27,12 @@ public class Appointment extends EntityBase {
     @Column(length = 2000)
     private String notes;
 
+    @Column(name = "client_request_message", length = 2000)
+    private String clientRequestMessage;
+
+    @Column(name = "client_requested_date")
+    private LocalDateTime clientRequestedDate;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AppointmentStatus status;

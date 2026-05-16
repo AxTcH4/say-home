@@ -24,6 +24,8 @@ public class HelpDeskAgentRequest {
 
     private List<AppointmentRequestToAgent> appointments = new ArrayList<>();
 
+    private List<OwnedPropertyContextDTO> ownedProperties = new ArrayList<>();
+
     private ChatMessageRequest messageRequest;
 
 //    private List<LeadScore> leadScores = new ArrayList<>();

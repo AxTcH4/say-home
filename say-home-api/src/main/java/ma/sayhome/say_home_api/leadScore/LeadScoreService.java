@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface LeadScoreService extends ServiceBase<LeadScore, Integer> {
     LeadScorePredictionResponse predict(Integer prospectId);
+    LeadScoreSummary getLatestOrPredictSummary(Integer prospectId);
     LeadScoreRefreshResponse refreshAll();
     List<LeadScore> findByProspectId(Integer prospectId);
 }

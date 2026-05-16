@@ -1,5 +1,6 @@
 package ma.sayhome.say_home_api.pipeline;
 
+import ma.sayhome.say_home_api.feedback.ProspectFeedbackService;
 import ma.sayhome.say_home_api.pipeline.dto.PipelineBoardResponse;
 import ma.sayhome.say_home_api.pipeline.dto.PipelineCardResponse;
 import ma.sayhome.say_home_api.pipeline.dto.PipelineColumnResponse;
@@ -29,10 +30,16 @@ public class PipelineServiceImpl implements PipelineService {
 
     private final ProspectRepository prospectRepository;
     private final PipelineStageRepository pipelineStageRepository;
+    private final ProspectFeedbackService feedbackService;
 
-    public PipelineServiceImpl(ProspectRepository prospectRepository, PipelineStageRepository pipelineStageRepository) {
+    public PipelineServiceImpl(
+            ProspectRepository prospectRepository,
+            PipelineStageRepository pipelineStageRepository,
+            ProspectFeedbackService feedbackService
+    ) {
         this.prospectRepository = prospectRepository;
         this.pipelineStageRepository = pipelineStageRepository;
+        this.feedbackService = feedbackService;
     }
 
     @Override
@@ -110,7 +117,11 @@ public class PipelineServiceImpl implements PipelineService {
         }
 
         prospect.setStatus(nextStatus);
+        prospect.setStage(resolveStageForStatus(nextStatus));
         prospectRepository.save(prospect);
+        if (nextStatus == ProspectStatus.LOST) {
+            feedbackService.requestForProspect(prospect, nextStatus.name());
+        }
         return getBoard(null, null, null);
     }
 
@@ -188,5 +199,25 @@ public class PipelineServiceImpl implements PipelineService {
             return String.format("%.1fM", budget / 1_000_000f);
         }
         return String.format("%.0fk", budget / 1_000f);
+    }
+
+    private PipelineStage resolveStageForStatus(ProspectStatus status) {
+        String stageName = switch (status) {
+            case NEW -> "New Lead";
+            case CONTACTED -> "Contacted";
+            case QUALIFIED -> "Visit Scheduled";
+            case NEGOTIATING -> "Negotiation";
+            case CONVERTED -> "Won";
+            case LOST -> "Lost";
+        };
+
+        return pipelineStageRepository.findAll().stream()
+                .filter(stage -> stageName.equalsIgnoreCase(stage.getName()))
+                .findFirst()
+                .orElseGet(() -> {
+                    PipelineStage stage = new PipelineStage();
+                    stage.setName(stageName);
+                    return pipelineStageRepository.save(stage);
+                });
     }
 }

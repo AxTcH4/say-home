@@ -30,9 +30,11 @@ public class ProspectController extends ControllerBase {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String assignedAgent,
-            @RequestParam(required = false) String source
+            @RequestParam(required = false) String source,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize
     ) {
-        return ok(prospectService.getProspects(search, status, assignedAgent, source));
+        return ok(prospectService.getProspects(search, status, assignedAgent, source, page, pageSize));
     }
 
     @GetMapping("/{id}")

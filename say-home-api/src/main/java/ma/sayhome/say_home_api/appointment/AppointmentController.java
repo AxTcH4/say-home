@@ -1,6 +1,7 @@
 package ma.sayhome.say_home_api.appointment;
 
 import ma.sayhome.say_home_api.appointment.dto.CreateAppointmentRequest;
+import ma.sayhome.say_home_api.appointment.dto.ClientAppointmentActionRequest;
 import ma.sayhome.say_home_api.appointment.dto.CreateVisitRequest;
 import ma.sayhome.say_home_api.shared.ControllerBase;
 import org.springframework.http.ResponseEntity;
@@ -54,6 +55,24 @@ public class AppointmentController extends ControllerBase {
         return ok(appointmentService.getMyVisitRequests());
     }
 
+    @PatchMapping("/{id}/request-reschedule")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<?> requestReschedule(
+            @PathVariable Integer id,
+            @RequestBody ClientAppointmentActionRequest request
+    ) {
+        return ok(appointmentService.requestReschedule(id, request));
+    }
+
+    @PatchMapping("/{id}/request-cancel")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<?> requestCancellation(
+            @PathVariable Integer id,
+            @RequestBody ClientAppointmentActionRequest request
+    ) {
+        return ok(appointmentService.requestCancellation(id, request));
+    }
+
     @GetMapping("/requests/prospect/{id}")
     public ResponseEntity<?> getVisitRequestsByProspect(
             @PathVariable Integer id
@@ -86,6 +105,12 @@ public class AppointmentController extends ControllerBase {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> cancelAppointment(@PathVariable Integer id) {
         return ok(appointmentService.cancelAppointment(id));
+    }
+
+    @PatchMapping("/{id}/complete")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> completeAppointment(@PathVariable Integer id) {
+        return ok(appointmentService.completeAppointment(id));
     }
 
     @DeleteMapping("/{id}")

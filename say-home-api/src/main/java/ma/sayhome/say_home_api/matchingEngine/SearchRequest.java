@@ -9,10 +9,10 @@ public class SearchRequest {
     @Size(max = 100, message = "Query too long")
     private String title;
 
-    @Pattern(regexp = "^(villa|appartement|riad)?$", message = "Type Invalide")
+    @Pattern(regexp = "^(villa|appartement|riad|studio)?$", message = "Type Invalide")
     private String type;
 
-    @Pattern(regexp = "^(gueliz|hivernage|medina)?$", message = "Secteur Invalide")
+    @Pattern(regexp = "^(palmeraie|targa|medina|route-d-ourika|agdal|hivernage|mabrouka)?$", message = "Secteur Invalide")
     private String secteur;
 
     @DecimalMin(value = "0.0", inclusive = true, message = "Min price cannot be negative")

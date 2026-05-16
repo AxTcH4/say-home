@@ -5,6 +5,7 @@ public record ProspectMeetingResponse(
         String type,
         String date,
         String time,
-        String status
+        String status,
+        String propertyTitle
 ) {
 }

@@ -1,11 +1,14 @@
 package ma.sayhome.say_home_api.prospectProperty;
 
+import ma.sayhome.say_home_api.feedback.ProspectFeedbackService;
+import ma.sayhome.say_home_api.leadScore.LeadScoreService;
 import ma.sayhome.say_home_api.property.Property;
 import ma.sayhome.say_home_api.property.PropertyRepository;
 import ma.sayhome.say_home_api.property.propertyMedia.PropertyMediaServiceImpl;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.prospect.ProspectRepository;
 import ma.sayhome.say_home_api.prospectProperty.document.ProspectPropertyDocument;
+import ma.sayhome.say_home_api.prospectProperty.document.ProspectPropertyClosingDocumentService;
 import ma.sayhome.say_home_api.prospectProperty.document.ProspectPropertyDocumentRepository;
 import ma.sayhome.say_home_api.prospectProperty.document.ProspectPropertyDocumentService;
 import ma.sayhome.say_home_api.prospectProperty.document.ProspectPropertyDocumentTemplateService;
@@ -22,6 +25,7 @@ import ma.sayhome.say_home_api.shared.enums.PropertyStatus;
 import ma.sayhome.say_home_api.shared.enums.ProspectPropertyDocumentType;
 import ma.sayhome.say_home_api.shared.enums.ProspectPropertyInteractionType;
 import ma.sayhome.say_home_api.shared.enums.ProspectPropertyStatus;
+import ma.sayhome.say_home_api.shared.enums.ProspectStatus;
 import ma.sayhome.say_home_api.shared.exceptions.BadRequestException;
 import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
@@ -46,7 +50,10 @@ public class ProspectPropertyRecordService {
     private final ProspectPropertyInteractionRepository interactionRepository;
     private final ProspectPropertyDocumentService documentService;
     private final ProspectPropertyDocumentTemplateService documentTemplateService;
+    private final ProspectPropertyClosingDocumentService closingDocumentService;
     private final PropertyMediaServiceImpl propertyMediaService;
+    private final LeadScoreService leadScoreService;
+    private final ProspectFeedbackService feedbackService;
 
     public ProspectPropertyRecordService(
             ProspectPropertyRecordRepository recordRepository,
@@ -56,7 +63,10 @@ public class ProspectPropertyRecordService {
             ProspectPropertyInteractionRepository interactionRepository,
             ProspectPropertyDocumentService documentService,
             ProspectPropertyDocumentTemplateService documentTemplateService,
-            PropertyMediaServiceImpl propertyMediaService
+            ProspectPropertyClosingDocumentService closingDocumentService,
+            PropertyMediaServiceImpl propertyMediaService,
+            LeadScoreService leadScoreService,
+            ProspectFeedbackService feedbackService
     ) {
         this.recordRepository = recordRepository;
         this.prospectRepository = prospectRepository;
@@ -65,7 +75,10 @@ public class ProspectPropertyRecordService {
         this.interactionRepository = interactionRepository;
         this.documentService = documentService;
         this.documentTemplateService = documentTemplateService;
+        this.closingDocumentService = closingDocumentService;
         this.propertyMediaService = propertyMediaService;
+        this.leadScoreService = leadScoreService;
+        this.feedbackService = feedbackService;
     }
 
     public ProspectPropertyRecordResponse createRecord(CreateProspectPropertyRecordRequest request) {
@@ -90,6 +103,8 @@ public class ProspectPropertyRecordService {
         createAutomaticStatusInteraction(saved, null, request.status);
 
         syncPropertyStatus(property.getId());
+        syncProspectStatus(prospect.getId());
+        refreshLeadScoreQuietly(prospect.getId());
         return toResponse(getRequiredRecord(saved.getId()));
     }
 
@@ -103,17 +118,23 @@ public class ProspectPropertyRecordService {
         ProspectPropertyStatus previousStatus = record.getStatus();
         applyRecordPayload(record, request.status, request.finalPrice, request.notes);
         ProspectPropertyRecord saved = recordRepository.save(record);
+        generateClosingDocumentIfNeeded(saved, previousStatus, request.status);
         createAutomaticStatusInteraction(saved, previousStatus, request.status);
 
         syncPropertyStatus(saved.getProperty().getId());
+        syncProspectStatus(saved.getProspect().getId());
+        refreshLeadScoreQuietly(saved.getProspect().getId());
         return toResponse(getRequiredRecord(saved.getId()));
     }
 
     public void deleteRecord(Integer recordId) {
         ProspectPropertyRecord record = getRequiredRecord(recordId);
         Integer propertyId = record.getProperty().getId();
+        Integer prospectId = record.getProspect().getId();
         recordRepository.delete(record);
         syncPropertyStatus(propertyId);
+        syncProspectStatus(prospectId);
+        refreshLeadScoreQuietly(prospectId);
     }
 
     public List<ProspectPropertyRecordResponse> getRecordsByProspectId(Integer prospectId) {
@@ -138,7 +159,7 @@ public class ProspectPropertyRecordService {
         }
 
         documentService.uploadAll(files, record, type);
-        createDocumentInteraction(record, type, files);
+        refreshLeadScoreQuietly(record.getProspect().getId());
         return toResponse(getRequiredRecord(recordId));
     }
 
@@ -150,6 +171,7 @@ public class ProspectPropertyRecordService {
         }
 
         documentService.deleteById(documentId);
+        refreshLeadScoreQuietly(record.getProspect().getId());
         return toResponse(getRequiredRecord(recordId));
     }
 
@@ -167,6 +189,7 @@ public class ProspectPropertyRecordService {
         interaction.setType(request.type);
         interaction.setComment(request.comment.trim());
         interactionRepository.save(interaction);
+        refreshLeadScoreQuietly(record.getProspect().getId());
 
         return toResponse(getRequiredRecord(recordId));
     }
@@ -207,6 +230,62 @@ public class ProspectPropertyRecordService {
         propertyRepository.save(property);
     }
 
+    private void syncProspectStatus(Integer prospectId) {
+        Prospect prospect = prospectRepository.findById(prospectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Prospect not found"));
+
+        List<ProspectPropertyRecord> records = recordRepository.findByProspectIdOrderByUpdatedAtDesc(prospectId);
+        ProspectStatus nextStatus = prospect.getStatus() == null ? ProspectStatus.NEW : prospect.getStatus();
+
+        if (records.stream().anyMatch(record -> record.getStatus() == ProspectPropertyStatus.BOUGHT
+                || record.getStatus() == ProspectPropertyStatus.RENTED)) {
+            nextStatus = ProspectStatus.CONVERTED;
+        } else if (records.stream().anyMatch(record -> record.getStatus() == ProspectPropertyStatus.NEGOTIATING)) {
+            nextStatus = ProspectStatus.NEGOTIATING;
+        } else if (records.stream().anyMatch(record -> record.getStatus() == ProspectPropertyStatus.FAVORITE)) {
+            nextStatus = ProspectStatus.QUALIFIED;
+        }
+
+        prospect.setStatus(nextStatus);
+        prospectRepository.save(prospect);
+    }
+
+    private void generateClosingDocumentIfNeeded(
+            ProspectPropertyRecord record,
+            ProspectPropertyStatus previousStatus,
+            ProspectPropertyStatus nextStatus
+    ) {
+        if (!isFinalStatus(nextStatus) || previousStatus == nextStatus) {
+            return;
+        }
+
+        ProspectPropertyDocument beforeDocument = ensurePreAssignmentDocument(record, nextStatus);
+        closingDocumentService.ensureGenerated(record, beforeDocument);
+        feedbackService.requestForRecord(record, nextStatus.name());
+    }
+
+    private ProspectPropertyDocument ensurePreAssignmentDocument(
+            ProspectPropertyRecord record,
+            ProspectPropertyStatus finalStatus
+    ) {
+        ProspectPropertyDocumentType expectedType = finalStatus == ProspectPropertyStatus.BOUGHT
+                ? ProspectPropertyDocumentType.BEFORE_SALE_DOCUMENT
+                : ProspectPropertyDocumentType.BEFORE_RENTAL_DOCUMENT;
+
+        return documentRepository.findFirstByRecordIdAndTypeOrderByCreatedAtDesc(record.getId(), expectedType)
+                .orElseThrow(() -> new BadRequestException("Ajoute le document PDF avant affectation."));
+    }
+
+    private boolean isFinalStatus(ProspectPropertyStatus status) {
+        return status == ProspectPropertyStatus.BOUGHT || status == ProspectPropertyStatus.RENTED;
+    }
+
+    private ProspectPropertyDocumentType resolveFinalDocumentType(ProspectPropertyStatus status) {
+        return status == ProspectPropertyStatus.BOUGHT
+                ? ProspectPropertyDocumentType.SALE_DEED
+                : ProspectPropertyDocumentType.LEASE_CONTRACT;
+    }
+
     private ProspectPropertyRecordResponse toResponse(ProspectPropertyRecord record) {
         List<ProspectPropertyDocument> documentEntities = documentRepository.findByRecordIdOrderByCreatedAtDesc(record.getId())
                 .stream()
@@ -220,6 +299,7 @@ public class ProspectPropertyRecordService {
                 .buildExpectedDocuments(record, documentEntities);
         List<ProspectPropertyInteractionResponse> interactions = interactionRepository.findByRecordIdOrderByCreatedAtDesc(record.getId())
                 .stream()
+                .filter(interaction -> interaction.getType() != ProspectPropertyInteractionType.DOCUMENT_ADDED)
                 .map(this::toInteractionResponse)
                 .toList();
 
@@ -228,8 +308,8 @@ public class ProspectPropertyRecordService {
                 record.getId(),
                 property.getId(),
                 property.getTitle(),
-                property.getType(),
-                property.getSecteur(),
+                property.getType() != null ? property.getType().name() : null,
+                property.getSecteur() != null ? property.getSecteur().name() : null,
                 property.getPrice(),
                 property.getStatus().name(),
                 record.getStatus().name(),
@@ -272,23 +352,6 @@ public class ProspectPropertyRecordService {
         }
     }
 
-    private void createDocumentInteraction(
-            ProspectPropertyRecord record,
-            ProspectPropertyDocumentType type,
-            List<MultipartFile> files
-    ) {
-        long uploadedCount = files.stream().filter(file -> file != null && !file.isEmpty()).count();
-        if (uploadedCount == 0) {
-            return;
-        }
-
-        saveInteraction(
-                record,
-                ProspectPropertyInteractionType.DOCUMENT_ADDED,
-                "Document ajoute au dossier : " + formatDocumentType(type) + "."
-        );
-    }
-
     private void saveInteraction(
             ProspectPropertyRecord record,
             ProspectPropertyInteractionType type,
@@ -303,11 +366,13 @@ public class ProspectPropertyRecordService {
 
     private String formatDocumentType(ProspectPropertyDocumentType type) {
         return switch (type) {
+            case BEFORE_SALE_DOCUMENT -> "Document avant vente";
+            case BEFORE_RENTAL_DOCUMENT -> "Document avant location";
             case SALE_DEED -> "Acte de vente";
+            case LEASE_CONTRACT -> "Contrat de bail";
             case LAND_TITLE -> "Titre foncier";
             case MORTGAGE_CONTRACT -> "Contrat de credit immobilier";
             case PAYMENT_RECEIPT -> "Recu de paiement";
-            case LEASE_CONTRACT -> "Contrat de bail";
             case RENT_RECEIPT -> "Quittance de loyer";
             case PROPERTY_INSPECTION_REPORT -> "Etat des lieux";
             case SECURITY_DEPOSIT_RECEIPT -> "Recu de caution";
@@ -337,5 +402,12 @@ public class ProspectPropertyRecordService {
             return "";
         }
         return DATE_TIME_FORMATTER.format(dateTime);
+    }
+
+    private void refreshLeadScoreQuietly(Integer prospectId) {
+        try {
+            leadScoreService.predict(prospectId);
+        } catch (Exception ignored) {
+        }
     }
 }

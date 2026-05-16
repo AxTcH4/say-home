@@ -136,3 +136,81 @@ export async function getMyVisitRequests() {
   const data = await res.json();
   return data.data ?? [];
 }
+
+export async function requestVisitReschedule(id: number, payload: {
+  date: string;
+  time: string;
+  message: string;
+}) {
+  const res = await fetch(buildUrl(`/appointments/${id}/request-reschedule`), {
+    method: "PATCH",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await readError(res, "Unable to request meeting reschedule"));
+  }
+
+  const data = await res.json();
+  return data.data;
+}
+
+export async function requestVisitCancellation(id: number, payload: {
+  message: string;
+}) {
+  const res = await fetch(buildUrl(`/appointments/${id}/request-cancel`), {
+    method: "PATCH",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await readError(res, "Unable to request meeting cancellation"));
+  }
+
+  const data = await res.json();
+  return data.data;
+}
+
+export async function getFeedbackForm(token: string) {
+  const res = await fetch(buildUrl(`/feedback/${token}`), {
+    method: "GET",
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error(await readError(res, "Unable to load feedback form"));
+  }
+
+  const data = await readJson(res);
+  return data?.data ?? null;
+}
+
+export async function submitFeedback(
+  token: string,
+  payload: { sentiment: "POSITIVE" | "NEGATIVE"; comment?: string },
+) {
+  const res = await fetch(buildUrl(`/feedback/${token}`), {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await readError(res, "Unable to submit feedback"));
+  }
+
+  const data = await readJson(res);
+  return data?.data ?? null;
+}

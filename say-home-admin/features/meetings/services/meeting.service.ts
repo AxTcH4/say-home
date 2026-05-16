@@ -91,6 +91,13 @@ export const meetingService = {
     if (!response.ok) throw new Error(await readErrorMessage(response, "Unable to cancel meeting"));
   },
 
+  async completeAppointment(id: number) {
+    const response = await apiFetch(`${API_BASE_URL}/appointments/${id}/complete`, {
+      method: "PATCH",
+    });
+    if (!response.ok) throw new Error(await readErrorMessage(response, "Unable to complete meeting"));
+  },
+
   async deleteAppointment(id: number) {
     const response = await apiFetch(`${API_BASE_URL}/appointments/${id}`, {
       method: "DELETE",

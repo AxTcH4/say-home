@@ -144,8 +144,20 @@ public class HelpDeskController extends ControllerBase {
         return ok(results);
     }
 
+    @GetMapping("/tickets/me")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<ApiResponse<List<TicketDTO>>> getMyTickets() {
+        User authenticatedUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (authenticatedUser == null) {
+            throw new UnauthorizedException("User is not logged in");
+        }
+
+        return ok(helpDeskService.getTicketsByAuthenticatedProspect(authenticatedUser));
+    }
+
     //Get latest active tickets by prospectId
-    @GetMapping("/tickets/latest/")
+    @GetMapping("/tickets/latest/{prospectId}")
     public ResponseEntity<ApiResponse<List<TicketDTO>>> getLatestactiveTickets(@PathVariable("prospectId") Integer prospectId) {
         List<TicketDTO> results = helpDeskService.getLatestActiveTicketsByProspectId(prospectId);
         return ok(results);

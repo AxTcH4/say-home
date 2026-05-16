@@ -5,7 +5,7 @@ from langchain_core.messages import HumanMessage, ToolMessage
 import operator
 from chatbot.dto.llmSchemas import MessageAnalysisOutput
 from langgraph.checkpoint.memory import MemorySaver 
-from chatbot.dto.llmSchemas import AgentResponse, ProblemeOutput, TicketOutput,  TicketDecisionOutput
+from chatbot.dto.llmSchemas import AgentResponse, ProblemeOutput, TicketOutput,  TicketDecisionOutput, TonaliteOutput
 from chatbot.agent.tools import create_ticket, send_email, get_prospect_info, get_prospect_visit_requests
 import json
 import re
@@ -40,6 +40,10 @@ class AgentState(TypedDict):
 
     ticket_created: bool
 
+    off_topic: bool
+    conversation_tone: str
+    ticket_priority: str
+
 
 def format_prospect_context(prospect: dict, appointments: list) -> str:
     apts_text = ""
@@ -58,6 +62,25 @@ Source: {prospect["source"]}
 RENDEZ-VOUS:
 {apts_text if apts_text else "Aucun rendez-vous"}
 """
+
+def build_support_scope_context(prospect: dict, appointments: list) -> str:
+    owned_properties_text = ""
+    for owned_property in prospect.get("ownedProperties", []):
+        owned_properties_text += f"""
+  - Bien #{owned_property.get('propertyId')}: {owned_property.get('title', 'Bien inconnu')}
+    Secteur: {owned_property.get('secteur', '')}
+    Type: {owned_property.get('type', '')}
+    Statut: {owned_property.get('relationStatus', '')}
+"""
+
+    return (
+        format_prospect_context(prospect, appointments)
+        + f"""
+
+BIENS AUTORISES DANS LE PERIMETRE SAV:
+{owned_properties_text if owned_properties_text else "Aucun bien possede ou loue actuellement"}
+"""
+    )
 
 def analyse_message(state: AgentState, llm) -> AgentState:
 
@@ -195,12 +218,23 @@ def analyse_message(state: AgentState, llm) -> AgentState:
     - general:
     salutation ou conversation simple
 
+    - out_of_scope:
+    sujet hors SAV SAY Home, hors rendez-vous,
+    hors documents, hors suivi des biens du prospect
+
     IMPORTANT:
     - Les questions générales immobilières
     ou administratives utilisent:
     support
 
     - Réponds uniquement avec l'intent
+    """
+
+    prompt += """
+
+    Tu es strictement un assistant SAV SAY Home.
+    Si le message est hors SAV, hors rendez-vous, hors documents,
+    ou hors suivi des biens SAY Home du prospect, classe-le en out_of_scope.
     """
 
     structured_llm = llm.with_structured_output(
@@ -216,6 +250,7 @@ def analyse_message(state: AgentState, llm) -> AgentState:
         **state,
 
         "intent": response.intent,
+        "off_topic": response.intent == "out_of_scope",
 
         "problem": last_message,
 
@@ -229,17 +264,141 @@ def route_intent(state: AgentState) -> str:
     intent = state.get("intent", "general")
 
     if intent == "ticket_yes":
-        return "verifier_ou_creer_ticket"
+        return "analyser_tonalite_ticket"
 
     if intent == "ticket_no":
         return "cloturer_conversation"
 
     if intent == "general":
         return "cloturer_conversation"
+
+    if intent == "out_of_scope":
+        return "recentrer_sav"
     
     if intent == "view_requests":
         return "repondre_visites"
 
+    return "verifier_clarte"
+
+def verifier_clarte_message(state: AgentState, llm) -> AgentState:
+    last_message = state["messages"][-1].content
+
+    prompt = f"""
+    Analyse le dernier message du client.
+
+    Reponds UNIQUEMENT avec:
+    - clear
+    - vague
+
+    Considere le message comme vague si:
+    - le probleme n'est pas explique
+    - le client dit seulement qu'il a un probleme ou une reclamation
+    - il mentionne juste une propriete ou un sujet sans expliquer ce qui ne va pas
+
+    Message:
+    "{last_message}"
+    """
+
+    response = llm.invoke([
+        SystemMessage(content=prompt)
+    ])
+
+    clarity = response.content.strip().lower()
+
+    if clarity == "vague":
+        return {
+            **state,
+            "needs_clarification": True,
+            "messages": state["messages"] + [
+                AIMessage(
+                    content=(
+                        "Pouvez-vous preciser clairement le probleme rencontre "
+                        "avec votre propriete, votre rendez-vous, vos documents "
+                        "ou votre dossier SAY Home ?"
+                    )
+                )
+            ]
+        }
+
+    return {
+        **state,
+        "needs_clarification": False,
+    }
+
+def analyser_tonalite_ticket(state: AgentState, llm) -> AgentState:
+    print("Analysing ticket tonality...")
+
+    trimmed = trim_messages(
+        state["messages"],
+        max_tokens=1000,
+        strategy="last",
+        token_counter=llm,
+    )
+
+    prompt = """
+    Tu analyses la tonalite d'une conversation SAV SAY Home.
+
+    Releve:
+    - tone:
+      - angry: client frustre, presse, inquiet, bloquant, ton fort
+      - calm: ton normal, demande simple ou neutre
+    - clarity:
+      - clear
+      - vague
+    - requests_info:
+      - true si le client demande surtout des informations
+      - false sinon
+    """
+
+    structured_llm = llm.with_structured_output(TonaliteOutput)
+    response = structured_llm.invoke([
+        SystemMessage(content=prompt),
+        *trimmed
+    ])
+
+    priority = "MEDIUM"
+    last_message = state.get("problem", "").lower()
+    requests_info = response.requests_info
+
+    if isinstance(requests_info, str):
+        requests_info = requests_info.strip().lower() == "true"
+
+    urgent_keywords = [
+        "urgent",
+        "urgence",
+        "bloque",
+        "bloqué",
+        "impossible",
+        "fuite",
+        "danger",
+        "grave",
+        "immediat",
+        "immédiat",
+        "tout de suite",
+        "rapidement",
+    ]
+
+    light_keywords = [
+        "information",
+        "renseignement",
+        "question",
+        "simple",
+    ]
+
+    if response.tone == "angry" or any(keyword in last_message for keyword in urgent_keywords):
+        priority = "HIGH"
+    elif requests_info and response.tone == "calm" and any(keyword in last_message for keyword in light_keywords):
+        priority = "LOW"
+
+    return {
+        **state,
+        "conversation_tone": response.tone,
+        "ticket_priority": priority,
+    }
+
+def route_clarity(state: AgentState) -> str:
+    if state.get("needs_clarification"):
+        return END
     return "identifier_probleme"
 
 def repondre_visites(state: AgentState) -> AgentState:
@@ -424,6 +583,10 @@ def identifier_probleme(
         clair et précis pour comprendre
         le problème et agir dessus ?
 
+        Si le client mentionne seulement une propriete
+        ou un sujet sans expliquer le probleme,
+        considere le message comme vague.
+
         Message:
         "{raw_query}"
 
@@ -559,6 +722,20 @@ def resoudre_et_demander(
     sera transféré au support.
     """
 
+    prompt += f"""
+
+    PERIMETRE STRICT:
+    - service apres-vente SAY Home
+    - rendez-vous du client
+    - documents du client
+    - biens que le prospect possede deja ou loue deja via SAY Home
+    - si le client parle d'un autre sujet ou d'un autre bien,
+      recentre-le poliment vers le support SAY Home
+
+    CONTEXTE PROSPECT:
+    {build_support_scope_context(state["prospect"], state.get("appointments", []))}
+    """
+
     response = llm.invoke([
         SystemMessage(content=prompt),
         *trimmed
@@ -650,6 +827,16 @@ Analyse le problème et génère un titre et une description de ticket.
 Problème: {state["problem"]}
     """
     
+    prompt += f"""
+
+Limite le sujet aux biens possedes ou loues par le prospect.
+Contexte prospect:
+{build_support_scope_context(state["prospect"], state.get("appointments", []))}
+
+La priorite a deja ete determinee a partir de la tonalite:
+{state.get("ticket_priority", "MEDIUM")}
+    """
+
     structured_llm = llm.with_structured_output(TicketOutput)
     response = structured_llm.invoke([
         SystemMessage(content=prompt),
@@ -660,6 +847,7 @@ Problème: {state["problem"]}
         "prospect_id": state["prospect_id"],
         "title": response.title,
         "description": response.description,
+        "priority": state.get("ticket_priority", response.priority),
     })
 
     print(ticket_result)
@@ -701,7 +889,7 @@ def envoyer_email_confirmation(state: AgentState) -> AgentState:
     if not state["ticket"]:
         return {**state }
     
-    send_email.invoke({
+    email_result = send_email.invoke({
         "email": state["prospect"]["email"],
         "ticket_id": state["ticket"]["id"],
         "ticket_title": state["ticket"]["title"],
@@ -710,7 +898,10 @@ def envoyer_email_confirmation(state: AgentState) -> AgentState:
         "ticket_status": state["ticket"]["status"],
         "prospect_FirstName": state["prospect"]["nom"],
         # "createdAt": state["ticket"]["createdAt"],
-})
+    })
+
+    if not email_result.get("success", True):
+        print(f"Email confirmation failed: {email_result.get('error')}")
     
     return {**state,
             "is_sent": True
@@ -750,8 +941,11 @@ def cloturer_conversation(state: AgentState, llm) -> AgentState:
         token_counter=llm,
     )
     prompt = f"""
-        Tu es un agent SAY Home. 
+        Tu es un agent SAY Home.
         Termine la conversation avec le client poliment.
+        Si le message est hors sujet, rappelle que ton role
+        est centre sur le SAV SAY Home, les rendez-vous,
+        les documents et le suivi de ses biens SAY Home.
     """
     
     structured_llm = llm.with_structured_output(AgentResponse)
@@ -763,6 +957,21 @@ def cloturer_conversation(state: AgentState, llm) -> AgentState:
     return (
         {**state, "messages": state["messages"] + [AIMessage(content=response.message)]}
     )
+
+def recentrer_sav(state: AgentState) -> AgentState:
+    return {
+        **state,
+        "messages": state["messages"] + [
+            AIMessage(
+                content=(
+                    "Je suis un assistant SAV SAY Home. "
+                    "Si vous avez un probleme en relation avec une de vos proprietes, "
+                    "vos documents, vos rendez-vous ou le suivi de votre dossier, "
+                    "feel free to ask."
+                )
+            )
+        ]
+    }
 
 
 
@@ -787,10 +996,25 @@ def build_graph(llm, embedder, qdrant):
             qdrant
         )
     )
+    graph.add_node(
+        "verifier_clarte",
+        lambda state: verifier_clarte_message(
+            state,
+            llm
+        )
+    )
 
     graph.add_node(
         "resoudre_et_demander",
         lambda state: resoudre_et_demander(
+            state,
+            llm
+        )
+    )
+
+    graph.add_node(
+        "analyser_tonalite_ticket",
+        lambda state: analyser_tonalite_ticket(
             state,
             llm
         )
@@ -827,6 +1051,10 @@ def build_graph(llm, embedder, qdrant):
         )
     )
     graph.add_node(
+        "recentrer_sav",
+        lambda state: recentrer_sav(state)
+    )
+    graph.add_node(
     "repondre_visites",
     lambda state: repondre_visites(state)
 )
@@ -843,6 +1071,11 @@ def build_graph(llm, embedder, qdrant):
     )
 
     graph.add_conditional_edges(
+        "verifier_clarte",
+        route_clarity
+    )
+
+    graph.add_conditional_edges(
         "identifier_probleme",
         probleme_existe
     )
@@ -854,9 +1087,14 @@ def build_graph(llm, embedder, qdrant):
     )
 
 
+    graph.add_edge(
+        "analyser_tonalite_ticket",
+        "verifier_ou_creer_ticket"
+    )
+
     graph.add_conditional_edges(
-    "verifier_ou_creer_ticket",
-    route_ticket_result
+        "verifier_ou_creer_ticket",
+        route_ticket_result
     )
 
     graph.add_edge(
@@ -873,6 +1111,11 @@ def build_graph(llm, embedder, qdrant):
     "repondre_visites",
     END
 )
+
+    graph.add_edge(
+        "recentrer_sav",
+        END
+    )
 
     graph.add_edge(
         "cloturer_conversation",

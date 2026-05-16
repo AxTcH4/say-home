@@ -26,11 +26,13 @@ export type RealEstateRelationStatus =
   | "RENTED";
 
 export type RealEstateDocumentType =
+  | "BEFORE_SALE_DOCUMENT"
+  | "BEFORE_RENTAL_DOCUMENT"
   | "SALE_DEED"
+  | "LEASE_CONTRACT"
   | "LAND_TITLE"
   | "MORTGAGE_CONTRACT"
   | "PAYMENT_RECEIPT"
-  | "LEASE_CONTRACT"
   | "RENT_RECEIPT"
   | "PROPERTY_INSPECTION_REPORT"
   | "SECURITY_DEPOSIT_RECEIPT"
@@ -44,6 +46,7 @@ export interface RealEstateDocument {
   id: number;
   name: string;
   url: string;
+  downloadPath: string;
   type: RealEstateDocumentType;
   uploadedAt: string;
 }

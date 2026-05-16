@@ -1,5 +1,6 @@
 package ma.sayhome.say_home_api.property;
 import ma.sayhome.say_home_api.property.Property;
+import ma.sayhome.say_home_api.shared.enums.PropertyType;
 import ma.sayhome.say_home_api.shared.enums.PropertyStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,7 +11,7 @@ import java.util.List;
 @Repository
 public interface PropertyRepository extends JpaRepository<Property, Integer> {
     List<Property> findTop3ByOrderByCreatedAtDesc();
-    List<Property> findByTypeOrderByCreatedAtDesc(String type);
+    List<Property> findByTypeOrderByCreatedAtDesc(PropertyType type);
     List<Property> findByTitleContainingIgnoreCase(String q);
     List<Property> findByDescriptionContainingIgnoreCase(String q);
 

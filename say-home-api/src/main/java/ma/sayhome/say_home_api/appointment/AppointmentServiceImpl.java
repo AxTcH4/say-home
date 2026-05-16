@@ -2,6 +2,7 @@ package ma.sayhome.say_home_api.appointment;
 
 import ma.sayhome.say_home_api.appointment.dto.AppointmentDetailResponse;
 import ma.sayhome.say_home_api.appointment.dto.AppointmentsBoardResponse;
+import ma.sayhome.say_home_api.appointment.dto.ClientAppointmentActionRequest;
 import ma.sayhome.say_home_api.appointment.dto.ClientVisitRequestResponse;
 import ma.sayhome.say_home_api.appointment.dto.CreateAppointmentRequest;
 import ma.sayhome.say_home_api.appointment.dto.CreateVisitRequest;
@@ -19,7 +20,13 @@ import ma.sayhome.say_home_api.prospect.ProspectRepository;
 import ma.sayhome.say_home_api.shared.enums.AppointmentStatus;
 import ma.sayhome.say_home_api.shared.enums.ProspectStatus;
 import ma.sayhome.say_home_api.shared.enums.Role;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.MailException;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -43,6 +50,10 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final PropertyRepository propertyRepository;
     private final PipelineStageRepository pipelineStageRepository;
     private final NotificationService notificationService;
+    private final JavaMailSender mailSender;
+
+    @Value("${spring.mail.username}")
+    private String senderEmail;
 
     public AppointmentServiceImpl(
             AppointmentRepository appointmentRepository,
@@ -50,7 +61,8 @@ public class AppointmentServiceImpl implements AppointmentService {
             UserRepository userRepository, ProspectRepository propsectRepository,
             PropertyRepository propertyRepository,
             PipelineStageRepository pipelineStageRepository,
-            NotificationService notificationService
+            NotificationService notificationService,
+            JavaMailSender mailSender
     ) {
         this.appointmentRepository = appointmentRepository;
         this.prospectRepository = prospectRepository;
@@ -58,6 +70,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         this.propertyRepository = propertyRepository;
         this.pipelineStageRepository = pipelineStageRepository;
         this.notificationService = notificationService;
+        this.mailSender = mailSender;
     }
 
     public AppointmentsBoardResponse getBoard() {
@@ -67,14 +80,13 @@ public class AppointmentServiceImpl implements AppointmentService {
         List<Appointment> allAppointments = appointmentRepository.findAll();
 
         List<Appointment> scopedAppointments = allAppointments.stream()
-                .filter(appointment -> appointment.getStatus() != AppointmentStatus.REQUESTED)
-                .filter(appointment -> appointment.getStatus() != AppointmentStatus.REFUSED)
+                .filter(appointment -> appointment.getStatus() == AppointmentStatus.SCHEDULED)
                 .filter(appointment -> isAdmin || isOwnedBy(appointment, currentUser))
                 .toList();
 
         List<MeetingRequestResponse> requests = isAdmin
                 ? allAppointments.stream()
-                    .filter(appointment -> appointment.getStatus() == AppointmentStatus.REQUESTED)
+                    .filter(appointment -> isPendingAdminAction(appointment.getStatus()))
                     .sorted(Comparator.comparing(Appointment::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                     .map(this::toMeetingRequest)
                     .toList()
@@ -104,6 +116,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         applyRequest(appointment, request);
         appointment.setStatus(AppointmentStatus.SCHEDULED);
         Appointment saved = appointmentRepository.save(appointment);
+        clearClientRequest(saved);
         return toDetail(saved);
     }
 
@@ -112,8 +125,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         Appointment appointment = getRequiredAppointment(id);
         applyRequest(appointment, request);
         appointment.setStatus(AppointmentStatus.SCHEDULED);
+        clearClientRequest(appointment);
         Appointment saved = appointmentRepository.save(appointment);
         notifyClientForStatus(saved, "Votre demande de rendez-vous a ete acceptee et planifiee.");
+        sendClientEmail(saved, "Rendez-vous mis a jour", "Votre rendez-vous a ete modifie et confirme par notre equipe.");
         return toDetail(saved);
     }
 
@@ -151,6 +166,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                 currentUser.getFullName() + " requested a visit for " + property.getTitle(),
                 Role.ADMIN
         );
+        sendClientEmail(saved, "Demande de visite recue", "Votre demande de visite a bien ete recue. Notre equipe va la traiter.");
 
         return toClientRequest(saved);
     }
@@ -184,18 +200,54 @@ public class AppointmentServiceImpl implements AppointmentService {
     public AppointmentDetailResponse approveRequest(Integer id) {
         assertAdmin();
         Appointment appointment = getRequiredAppointment(id);
+        if (appointment.getStatus() == AppointmentStatus.RESCHEDULE_REQUESTED) {
+            if (appointment.getClientRequestedDate() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Requested new date is missing");
+            }
+            appointment.setDate(appointment.getClientRequestedDate());
+            appointment.setStatus(AppointmentStatus.SCHEDULED);
+            clearClientRequest(appointment);
+            Appointment saved = appointmentRepository.save(appointment);
+            notifyClientForStatus(saved, "Votre demande de modification de rendez-vous a ete acceptee.");
+            sendClientEmail(saved, "Modification acceptee", "Votre demande de modification de rendez-vous a ete confirmee.");
+            return toDetail(saved);
+        }
+
+        if (appointment.getStatus() == AppointmentStatus.CANCELLATION_REQUESTED) {
+            appointment.setStatus(AppointmentStatus.CANCELLED);
+            clearClientRequest(appointment);
+            Appointment saved = appointmentRepository.save(appointment);
+            notifyClientForStatus(saved, "Votre demande d'annulation de rendez-vous a ete acceptee.");
+            sendClientEmail(saved, "Annulation acceptee", "Votre demande d'annulation de rendez-vous a ete confirmee.");
+            return toDetail(saved);
+        }
+
         appointment.setStatus(AppointmentStatus.SCHEDULED);
+        clearClientRequest(appointment);
         Appointment saved = appointmentRepository.save(appointment);
         notifyClientForStatus(saved, "Votre demande de rendez-vous a ete acceptee.");
+        sendClientEmail(saved, "Demande acceptee", "Votre demande de rendez-vous a ete confirmee par notre equipe.");
         return toDetail(saved);
     }
 
     public AppointmentDetailResponse refuseRequest(Integer id) {
         assertAdmin();
         Appointment appointment = getRequiredAppointment(id);
+        if (appointment.getStatus() == AppointmentStatus.RESCHEDULE_REQUESTED
+                || appointment.getStatus() == AppointmentStatus.CANCELLATION_REQUESTED) {
+            appointment.setStatus(AppointmentStatus.SCHEDULED);
+            clearClientRequest(appointment);
+            Appointment saved = appointmentRepository.save(appointment);
+            notifyClientForStatus(saved, "Votre demande de modification ou d'annulation a ete refusee.");
+            sendClientEmail(saved, "Demande refusee", "Votre demande de modification ou d'annulation a ete refusee. Veuillez contacter notre equipe pour plus de details.");
+            return toDetail(saved);
+        }
+
         appointment.setStatus(AppointmentStatus.REFUSED);
+        clearClientRequest(appointment);
         Appointment saved = appointmentRepository.save(appointment);
         notifyClientForStatus(saved, "Votre demande de rendez-vous a ete refusee.");
+        sendClientEmail(saved, "Demande refusee", "Votre demande de rendez-vous a ete refusee. Veuillez contacter notre equipe pour plus de details.");
         return toDetail(saved);
     }
 
@@ -203,9 +255,66 @@ public class AppointmentServiceImpl implements AppointmentService {
         assertAdmin();
         Appointment appointment = getRequiredAppointment(id);
         appointment.setStatus(AppointmentStatus.CANCELLED);
+        clearClientRequest(appointment);
         Appointment saved = appointmentRepository.save(appointment);
         notifyClientForStatus(saved, "Votre rendez-vous a ete annule.");
+        sendClientEmail(saved, "Rendez-vous annule", "Votre rendez-vous a ete annule par notre equipe.");
         return toDetail(saved);
+    }
+
+    public AppointmentDetailResponse completeAppointment(Integer id) {
+        assertAdmin();
+        Appointment appointment = getRequiredAppointment(id);
+        appointment.setStatus(AppointmentStatus.COMPLETED);
+        clearClientRequest(appointment);
+        Appointment saved = appointmentRepository.save(appointment);
+        notifyClientForStatus(saved, "Votre rendez-vous est maintenant termine.");
+        sendClientEmail(saved, "Rendez-vous termine", "Votre rendez-vous a bien ete marque comme termine.");
+        return toDetail(saved);
+    }
+
+    public ClientVisitRequestResponse requestReschedule(Integer id, ClientAppointmentActionRequest request) {
+        Appointment appointment = getRequiredAppointment(id);
+        assertClientOwns(appointment);
+
+        if (appointment.getStatus() != AppointmentStatus.SCHEDULED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only confirmed meetings can be modified");
+        }
+        if (request == null || request.date == null || request.date.isBlank() || request.time == null || request.time.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New date and time are required");
+        }
+
+        LocalDateTime requestedDateTime = parseAppointmentDateTime(request.date, request.time);
+        if (requestedDateTime.isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot request a meeting in the past");
+        }
+
+        appointment.setClientRequestedDate(requestedDateTime);
+        appointment.setClientRequestMessage(request.message == null ? "" : request.message.trim());
+        appointment.setStatus(AppointmentStatus.RESCHEDULE_REQUESTED);
+        Appointment saved = appointmentRepository.save(appointment);
+
+        notifyAdminsForClientRequest(saved, "requested a meeting reschedule");
+        sendClientEmail(saved, "Demande de modification recue", "Votre demande de modification de rendez-vous a bien ete recue en attendant la validation de notre equipe.");
+        return toClientRequest(saved);
+    }
+
+    public ClientVisitRequestResponse requestCancellation(Integer id, ClientAppointmentActionRequest request) {
+        Appointment appointment = getRequiredAppointment(id);
+        assertClientOwns(appointment);
+
+        if (appointment.getStatus() != AppointmentStatus.SCHEDULED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only confirmed meetings can be cancelled");
+        }
+
+        appointment.setClientRequestedDate(null);
+        appointment.setClientRequestMessage(request == null || request.message == null ? "" : request.message.trim());
+        appointment.setStatus(AppointmentStatus.CANCELLATION_REQUESTED);
+        Appointment saved = appointmentRepository.save(appointment);
+
+        notifyAdminsForClientRequest(saved, "requested a meeting cancellation");
+        sendClientEmail(saved, "Demande d'annulation recue", "Votre demande d'annulation de rendez-vous a bien ete recue en attendant la validation de notre equipe.");
+        return toClientRequest(saved);
     }
 
     @Override
@@ -262,6 +371,19 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         if (!isOwnedBy(appointment, currentUser)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only view your own meetings");
+        }
+    }
+
+    private void assertClientOwns(Appointment appointment) {
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole() != Role.CLIENT) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only clients can manage this action");
+        }
+
+        if (appointment.getProspect() == null
+                || appointment.getProspect().getUser() == null
+                || !appointment.getProspect().getUser().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage your own meetings");
         }
     }
 
@@ -341,9 +463,10 @@ public class AppointmentServiceImpl implements AppointmentService {
                 prospect != null ? effectiveProspectName(prospect) : "Prospect",
                 prospect != null && prospect.getCity() != null ? prospect.getCity() : "",
                 prospect != null ? formatBudget(prospect.getBudget()) : "Not specified",
-                DATE_FORMATTER.format(appointment.getDate()),
-                TIME_FORMATTER.format(appointment.getDate()),
-                appointment.getNotes() == null ? "" : appointment.getNotes(),
+                toRequestKind(appointment.getStatus()),
+                DATE_FORMATTER.format(appointment.getClientRequestedDate() != null ? appointment.getClientRequestedDate() : appointment.getDate()),
+                TIME_FORMATTER.format(appointment.getClientRequestedDate() != null ? appointment.getClientRequestedDate() : appointment.getDate()),
+                effectiveRequestMessage(appointment),
                 property != null ? property.getId() : null,
                 property != null ? property.getTitle() : "",
                 appointment.getStatus().name()
@@ -359,6 +482,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                 DATE_FORMATTER.format(appointment.getDate()),
                 TIME_FORMATTER.format(appointment.getDate()),
                 appointment.getNotes() == null ? "" : appointment.getNotes(),
+                appointment.getClientRequestMessage() == null ? "" : appointment.getClientRequestMessage(),
                 appointment.getStatus().name(),
                 appointment.getAgent() != null ? appointment.getAgent().getFullName() : ""
         );
@@ -444,6 +568,107 @@ public class AppointmentServiceImpl implements AppointmentService {
         if (prospect != null && prospect.getUser() != null) {
             notificationService.createNotification(message, prospect.getUser());
         }
+    }
+
+    private void notifyAdminsForClientRequest(Appointment appointment, String action) {
+        notificationService.createNotificationsForRole(
+                effectiveProspectName(appointment.getProspect()) + " " + action,
+                Role.ADMIN
+        );
+    }
+
+    private boolean isPendingAdminAction(AppointmentStatus status) {
+        return status == AppointmentStatus.REQUESTED
+                || status == AppointmentStatus.RESCHEDULE_REQUESTED
+                || status == AppointmentStatus.CANCELLATION_REQUESTED;
+    }
+
+    private String toRequestKind(AppointmentStatus status) {
+        return switch (status) {
+            case RESCHEDULE_REQUESTED -> "Demande de modification";
+            case CANCELLATION_REQUESTED -> "Demande d'annulation";
+            default -> "Demande de visite";
+        };
+    }
+
+    private String effectiveRequestMessage(Appointment appointment) {
+        if (appointment.getStatus() == AppointmentStatus.RESCHEDULE_REQUESTED
+                || appointment.getStatus() == AppointmentStatus.CANCELLATION_REQUESTED) {
+            return appointment.getClientRequestMessage() == null ? "" : appointment.getClientRequestMessage();
+        }
+        return appointment.getNotes() == null ? "" : appointment.getNotes();
+    }
+
+    private void clearClientRequest(Appointment appointment) {
+        appointment.setClientRequestedDate(null);
+        appointment.setClientRequestMessage(null);
+    }
+
+    private void sendClientEmail(Appointment appointment, String subject, String message) {
+        Prospect prospect = appointment.getProspect();
+        if (prospect == null || prospect.getEmail() == null || prospect.getEmail().isBlank()) {
+            return;
+        }
+
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, false, "UTF-8");
+            helper.setFrom(senderEmail);
+            helper.setTo(prospect.getEmail());
+            helper.setSubject(subject + " - Say Home");
+            helper.setText(buildClientEmailHtml(appointment, message), true);
+            mailSender.send(mimeMessage);
+        } catch (MessagingException | MailException exception) {
+            System.err.println("Appointment email could not be sent: " + exception.getMessage());
+        }
+    }
+
+    private String buildClientEmailHtml(Appointment appointment, String message) {
+        String propertyTitle = appointment.getProperty() != null ? appointment.getProperty().getTitle() : "Votre bien";
+        String date = DATE_FORMATTER.format(appointment.getDate());
+        String time = TIME_FORMATTER.format(appointment.getDate());
+
+        return """
+                <!doctype html>
+                <html>
+                  <body style="margin:0;padding:0;background:#f5f5f3;font-family:Arial,Helvetica,sans-serif;color:#222222;">
+                    <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="background:#f5f5f3;padding:32px 12px;">
+                      <tr>
+                        <td align="center">
+                          <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #e3ded8;">
+                            <tr>
+                              <td style="background:#2f1b10;padding:28px 32px;text-align:center;">
+                                <div style="font-size:26px;font-weight:800;letter-spacing:3px;color:#ffffff;text-transform:uppercase;">Say Home</div>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding:36px 34px 28px 34px;">
+                                <h1 style="margin:0 0 18px 0;font-size:26px;line-height:1.25;color:#222222;font-weight:700;">Mise a jour de votre rendez-vous</h1>
+                                <p style="margin:0 0 14px 0;font-size:16px;line-height:1.7;color:#333333;">Bonjour %s,</p>
+                                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#555555;">%s</p>
+                                <p style="margin:0 0 8px 0;font-size:14px;color:#222222;"><strong>Bien :</strong> %s</p>
+                                <p style="margin:0 0 8px 0;font-size:14px;color:#222222;"><strong>Date :</strong> %s</p>
+                                <p style="margin:0 0 8px 0;font-size:14px;color:#222222;"><strong>Heure :</strong> %s</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="background:#f1eee9;padding:18px 32px;text-align:center;font-size:12px;color:#777777;">
+                                Marrakech, Maroc - Say Home
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </body>
+                </html>
+                """.formatted(
+                effectiveProspectName(appointment.getProspect()),
+                message,
+                propertyTitle,
+                date,
+                time
+        );
     }
 
     private String effectiveProspectName(Prospect prospect) {

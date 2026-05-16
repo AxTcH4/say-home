@@ -16,10 +16,10 @@ export function UsersHeader({ total }: UsersHeaderProps) {
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <h1 className="text-[42px] font-semibold tracking-[-0.03em] text-[#172033]">
-          Users & Agents
+          Agents
         </h1>
         <p className="mt-2 text-sm text-[#70819a]">
-          Manage roles and monitor team activity across the back-office.
+          Create and manage the agent accounts assigned to prospects and properties.
         </p>
       </div>
 
@@ -29,7 +29,7 @@ export function UsersHeader({ total }: UsersHeaderProps) {
             Filter
           </button>
           <Link href={APP_ROUTES.USERS_NEW} className="inline-flex items-center justify-center rounded-[10px] bg-[#2c1a0e] px-4 py-2 text-sm font-semibold text-white">
-            Add User
+            Add Agent
           </Link>
         </div>
       ) : null}

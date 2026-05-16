@@ -28,7 +28,7 @@ public class UserServiceImpl implements UserService {
     public UsersResponse getUsers() {
         assertAdmin();
         List<UserListItemResponse> items = userRepository.findAll().stream()
-                .filter(user -> user.getRole() != Role.CLIENT)
+                .filter(user -> user.getRole() == Role.AGENT)
                 .map(this::toResponse)
                 .toList();
 
@@ -84,9 +84,9 @@ public class UserServiceImpl implements UserService {
 
     private String mapRole(Role role) {
         return switch (role) {
-            case ADMIN -> "Admin";
             case AGENT -> "Agent";
             case CLIENT -> "Client";
+            case ADMIN -> "Admin";
         };
     }
 
@@ -114,21 +114,19 @@ public class UserServiceImpl implements UserService {
         if (request.firstName == null || request.firstName.isBlank()) throw new BadRequestException("First name is required");
         if (request.lastName == null || request.lastName.isBlank()) throw new BadRequestException("Last name is required");
         if (request.email == null || request.email.isBlank()) throw new BadRequestException("Email is required");
-        if (request.role == null || request.role.isBlank()) throw new BadRequestException("Role is required");
         if (requirePassword && (request.password == null || request.password.isBlank())) {
             throw new BadRequestException("Password is required");
         }
     }
 
     private Role parseRole(String role) {
-        try {
-            if ("AGENT_SENIOR".equals(role) || "AGENT_JUNIOR".equals(role)) {
-                return Role.AGENT;
-            }
-            return Role.valueOf(role);
-        } catch (IllegalArgumentException ex) {
-            throw new BadRequestException("Invalid role");
+        if (role == null || role.isBlank()) {
+            return Role.AGENT;
         }
+        if ("AGENT".equals(role) || "AGENT_SENIOR".equals(role) || "AGENT_JUNIOR".equals(role)) {
+            return Role.AGENT;
+        }
+        throw new BadRequestException("Only agent accounts can be managed from the back-office");
     }
 
     private void assertAdmin() {

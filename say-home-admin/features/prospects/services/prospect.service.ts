@@ -4,6 +4,7 @@ import type {
   CreateProspectPropertyInteractionPayload,
   CreateProspectPayload,
   ProspectDetail,
+  ProspectPropertyDocumentType,
   ProspectListResponse,
   ProspectQueryParams,
   ProspectPropertyRecord,
@@ -26,6 +27,8 @@ function buildQuery(params: ProspectQueryParams) {
     searchParams.set("assignedAgent", params.assignedAgent);
   }
   if (params.source) searchParams.set("source", params.source);
+  if (params.page) searchParams.set("page", String(params.page));
+  if (params.pageSize) searchParams.set("pageSize", String(params.pageSize));
 
   const query = searchParams.toString();
   return query ? `?${query}` : "";
@@ -193,6 +196,33 @@ export const prospectService = {
       const error = await response.json().catch(() => null);
       throw new Error(error?.message ?? "Unable to delete property record");
     }
+  },
+
+  async uploadPropertyDocuments(
+    recordId: number,
+    type: ProspectPropertyDocumentType,
+    files: File[],
+  ) {
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append("files", file);
+    }
+
+    const response = await apiFetch(
+      `${API_BASE_URL}/prospect-properties/${recordId}/documents?type=${type}`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message ?? "Unable to upload property document");
+    }
+
+    const result = await response.json();
+    return result.data as ProspectPropertyRecord;
   },
 
   async deleteProspect(id: number) {

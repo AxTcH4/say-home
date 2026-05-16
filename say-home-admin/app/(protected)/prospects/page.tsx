@@ -9,6 +9,7 @@ type SearchParams = Promise<{
   status?: string;
   assignedAgent?: string;
   source?: string;
+  page?: string;
 }>;
 
 export default async function ProspectsPage(props: {
@@ -21,17 +22,33 @@ export default async function ProspectsPage(props: {
     status: searchParams.status,
     assignedAgent: searchParams.assignedAgent,
     source: searchParams.source,
+    page: Number(searchParams.page ?? "1"),
+    pageSize: 10,
   });
 
   return (
     <section className="space-y-6">
       <ProspectsHeader total={data.total} />
-      <ProspectFilters filters={data.filters} />
+      <ProspectFilters
+        filters={data.filters}
+        currentFilters={{
+          search: searchParams.search ?? "",
+          status: searchParams.status ?? "",
+          assignedAgent: searchParams.assignedAgent ?? "",
+          source: searchParams.source ?? "",
+        }}
+      />
       <ProspectsTable
         prospects={data.items}
         page={data.page}
         pageSize={data.pageSize}
         total={data.total}
+        searchParams={{
+          search: searchParams.search,
+          status: searchParams.status,
+          assignedAgent: searchParams.assignedAgent,
+          source: searchParams.source,
+        }}
       />
     </section>
   );

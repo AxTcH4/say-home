@@ -13,7 +13,6 @@ interface UsersTableProps {
 }
 
 function roleStyle(role: string) {
-  if (role === "Admin") return "bg-[#efe3ff] text-[#7a35c8]";
   return "bg-[#dfe9ff] text-[#2f66da]";
 }
 
@@ -35,7 +34,7 @@ export function UsersTable({ users, total }: UsersTableProps) {
             <tr>
               <th className="px-5 py-4 font-semibold">Agent</th>
               <th className="px-5 py-4 font-semibold">Email</th>
-              <th className="px-5 py-4 font-semibold">Role</th>
+              <th className="px-5 py-4 font-semibold">Type</th>
               <th className="px-5 py-4 font-semibold">Active Prospects</th>
               <th className="px-5 py-4 font-semibold">Status</th>
               {isAdmin ? <th className="px-5 py-4 font-semibold">Actions</th> : null}

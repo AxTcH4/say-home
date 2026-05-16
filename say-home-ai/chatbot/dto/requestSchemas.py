@@ -19,6 +19,7 @@ class HelpDeskAgentRequest(BaseModel):
     # user: Optional[dict] = None
     messageRequest: ChatMessageRequest
     appointments: Optional[list] = []
+    ownedProperties: Optional[list] = []
     # sessionId: Optional[int] = None
     @staticmethod
     def display(request: 'HelpDeskAgentRequest') -> str:

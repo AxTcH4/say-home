@@ -26,6 +26,23 @@ const defaultFilters = {
   maxPrice: "",
 };
 
+const PROPERTY_TYPE_OPTIONS = [
+  { value: "villa", label: "Villa" },
+  { value: "appartement", label: "Appartement" },
+  { value: "riad", label: "Riad" },
+  { value: "studio", label: "Studio" },
+];
+
+const PROPERTY_SECTEUR_OPTIONS = [
+  { value: "palmeraie", label: "Palmeraie" },
+  { value: "targa", label: "Targa" },
+  { value: "medina", label: "Medina" },
+  { value: "route-d-ourika", label: "Route d'Ourika" },
+  { value: "agdal", label: "Agdal" },
+  { value: "hivernage", label: "Hivernage" },
+  { value: "mabrouka", label: "Mabrouka" },
+];
+
 export default function PropertiesPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +59,7 @@ export default function PropertiesPage() {
     id: p.id,
     description: p.description,
     title: p.title,
+    type: p.type,
     secteur: p.secteur,
     medias: p.medias,
     price: `${p.price} MAD`,
@@ -179,7 +197,7 @@ export default function PropertiesPage() {
 
             <div className="grid gap-3 sm:grid-cols-3">
               <QuickStat label="Resultats visibles" value={resultsLabel} />
-              <QuickStat label="Secteurs suivis" value="Guéliz, Hivernage, Medina" />
+              <QuickStat label="Secteurs suivis" value="Palmeraie, Agdal, Hivernage" />
               <QuickStat label="Experience" value="Recherche rapide et claire" />
             </div>
           </div>
@@ -226,9 +244,11 @@ export default function PropertiesPage() {
                   className="w-full rounded-[2px] border border-[#d8d1c8] bg-[#fbfaf8] px-3 py-3 text-sm text-[#4a4038] outline-none"
                 >
                   <option value="">Selectionnez un type</option>
-                  <option value="villa">Villa</option>
-                  <option value="appartement">Appartement</option>
-                  <option value="riad">Riad</option>
+                  {PROPERTY_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </Field>
 
@@ -239,9 +259,11 @@ export default function PropertiesPage() {
                   className="w-full rounded-[2px] border border-[#d8d1c8] bg-[#fbfaf8] px-3 py-3 text-sm text-[#4a4038] outline-none"
                 >
                   <option value="">Selectionnez un secteur</option>
-                  <option value="gueliz">Gueliz</option>
-                  <option value="hivernage">Hivernage</option>
-                  <option value="medina">Medina</option>
+                  {PROPERTY_SECTEUR_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </Field>
 
@@ -286,8 +308,19 @@ export default function PropertiesPage() {
               </div>
 
               <div className="flex flex-wrap gap-2 text-xs font-medium text-[#6d6259]">
-                {filters.type && <FilterChip label={filters.type} />}
-                {filters.secteur && <FilterChip label={filters.secteur} />}
+                {filters.type && (
+                  <FilterChip
+                    label={PROPERTY_TYPE_OPTIONS.find((option) => option.value === filters.type)?.label ?? filters.type}
+                  />
+                )}
+                {filters.secteur && (
+                  <FilterChip
+                    label={
+                      PROPERTY_SECTEUR_OPTIONS.find((option) => option.value === filters.secteur)?.label ??
+                      filters.secteur
+                    }
+                  />
+                )}
                 {(filters.minPrice || filters.maxPrice) && (
                   <FilterChip
                     label={`${filters.minPrice || "0"} - ${filters.maxPrice || "∞"} MAD`}

@@ -4,6 +4,7 @@ export interface MeetingRequestItem {
   prospectName: string;
   city: string;
   budgetLabel: string;
+  requestKind: string;
   requestedDate: string;
   requestedTime: string;
   message: string;

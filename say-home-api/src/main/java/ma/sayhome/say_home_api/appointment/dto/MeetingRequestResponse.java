@@ -6,6 +6,7 @@ public record MeetingRequestResponse(
         String prospectName,
         String city,
         String budgetLabel,
+        String requestKind,
         String requestedDate,
         String requestedTime,
         String message,

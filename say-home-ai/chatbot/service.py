@@ -1,7 +1,7 @@
 from chatbot.agent.Agent import Agent
 from chatbot.dto.requestSchemas import HelpDeskAgentRequest
 
-
+ 
 class ChatbotService:
     def __init__(self, embedder, storage):
          
@@ -24,10 +24,9 @@ class ChatbotService:
                 "ville": data.messageRequest.session["prospect"].get("city"),
                 "user": data.messageRequest.session["prospect"]["user"],
                 "source": data.messageRequest.session["prospect"].get("source"),
-                "appointments": data.appointments,
                 "budget": data.messageRequest.session["prospect"].get("budget"),
-                "appointments": [apt for apt in data.messageRequest.appointments] if data.messageRequest.appointments else [],
-
+                "appointments": [apt for apt in data.appointments] if data.appointments else [],
+                "ownedProperties": [prop for prop in data.ownedProperties] if data.ownedProperties else [],
             }
         # return "ok"
         return self.agent.run(prompt, session_id, prospect)

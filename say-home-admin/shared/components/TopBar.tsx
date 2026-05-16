@@ -186,10 +186,6 @@ export default function TopBar({ isSearchOpened, setIsSearchOpened }: any) {
             )}
           </div>
 
-          <button className="w-fit px-6 py-[9px] text-sm bg-[#2C1A0E] text-white hover:scale-105 transition rounded-[1px]">
-            &#10010; Add New
-          </button>
-
           {/* Notifications dropdown */}
           {isNotificationsOpened && (
             <div className="absolute top-12 right-0 w-[320px] bg-white shadow-lg rounded-[2px] z-50 border border-gray-100">

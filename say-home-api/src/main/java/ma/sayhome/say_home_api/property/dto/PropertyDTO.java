@@ -5,7 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import ma.sayhome.say_home_api.user.dto.UserDTO;
 import ma.sayhome.say_home_api.property.Property;
+import ma.sayhome.say_home_api.shared.enums.PropertySecteur;
 import ma.sayhome.say_home_api.shared.enums.PropertyStatus;
+import ma.sayhome.say_home_api.shared.enums.PropertyType;
 
 import java.util.List;
 import lombok.Data;
@@ -17,11 +19,18 @@ public class PropertyDTO {
     private Integer id;
     private String title;
     private String description;
-    private String type;
-    private String secteur;
+    private PropertyType type;
+    private PropertySecteur secteur;
     private Float price;
     private Integer surface;
     private Integer rooms;
+    private Integer bathrooms;
+    private Boolean climatisation;
+    private Boolean piscine;
+    private Boolean jardin;
+    private Boolean garage;
+    private Boolean securite;
+    private Boolean systemeDomotiqueComplet;
     private PropertyStatus status;
     private UserDTO agent;
     private List<String> medias;
@@ -38,6 +47,13 @@ public class PropertyDTO {
         dto.setPrice(property.getPrice());
         dto.setSurface(property.getSurface());
         dto.setRooms(property.getRooms());
+        dto.setBathrooms(property.getBathrooms());
+        dto.setClimatisation(property.getClimatisation());
+        dto.setPiscine(property.getPiscine());
+        dto.setJardin(property.getJardin());
+        dto.setGarage(property.getGarage());
+        dto.setSecurite(property.getSecurite());
+        dto.setSystemeDomotiqueComplet(property.getSystemeDomotiqueComplet());
         dto.setStatus(property.getStatus());
         //dto.setAgent(property.getAgent());
         dto.setAgent(UserDTO.toDTO(property.getAgent()));
@@ -57,6 +73,13 @@ public class PropertyDTO {
         property.setPrice(propertyDTO.getPrice());
         property.setSurface(propertyDTO.getSurface());
         property.setRooms(propertyDTO.getRooms());
+        property.setBathrooms(propertyDTO.getBathrooms());
+        property.setClimatisation(propertyDTO.getClimatisation());
+        property.setPiscine(propertyDTO.getPiscine());
+        property.setJardin(propertyDTO.getJardin());
+        property.setGarage(propertyDTO.getGarage());
+        property.setSecurite(propertyDTO.getSecurite());
+        property.setSystemeDomotiqueComplet(propertyDTO.getSystemeDomotiqueComplet());
 
         return  property;
     }

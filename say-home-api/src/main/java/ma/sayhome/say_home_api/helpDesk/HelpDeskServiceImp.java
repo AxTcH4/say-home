@@ -16,6 +16,9 @@ import ma.sayhome.say_home_api.helpDesk.ticket.TicketRepository;
 import ma.sayhome.say_home_api.notification.NotificationService;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.prospect.ProspectRepository;
+import ma.sayhome.say_home_api.prospectProperty.ProspectPropertyRecord;
+import ma.sayhome.say_home_api.prospectProperty.ProspectPropertyRecordRepository;
+import ma.sayhome.say_home_api.shared.enums.ProspectPropertyStatus;
 import ma.sayhome.say_home_api.shared.enums.Role;
 import ma.sayhome.say_home_api.shared.enums.Sender;
 import ma.sayhome.say_home_api.shared.enums.TicketStatus;
@@ -61,6 +64,9 @@ public class HelpDeskServiceImp implements HelpDeskService {
     @Autowired
     private NotificationService notificationService;
 
+    @Autowired
+    private ProspectPropertyRecordRepository prospectPropertyRecordRepository;
+
     @Value("${ai.server.url}")
     private String aiServerUrl;
 
@@ -104,6 +110,13 @@ public class HelpDeskServiceImp implements HelpDeskService {
                     aptsToAgent.add(aptRequest);
                 }
                 agentRequest.setAppointments(aptsToAgent);
+                agentRequest.setOwnedProperties(
+                        prospectPropertyRecordRepository.findByProspectIdOrderByUpdatedAtDesc(prospect.getId()).stream()
+                                .filter(record -> record.getStatus() == ProspectPropertyStatus.BOUGHT
+                                        || record.getStatus() == ProspectPropertyStatus.RENTED)
+                                .map(this::toOwnedPropertyContext)
+                                .toList()
+                );
         }
 
         agentRequest.setMessageRequest(messageRequest);
@@ -124,6 +137,17 @@ public class HelpDeskServiceImp implements HelpDeskService {
         }
 
         return MessageResponse.toDTO(message);
+    }
+
+    private OwnedPropertyContextDTO toOwnedPropertyContext(ProspectPropertyRecord record) {
+        return new OwnedPropertyContextDTO(
+                record.getId(),
+                record.getProperty() != null ? record.getProperty().getId() : null,
+                record.getProperty() != null ? record.getProperty().getTitle() : null,
+                record.getProperty() != null && record.getProperty().getSecteur() != null ? record.getProperty().getSecteur().name() : null,
+                record.getProperty() != null && record.getProperty().getType() != null ? record.getProperty().getType().name() : null,
+                record.getStatus() != null ? record.getStatus().name() : null
+        );
     }
 
 //    @Async
@@ -336,6 +360,19 @@ public class HelpDeskServiceImp implements HelpDeskService {
         List<Ticket> tickets = ticketRepository.findAllByProspect(prospect);
         List<TicketDTO> results = new ArrayList<>();
         for (Ticket ticket : tickets) {
+            results.add(TicketDTO.toDTO(ticket));
+        }
+        return results;
+    }
+
+    public List<TicketDTO> getTicketsByAuthenticatedProspect(User authenticatedUser) {
+        Prospect prospect = prospectRepository.findByUser(authenticatedUser);
+        if (prospect == null) {
+            throw new ResourceNotFoundException("Prospect not found for authenticated user");
+        }
+
+        List<TicketDTO> results = new ArrayList<>();
+        for (Ticket ticket : ticketRepository.findAllByProspect(prospect)) {
             results.add(TicketDTO.toDTO(ticket));
         }
         return results;

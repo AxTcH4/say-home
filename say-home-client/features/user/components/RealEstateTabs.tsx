@@ -12,6 +12,9 @@ import type {
   RealEstateRecord,
 } from "../types/account.types";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+
 const tabs = [
   {
     key: "rented",
@@ -34,11 +37,11 @@ const tabs = [
     summaryKey: "boughtProperties",
   },
   {
-    key: "negotiating",
-    label: "Negociations",
-    title: "Mes negotiations",
-    description: "Retrouvez simplement vos rendez-vous et visites en cours.",
-    emptyTitle: "Aucune negotiation en cours",
+    key: "appointments",
+    label: "Rendez-vous",
+    title: "Mes rendez-vous",
+    description: "Retrouvez vos demandes de visite et l'etat de vos rendez-vous.",
+    emptyTitle: "Aucun rendez-vous pour le moment",
     emptyDescription:
       "Quand vous demanderez une visite, elle apparaitra ici avec son statut.",
     summaryKey: "negotiatingProperties",
@@ -55,8 +58,7 @@ export default function RealEstateTabs() {
   const activeCount = summary?.[activeTab.summaryKey] ?? 0;
   const activeRecords = realEstate.filter((record) => {
     if (activeKey === "bought") return record.relationStatus === "BOUGHT";
-    if (activeKey === "rented") return record.relationStatus === "RENTED";
-    return record.relationStatus === "NEGOTIATING";
+    return record.relationStatus === "RENTED";
   });
 
   return (
@@ -99,24 +101,8 @@ export default function RealEstateTabs() {
         </div>
       )}
 
-      {activeKey === "negotiating" ? (
-        activeRecords.length > 0 ? (
-          <div className="overflow-hidden rounded-[2px] border border-[#ded8d1] bg-white shadow-[0_14px_35px_rgba(0,0,0,0.08)]">
-            <SectionHeader
-              title={activeTab.title}
-              description={activeTab.description}
-              count={activeCount}
-              loading={loading}
-            />
-            <div className="space-y-4 px-8 py-10">
-              {activeRecords.map((record) => (
-                <RealEstateRecordCard key={record.id} record={record} />
-              ))}
-            </div>
-          </div>
-        ) : (
-          <MeetingRequestsPanel compact />
-        )
+      {activeKey === "appointments" ? (
+        <MeetingRequestsPanel compact />
       ) : (
         <div className="overflow-hidden rounded-[2px] border border-[#ded8d1] bg-white shadow-[0_14px_35px_rgba(0,0,0,0.08)]">
           <SectionHeader
@@ -198,6 +184,13 @@ function SectionHeader({
 
 function RealEstateRecordCard({ record }: { record: RealEstateRecord }) {
   const cover = record.medias?.[0] || "/placeholder.jpg";
+  const assignmentDocuments = record.documents.filter(
+    (document) =>
+      document.type === "BEFORE_SALE_DOCUMENT" ||
+      document.type === "BEFORE_RENTAL_DOCUMENT" ||
+      document.type === "SALE_DEED" ||
+      document.type === "LEASE_CONTRACT",
+  );
 
   return (
     <article className="overflow-hidden rounded-[2px] border border-[#ded8d1] bg-[#fbfaf8]">
@@ -247,29 +240,13 @@ function RealEstateRecordCard({ record }: { record: RealEstateRecord }) {
           </div>
 
           <div>
-            {record.expectedDocuments.length > 0 ? (
-              <div className="mb-5 rounded-[2px] border border-[#ded8d1] bg-white px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#88786c]">
-                  Documents attendus
-                </p>
-                <p className="mt-2 text-sm text-[#666666]">
-                  Voici les documents a preparer pour ce dossier.
-                </p>
-                <div className="mt-3 space-y-3">
-                  {record.expectedDocuments.map((document) => (
-                    <ExpectedDocumentItem key={document.type} document={document} />
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#88786c]">
               Documents
             </p>
-            {record.documents.length > 0 ? (
+            {assignmentDocuments.length > 0 ? (
               <div className="mt-3 flex flex-col gap-2">
-                {record.documents.map((document) => (
-                  <DocumentItem key={document.id} document={document} />
+                {assignmentDocuments.map((document) => (
+                  <FinalDocumentItem key={document.id} document={document} />
                 ))}
               </div>
             ) : (
@@ -316,6 +293,24 @@ function DocumentItem({ document }: { document: RealEstateDocument }) {
   );
 }
 
+function FinalDocumentItem({ document }: { document: RealEstateDocument }) {
+  const href = document.downloadPath
+    ? `${API_BASE_URL}${document.downloadPath.replace("/api", "")}`
+    : document.url;
+
+  return (
+    <a
+      href={href}
+      className="flex items-center justify-between rounded-[2px] border border-[#ded8d1] bg-white px-4 py-3 text-sm transition hover:border-[#2f1b10]"
+    >
+      <p className="font-semibold text-[#222222]">{formatDocumentType(document.type)}</p>
+      <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#2f1b10]">
+        Telecharger
+      </span>
+    </a>
+  );
+}
+
 function ExpectedDocumentItem({
   document,
 }: {
@@ -353,10 +348,10 @@ function formatRelationStatus(status: RealEstateRecord["relationStatus"]) {
       return "Achete";
     case "RENTED":
       return "Loue";
-    case "NEGOTIATING":
-      return "En negociation";
     case "FAVORITE":
       return "Favori";
+    case "NEGOTIATING":
+      return "En discussion";
     default:
       return status;
   }
@@ -364,6 +359,10 @@ function formatRelationStatus(status: RealEstateRecord["relationStatus"]) {
 
 function formatDocumentType(type: RealEstateDocumentType) {
   switch (type) {
+    case "BEFORE_SALE_DOCUMENT":
+      return "Document avant vente";
+    case "BEFORE_RENTAL_DOCUMENT":
+      return "Document avant location";
     case "SALE_DEED":
       return "Acte de vente";
     case "LAND_TITLE":

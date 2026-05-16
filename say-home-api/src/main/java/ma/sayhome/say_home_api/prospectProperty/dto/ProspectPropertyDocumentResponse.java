@@ -6,6 +6,7 @@ public record ProspectPropertyDocumentResponse(
         Integer id,
         String name,
         String url,
+        String downloadPath,
         String type,
         String uploadedAt
 ) {
@@ -14,6 +15,7 @@ public record ProspectPropertyDocumentResponse(
                 document.getId(),
                 document.getName(),
                 document.getUrl(),
+                "/api/prospect-properties/documents/" + document.getId() + "/download",
                 document.getType().name(),
                 uploadedAt
         );

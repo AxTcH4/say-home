@@ -1,6 +1,7 @@
 from langchain_core.tools import tool
 import httpx
 from dotenv import load_dotenv
+import threading
 
 import os
 
@@ -10,7 +11,8 @@ load_dotenv()
 def create_ticket(
     title: str,
     description: str,
-    prospect_id: int
+    prospect_id: int,
+    priority: str = "MEDIUM"
 ) -> dict:
 
     """Create a support ticket."""
@@ -28,7 +30,8 @@ def create_ticket(
             json={
                 "title": title,
                 "description": description,
-                "prospectId": prospect_id
+                "prospectId": prospect_id,
+                "priority": priority
             },
             timeout=10
         )
@@ -64,24 +67,44 @@ Titre: {ticket_title}
 <br/>
 Description: {ticket_description}
 """
-    response = httpx.post(
-        f"{os.environ.get('BACKEND_API_URL')}/helpdesk/tickets/comfirmation",
-        headers={ 
-            "X-Internal-Key": os.environ.get('INTERNAL_API_KEY'),
-        },
-        
-        json={
-            "subject": email_subject,
-            "greeting": email_greeting,
-            "body": email_content,
-            "footnote": email_footnote,
-            "email": email,
+
+    payload = {
+        "subject": email_subject,
+        "greeting": email_greeting,
+        "body": email_content,
+        "footnote": email_footnote,
+        "email": email,
+    }
+
+    headers = {
+        "X-Internal-Key": os.environ.get('INTERNAL_API_KEY'),
+    }
+
+    def _send_async():
+        try:
+            response = httpx.post(
+                f"{os.environ.get('BACKEND_API_URL')}/helpdesk/tickets/comfirmation",
+                headers=headers,
+                json=payload,
+                timeout=10,
+            )
+            response.raise_for_status()
+            print("ticket confirmation email sent")
+        except Exception as e:
+            print(f"send_email async error: {e}")
+
+    try:
+        threading.Thread(target=_send_async, daemon=True).start()
+        return {
+            "success": True,
+            "queued": True
         }
-    )
-
-    print (response)
-
-    return response.json()
+    except Exception as e:
+        print(f"send_email error: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 @tool
 def get_prospect_visit_requests(prospect_id: int):
@@ -198,7 +221,16 @@ def get_latest_active_ticket(prospect_id: int):
 
         response.raise_for_status()
 
-        return response.json()
+        raw = response.json()
+        data = raw.get("data") or []
+        latest_ticket = data[0] if isinstance(data, list) and data else None
+
+        return {
+            "success": raw.get("success", True),
+            "exists": latest_ticket is not None,
+            "data": latest_ticket,
+            "message": raw.get("message")
+        }
 
     except Exception as e:
 

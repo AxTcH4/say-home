@@ -25,6 +25,7 @@ export default function LatestProperties() {
           id: p.id,
           description: p.description || 'Location',
           medias: p.medias,
+          type: p.type,
           secteur: p.secteur,
           title: p.title,
           price: `${p.price} MAD`,

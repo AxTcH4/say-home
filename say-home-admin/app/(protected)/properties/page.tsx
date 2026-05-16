@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { propertyService } from "@/features/properties/services/propertyService";
+import { userService } from "@/features/users/services/user.service";
+import type { AdminUserItem } from "@/features/users/types/user.types";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { AxiosError } from "axios";
 import { toast } from "sonner";
@@ -21,15 +23,94 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const PAGE_SIZE = 5;
+const PROPERTY_TYPE_OPTIONS = [
+  { value: "RIAD", label: "Riad" },
+  { value: "VILLA", label: "Villa" },
+  { value: "APPARTEMENT", label: "Appartement" },
+  { value: "STUDIO", label: "Studio" },
+] as const;
+
+const PROPERTY_SECTEUR_OPTIONS = [
+  { value: "PALMERAIE", label: "Palmeraie" },
+  { value: "TARGA", label: "Targa" },
+  { value: "MEDINA", label: "Medina" },
+  { value: "ROUTE_D_OURIKA", label: "Route d'Ourika" },
+  { value: "AGDAL", label: "Agdal" },
+  { value: "HIVERNAGE", label: "Hivernage" },
+  { value: "MABROUKA", label: "Mabrouka" },
+] as const;
+
+const PROPERTY_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  PROPERTY_TYPE_OPTIONS.map((option) => [option.value, option.label]),
+);
+
+const PROPERTY_SECTEUR_LABELS: Record<string, string> = Object.fromEntries(
+  PROPERTY_SECTEUR_OPTIONS.map((option) => [option.value, option.label]),
+);
+
+PROPERTY_SECTEUR_LABELS.GUELIZ = "Gueliz";
+
+function isVillaOrRiad(type?: string) {
+  return type === "VILLA" || type === "RIAD";
+}
+
+function isStudio(type?: string) {
+  return type === "STUDIO";
+}
+
+function AmenityToggle({
+  checked,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  label: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm text-[#1a1a1a]">
+      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+      <span>{label}</span>
+    </label>
+  );
+}
+
+function PropertyAmenitiesSummary({ property }: { property: any }) {
+  const amenities = [
+    property.climatisation ? "Climatisation" : null,
+    isVillaOrRiad(property.type) && property.piscine ? "Piscine" : null,
+    isVillaOrRiad(property.type) && property.jardin ? "Jardin" : null,
+    !isStudio(property.type) && property.garage ? "Garage" : null,
+    property.securite ? "Securite" : null,
+    property.systemeDomotiqueComplet ? "Systeme domotique complet" : null,
+  ].filter(Boolean);
+
+  if (amenities.length === 0) {
+    return <p className="mt-1 text-[#1a1a1a]">Aucun equipement specifique</p>;
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      {amenities.map((amenity) => (
+        <span
+          key={String(amenity)}
+          className="rounded-full border border-[#e0d7cf] bg-[#faf7f2] px-3 py-1 text-xs font-medium text-[#5f4a3c]"
+        >
+          {amenity}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 function AddPropertyModal({
   onClose,
   onAdded,
-  agentName,
+  agents,
 }: {
   onClose: () => void;
   onAdded: () => void;
-  agentName: string;
+  agents: AdminUserItem[];
 }) {
   const [form, setForm] = useState({
     title: "",
@@ -39,7 +120,15 @@ function AddPropertyModal({
     price: "",
     surface: "",
     rooms: "",
+    bathrooms: "",
     status: "AVAILABLE",
+    climatisation: false,
+    piscine: false,
+    jardin: false,
+    garage: false,
+    securite: false,
+    systemeDomotiqueComplet: false,
+    agentName: "",
   });
   const [files, setFiles] = useState<FileList | null>(null);
   const [saving, setSaving] = useState(false);
@@ -67,7 +156,7 @@ function AddPropertyModal({
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!form.title || !form.price || !form.surface || !form.rooms) {
+    if (!form.title || !form.type || !form.secteur || !form.price || !form.surface || !form.rooms || !form.bathrooms) {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -87,8 +176,15 @@ function AddPropertyModal({
         price: parseFloat(form.price),
         surface: parseInt(form.surface, 10),
         rooms: parseInt(form.rooms, 10),
+        bathrooms: parseInt(form.bathrooms, 10),
         status: form.status,
-        agentName,
+        climatisation: form.climatisation,
+        piscine: isVillaOrRiad(form.type) ? form.piscine : false,
+        jardin: isVillaOrRiad(form.type) ? form.jardin : false,
+        garage: isStudio(form.type) ? false : form.garage,
+        securite: form.securite,
+        systemeDomotiqueComplet: form.systemeDomotiqueComplet,
+        agentName: form.agentName || undefined,
       };
 
       fd.append(
@@ -151,6 +247,22 @@ function AddPropertyModal({
               />
             </div>
 
+            <div className="col-span-2">
+              <label className="mb-1 block text-xs text-gray-500">Agent assigne</label>
+              <select
+                className="w-full rounded border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#2C1A0E]"
+                value={form.agentName}
+                onChange={(e) => set("agentName", e.target.value)}
+              >
+                <option value="">Aucun agent pour le moment</option>
+                {agents.map((agent) => (
+                  <option key={agent.id} value={agent.fullName}>
+                    {agent.fullName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="mb-1 block text-xs text-gray-500">Type</label>
               <select
@@ -159,9 +271,11 @@ function AddPropertyModal({
                 onChange={(e) => set("type", e.target.value)}
               >
                 <option value="">Selectionner</option>
-                <option value="villa">Villa</option>
-                <option value="appartement">Appartement</option>
-                <option value="riad">Riad</option>
+                {PROPERTY_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -173,9 +287,11 @@ function AddPropertyModal({
                 onChange={(e) => set("secteur", e.target.value)}
               >
                 <option value="">Selectionner</option>
-                <option value="gueliz">Gueliz</option>
-                <option value="hivernage">Hivernage</option>
-                <option value="medina">Medina</option>
+                {PROPERTY_SECTEUR_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -216,6 +332,18 @@ function AddPropertyModal({
             </div>
 
             <div>
+              <label className="mb-1 block text-xs text-gray-500">Salles de bain *</label>
+              <input
+                type="number"
+                min={0}
+                className="w-full rounded border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#2C1A0E]"
+                value={form.bathrooms}
+                onChange={(e) => set("bathrooms", e.target.value)}
+                placeholder="2"
+              />
+            </div>
+
+            <div>
               <label className="mb-1 block text-xs text-gray-500">Statut</label>
               <select
                 className="w-full rounded border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#2C1A0E]"
@@ -226,6 +354,50 @@ function AddPropertyModal({
                 <option value="RESERVED">Reserved</option>
                 <option value="SOLD">Sold</option>
               </select>
+            </div>
+
+            <div className="col-span-2">
+              <label className="mb-2 block text-xs text-gray-500">Equipements</label>
+              <div className="grid grid-cols-2 gap-3">
+                <AmenityToggle
+                  label="Climatisation"
+                  checked={form.climatisation}
+                  onChange={(checked) => setForm((current) => ({ ...current, climatisation: checked }))}
+                />
+                <AmenityToggle
+                  label="Securite"
+                  checked={form.securite}
+                  onChange={(checked) => setForm((current) => ({ ...current, securite: checked }))}
+                />
+                <AmenityToggle
+                  label="Systeme domotique complet"
+                  checked={form.systemeDomotiqueComplet}
+                  onChange={(checked) =>
+                    setForm((current) => ({ ...current, systemeDomotiqueComplet: checked }))
+                  }
+                />
+                {!isStudio(form.type) ? (
+                  <AmenityToggle
+                    label="Garage"
+                    checked={form.garage}
+                    onChange={(checked) => setForm((current) => ({ ...current, garage: checked }))}
+                  />
+                ) : null}
+                {isVillaOrRiad(form.type) ? (
+                  <>
+                    <AmenityToggle
+                      label="Piscine"
+                      checked={form.piscine}
+                      onChange={(checked) => setForm((current) => ({ ...current, piscine: checked }))}
+                    />
+                    <AmenityToggle
+                      label="Jardin"
+                      checked={form.jardin}
+                      onChange={(checked) => setForm((current) => ({ ...current, jardin: checked }))}
+                    />
+                  </>
+                ) : null}
+              </div>
             </div>
 
             <div className="col-span-2">
@@ -310,13 +482,13 @@ function PropertyDetailsModal({
             <div>
               <p className="text-gray-400">City</p>
               <p className="mt-1 font-medium capitalize text-[#1a1a1a]">
-                {property.secteur ?? "-"}
+                {PROPERTY_SECTEUR_LABELS[property.secteur] ?? property.secteur ?? "-"}
               </p>
             </div>
             <div>
               <p className="text-gray-400">Type</p>
               <p className="mt-1 font-medium capitalize text-[#1a1a1a]">
-                {property.type ?? "-"}
+                {PROPERTY_TYPE_LABELS[property.type] ?? property.type ?? "-"}
               </p>
             </div>
             <div>
@@ -336,10 +508,18 @@ function PropertyDetailsModal({
               <p className="mt-1 font-medium text-[#1a1a1a]">{property.rooms}</p>
             </div>
             <div>
+              <p className="text-gray-400">Bathrooms</p>
+              <p className="mt-1 font-medium text-[#1a1a1a]">{property.bathrooms ?? "-"}</p>
+            </div>
+            <div>
               <p className="text-gray-400">Status</p>
               <p className="mt-1 font-medium text-[#1a1a1a]">
                 {STATUS_LABELS[property.status] ?? property.status}
               </p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-gray-400">Equipements</p>
+              <PropertyAmenitiesSummary property={property} />
             </div>
             <div className="col-span-2">
               <p className="text-gray-400">Agent</p>
@@ -389,7 +569,14 @@ function EditPropertyModal({
     price: String(property.price ?? ""),
     surface: String(property.surface ?? ""),
     rooms: String(property.rooms ?? ""),
+    bathrooms: String(property.bathrooms ?? ""),
     status: property.status ?? "AVAILABLE",
+    climatisation: Boolean(property.climatisation),
+    piscine: Boolean(property.piscine),
+    jardin: Boolean(property.jardin),
+    garage: Boolean(property.garage),
+    securite: Boolean(property.securite),
+    systemeDomotiqueComplet: Boolean(property.systemeDomotiqueComplet),
   });
   const [saving, setSaving] = useState(false);
 
@@ -398,7 +585,7 @@ function EditPropertyModal({
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!form.title || !form.price || !form.surface || !form.rooms) {
+    if (!form.title || !form.type || !form.secteur || !form.price || !form.surface || !form.rooms || !form.bathrooms) {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -413,7 +600,14 @@ function EditPropertyModal({
         price: parseFloat(form.price),
         surface: parseInt(form.surface, 10),
         rooms: parseInt(form.rooms, 10),
+        bathrooms: parseInt(form.bathrooms, 10),
         status: form.status,
+        climatisation: form.climatisation,
+        piscine: isVillaOrRiad(form.type) ? form.piscine : false,
+        jardin: isVillaOrRiad(form.type) ? form.jardin : false,
+        garage: isStudio(form.type) ? false : form.garage,
+        securite: form.securite,
+        systemeDomotiqueComplet: form.systemeDomotiqueComplet,
       });
       toast.success("Propriete modifiee avec succes");
       await onUpdated();
@@ -467,9 +661,11 @@ function EditPropertyModal({
                 onChange={(e) => set("type", e.target.value)}
               >
                 <option value="">Selectionner</option>
-                <option value="villa">Villa</option>
-                <option value="appartement">Appartement</option>
-                <option value="riad">Riad</option>
+                {PROPERTY_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -481,9 +677,11 @@ function EditPropertyModal({
                 onChange={(e) => set("secteur", e.target.value)}
               >
                 <option value="">Selectionner</option>
-                <option value="gueliz">Gueliz</option>
-                <option value="hivernage">Hivernage</option>
-                <option value="medina">Medina</option>
+                {PROPERTY_SECTEUR_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -521,6 +719,17 @@ function EditPropertyModal({
             </div>
 
             <div>
+              <label className="mb-1 block text-xs text-gray-500">Salles de bain *</label>
+              <input
+                type="number"
+                min={0}
+                className="w-full rounded border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#2C1A0E]"
+                value={form.bathrooms}
+                onChange={(e) => set("bathrooms", e.target.value)}
+              />
+            </div>
+
+            <div>
               <label className="mb-1 block text-xs text-gray-500">Statut</label>
               <select
                 className="w-full rounded border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#2C1A0E]"
@@ -531,6 +740,50 @@ function EditPropertyModal({
                 <option value="RESERVED">Reserved</option>
                 <option value="SOLD">Sold</option>
               </select>
+            </div>
+
+            <div className="col-span-2">
+              <label className="mb-2 block text-xs text-gray-500">Equipements</label>
+              <div className="grid grid-cols-2 gap-3">
+                <AmenityToggle
+                  label="Climatisation"
+                  checked={form.climatisation}
+                  onChange={(checked) => setForm((current) => ({ ...current, climatisation: checked }))}
+                />
+                <AmenityToggle
+                  label="Securite"
+                  checked={form.securite}
+                  onChange={(checked) => setForm((current) => ({ ...current, securite: checked }))}
+                />
+                <AmenityToggle
+                  label="Systeme domotique complet"
+                  checked={form.systemeDomotiqueComplet}
+                  onChange={(checked) =>
+                    setForm((current) => ({ ...current, systemeDomotiqueComplet: checked }))
+                  }
+                />
+                {!isStudio(form.type) ? (
+                  <AmenityToggle
+                    label="Garage"
+                    checked={form.garage}
+                    onChange={(checked) => setForm((current) => ({ ...current, garage: checked }))}
+                  />
+                ) : null}
+                {isVillaOrRiad(form.type) ? (
+                  <>
+                    <AmenityToggle
+                      label="Piscine"
+                      checked={form.piscine}
+                      onChange={(checked) => setForm((current) => ({ ...current, piscine: checked }))}
+                    />
+                    <AmenityToggle
+                      label="Jardin"
+                      checked={form.jardin}
+                      onChange={(checked) => setForm((current) => ({ ...current, jardin: checked }))}
+                    />
+                  </>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -690,8 +943,9 @@ function PropertyImagesModal({
 }
 
 export default function Properties() {
-  const { user } = useAuth();
+  useAuth();
   const [properties, setProperties] = useState<any[]>([]);
+  const [agents, setAgents] = useState<AdminUserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any | null>(null);
@@ -718,6 +972,21 @@ export default function Properties() {
 
   useEffect(() => {
     load();
+  }, []);
+
+  useEffect(() => {
+    const loadAgents = async () => {
+      try {
+        const res = await userService.getUsers();
+        setAgents(
+          res.items.filter((item) => item.role?.toUpperCase?.() === "AGENT"),
+        );
+      } catch {
+        toast.error("Impossible de charger la liste des agents");
+      }
+    };
+
+    loadAgents();
   }, []);
 
   const handleView = async (id: number) => {
@@ -768,11 +1037,10 @@ export default function Properties() {
     const matchSearch =
       !search ||
       property.title?.toLowerCase().includes(search.toLowerCase()) ||
-      property.secteur?.toLowerCase().includes(search.toLowerCase());
-    const matchType = filterType === "All" || property.type === filterType.toLowerCase();
+      PROPERTY_SECTEUR_LABELS[property.secteur]?.toLowerCase().includes(search.toLowerCase());
+    const matchType = filterType === "All" || property.type === filterType;
     const matchSecteur =
-      filterSecteur === "All" ||
-      property.secteur?.toLowerCase() === filterSecteur.toLowerCase();
+      filterSecteur === "All" || property.secteur === filterSecteur;
     const matchStatus = filterStatus === "All" || property.status === filterStatus;
     return matchSearch && matchType && matchSecteur && matchStatus;
   });
@@ -793,7 +1061,7 @@ export default function Properties() {
         <AddPropertyModal
           onClose={() => setShowModal(false)}
           onAdded={load}
-          agentName={`${user?.firstName ?? ""} ${user?.lastName ?? ""}`}
+          agents={agents}
         />
       )}
 
@@ -857,9 +1125,11 @@ export default function Properties() {
             className="rounded border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#2C1A0E]"
           >
             <option value="All">City: All</option>
-            <option value="gueliz">Gueliz</option>
-            <option value="hivernage">Hivernage</option>
-            <option value="medina">Medina</option>
+            {PROPERTY_SECTEUR_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
 
           <select
@@ -868,9 +1138,11 @@ export default function Properties() {
             className="rounded border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#2C1A0E]"
           >
             <option value="All">Property Type: All</option>
-            <option value="villa">Villa</option>
-            <option value="appartement">Appartement</option>
-            <option value="riad">Riad</option>
+            {PROPERTY_TYPE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
 
           <select
@@ -958,8 +1230,11 @@ export default function Properties() {
                       ID: PRE-{String(property.id).padStart(4, "0")}
                     </p>
                   </td>
-                  <td className="px-4 py-3 capitalize text-gray-600">
-                    {property.secteur ?? "-"}
+                  <td className="px-4 py-3 text-gray-600">
+                    <p>{PROPERTY_SECTEUR_LABELS[property.secteur] ?? property.secteur ?? "-"}</p>
+                    <p className="text-xs text-gray-400">
+                      {PROPERTY_TYPE_LABELS[property.type] ?? property.type ?? "-"}
+                    </p>
                   </td>
                   <td className="px-4 py-3 font-semibold text-[#1a1a1a]">
                     {property.price?.toLocaleString("fr-MA")} MAD

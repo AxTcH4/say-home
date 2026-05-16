@@ -5,8 +5,10 @@ import ma.sayhome.say_home_api.property.dto.PropertyReqDTO;
 import ma.sayhome.say_home_api.shared.ApiResponse;
 import ma.sayhome.say_home_api.shared.ControllerBase;
 import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
+import ma.sayhome.say_home_api.shared.enums.PropertyType;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,8 +39,12 @@ public class PropertyController extends ControllerBase {
 
     @GetMapping("/latest")
     public ResponseEntity<ApiResponse<List<PropertyDTO>>> getLatestProperties(@RequestParam(required = false) String type) {
-        List<Property> properties = (type != null && !type.isEmpty())
-                ? propertyRepository.findByTypeOrderByCreatedAtDesc(type)
+        PropertyType propertyType = (type != null && !type.isBlank())
+                ? PropertyType.fromStorageValue(type)
+                : null;
+
+        List<Property> properties = propertyType != null
+                ? propertyRepository.findByTypeOrderByCreatedAtDesc(propertyType)
                 : propertyRepository.findTop3ByOrderByCreatedAtDesc();
 
         List<PropertyDTO> results = new ArrayList<>();
@@ -79,6 +85,7 @@ public class PropertyController extends ControllerBase {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PropertyDTO>> createProperty(
             @RequestPart("property") PropertyReqDTO property,
             @RequestPart("files") List<MultipartFile> files
@@ -87,6 +94,7 @@ public class PropertyController extends ControllerBase {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PropertyDTO>> updateProperty(
             @PathVariable Integer id,
             @RequestBody PropertyReqDTO property
@@ -95,6 +103,7 @@ public class PropertyController extends ControllerBase {
     }
 
     @PostMapping(path = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PropertyDTO>> replacePropertyImages(
             @PathVariable Integer id,
             @RequestPart("files") List<MultipartFile> files
@@ -103,6 +112,7 @@ public class PropertyController extends ControllerBase {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteProperty(@PathVariable Integer id) {
         propertyService.delete(id);
         return ok(null);

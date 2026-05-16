@@ -20,6 +20,8 @@ public record ProspectDetailResponse(
         String createdAt,
         String notes,
         String temperature,
+        LeadScoreMetricsResponse leadScoreMetrics,
+        List<ProspectPropertyInsightResponse> propertyInsights,
         List<ProspectInteractionResponse> interactions,
         List<ProspectMeetingResponse> meetings,
         List<ProspectFeedbackResponse> feedback,

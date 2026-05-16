@@ -13,14 +13,14 @@ class MessageAnalysisOutput(BaseModel):
 
     intent: Literal[
         "support",
-        "info_request",
         "appointment_action",
-        "general"
+        "general",
+        "out_of_scope"
     ]
 class TicketOutput(BaseModel):
     title: str
     description: str
-    # priority: Literal["HIGH", "MEDIUM", "LOW"]
+    priority: Literal["HIGH", "MEDIUM", "LOW"]
     # createdAt: str
     # status: str
 
@@ -28,7 +28,7 @@ class TicketOutput(BaseModel):
 class TonaliteOutput(BaseModel):
     tone: Literal["angry", "calm"]
     clarity: Literal["clear", "vague"] 
-    requests_info: bool
+    requests_info: Literal[True, False, "true", "false"]
 
 class SatisfactionOutput(BaseModel):
     satisfied: bool

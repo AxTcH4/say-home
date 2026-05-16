@@ -4,6 +4,7 @@ import ma.sayhome.say_home_api.dashboard.dto.DashboardProfileResponse;
 import ma.sayhome.say_home_api.dashboard.dto.DashboardProfileUpdateRequest;
 import ma.sayhome.say_home_api.dashboard.dto.DashboardStatsResponse;
 import ma.sayhome.say_home_api.dashboard.dto.DashboardSummaryResponse;
+import ma.sayhome.say_home_api.appointment.AppointmentRepository;
 import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.user.UserRepository;
 import ma.sayhome.say_home_api.helpDesk.ticket.Ticket;
@@ -18,6 +19,7 @@ import ma.sayhome.say_home_api.prospectProperty.ProspectPropertyRecordService;
 import ma.sayhome.say_home_api.prospectProperty.dto.ProspectPropertyRecordResponse;
 import ma.sayhome.say_home_api.shared.enums.PropertyStatus;
 import ma.sayhome.say_home_api.shared.enums.ProspectPropertyStatus;
+import ma.sayhome.say_home_api.shared.enums.AppointmentStatus;
 import ma.sayhome.say_home_api.shared.enums.TicketStatus;
 import ma.sayhome.say_home_api.shared.exceptions.BadRequestException;
 import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
@@ -38,6 +40,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final PropertyRepository propertyRepository;
     private final TicketRepository ticketRepository;
     private final LeadScoreRepository leadScoreRepository;
+    private final AppointmentRepository appointmentRepository;
     private final ProspectPropertyRecordRepository prospectPropertyRecordRepository;
     private final ProspectPropertyRecordService prospectPropertyRecordService;
 
@@ -46,6 +49,7 @@ public class DashboardServiceImpl implements DashboardService {
                                 PropertyRepository propertyRepository,
                                 TicketRepository ticketRepository,
                                 LeadScoreRepository leadScoreRepository,
+                                AppointmentRepository appointmentRepository,
                                 ProspectPropertyRecordRepository prospectPropertyRecordRepository,
                                 ProspectPropertyRecordService prospectPropertyRecordService) {
         this.userRepository = userRepository;
@@ -53,6 +57,7 @@ public class DashboardServiceImpl implements DashboardService {
         this.propertyRepository = propertyRepository;
         this.ticketRepository = ticketRepository;
         this.leadScoreRepository = leadScoreRepository;
+        this.appointmentRepository = appointmentRepository;
         this.prospectPropertyRecordRepository = prospectPropertyRecordRepository;
         this.prospectPropertyRecordService = prospectPropertyRecordService;
     }
@@ -105,10 +110,23 @@ public class DashboardServiceImpl implements DashboardService {
             return new DashboardSummaryResponse(0, 0, 0, 0);
         }
 
+        long negotiatingProperties = prospectPropertyRecordRepository.countByProspectIdAndStatus(
+                prospect.getId(),
+                ProspectPropertyStatus.NEGOTIATING
+        );
+        long activeMeetings = appointmentRepository.findByProspectUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .filter(appointment -> appointment.getStatus() == AppointmentStatus.REQUESTED
+                        || appointment.getStatus() == AppointmentStatus.SCHEDULED)
+                .count();
+        long negotiatingSummaryCount = negotiatingProperties > 0
+                ? negotiatingProperties
+                : activeMeetings;
+
         return new DashboardSummaryResponse(
                 prospectPropertyRecordRepository.countByProspectIdAndStatus(prospect.getId(), ProspectPropertyStatus.BOUGHT),
                 prospectPropertyRecordRepository.countByProspectIdAndStatus(prospect.getId(), ProspectPropertyStatus.RENTED),
-                prospectPropertyRecordRepository.countByProspectIdAndStatus(prospect.getId(), ProspectPropertyStatus.NEGOTIATING),
+                negotiatingSummaryCount,
                 prospect.getTickets() != null ? prospect.getTickets().size() : 0
         );
     }

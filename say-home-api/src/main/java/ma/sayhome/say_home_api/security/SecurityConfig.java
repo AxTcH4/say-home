@@ -42,6 +42,9 @@ public class SecurityConfig {
                                 "/api/auth/reset-password",
                                 "/api/contact"
                         ).permitAll()
+                        .requestMatchers(
+                                "/api/feedback/*"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/properties",
                                 "/api/properties/latest",

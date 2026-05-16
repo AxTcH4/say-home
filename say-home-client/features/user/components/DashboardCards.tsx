@@ -25,7 +25,7 @@ export default function DashboardCards() {
     {
       title: "Mes biens",
       eyebrow: "Immobilier",
-      description: "Retrouvez vos locations, achats et negotiations.",
+      description: "Retrouvez vos locations, achats et rendez-vous.",
       value: loading
         ? "..."
         : `${(summary?.rentedProperties ?? 0) + (summary?.boughtProperties ?? 0) + (summary?.negotiatingProperties ?? 0)} suivi`,

@@ -47,6 +47,43 @@ const statusCopy: Record<VisitRequestStatus, { label: string; classes: string }>
   },
 };
 
+const TYPE_LABELS: Record<string, string> = {
+  RIAD: "Riad",
+  VILLA: "Villa",
+  APPARTEMENT: "Appartement",
+  STUDIO: "Studio",
+};
+
+const SECTEUR_LABELS: Record<string, string> = {
+  GUELIZ: "Gueliz",
+  PALMERAIE: "Palmeraie",
+  TARGA: "Targa",
+  MEDINA: "Medina",
+  ROUTE_D_OURIKA: "Route d'Ourika",
+  AGDAL: "Agdal",
+  HIVERNAGE: "Hivernage",
+  MABROUKA: "Mabrouka",
+};
+
+function isVillaOrRiad(type?: string) {
+  return type === "VILLA" || type === "RIAD";
+}
+
+function isStudio(type?: string) {
+  return type === "STUDIO";
+}
+
+function getAmenities(property: any) {
+  return [
+    property.climatisation ? "Climatisation" : null,
+    isVillaOrRiad(property.type) && property.piscine ? "Piscine" : null,
+    isVillaOrRiad(property.type) && property.jardin ? "Jardin" : null,
+    !isStudio(property.type) && property.garage ? "Garage" : null,
+    property.securite ? "Securite" : null,
+    property.systemeDomotiqueComplet ? "Systeme domotique complet" : null,
+  ].filter(Boolean);
+}
+
 export default function PropertyDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -191,7 +228,7 @@ export default function PropertyDetailPage() {
                 <h1 className="text-3xl font-semibold text-gray-900">{property.title}</h1>
                 <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
                   <MapPin size={15} />
-                  <span>{property.secteur || "Marrakech, Maroc"}</span>
+                  <span>{(SECTEUR_LABELS[property.secteur] ?? property.secteur) || "Marrakech, Maroc"}</span>
                 </div>
               </div>
               <p className="text-2xl font-bold text-gray-900">{property.price} MAD</p>
@@ -199,8 +236,9 @@ export default function PropertyDetailPage() {
 
             <div className="my-8 flex flex-wrap gap-8 border-y border-gray-100 py-5">
               <Metric icon="/chambres.svg" label={`${property.rooms} chambres`} />
-              <Metric icon="/shower.svg" label="4 salles de bain" />
+              <Metric icon="/shower.svg" label={`${property.bathrooms ?? 0} salles de bain`} />
               <Metric icon="/surface.svg" label={`${property.surface} m2`} />
+              <Metric icon="/location.svg" label={TYPE_LABELS[property.type] ?? property.type ?? "Bien"} />
             </div>
 
             <div className="mb-8">
@@ -213,19 +251,16 @@ export default function PropertyDetailPage() {
             <div className="mb-8">
               <h2 className="mb-3 text-lg font-semibold text-gray-900">Equipements & caracteristiques</h2>
               <div className="grid gap-3 md:grid-cols-2">
-                {[
-                  "Climatisation reversible",
-                  "Piscine a debordement chauffee",
-                  "Systeme domotique complet",
-                  "Cave a vin climatisee",
-                  "Salle de sport privee",
-                  "Securite 24/7 et alarme",
-                ].map((item) => (
-                  <div key={item} className="flex items-center gap-2 text-sm text-gray-600">
-                    <span className="text-gray-400">•</span>
-                    <span>{item}</span>
-                  </div>
-                ))}
+                {getAmenities(property).length > 0 ? (
+                  getAmenities(property).map((item) => (
+                    <div key={item} className="flex items-center gap-2 text-sm text-gray-600">
+                      <span className="text-gray-400">-</span>
+                      <span>{String(item)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">Aucun equipement specifique renseigne pour ce bien.</p>
+                )}
               </div>
             </div>
           </div>
