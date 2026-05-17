@@ -61,7 +61,7 @@ export const mockProspectsResponse: ProspectListResponse = {
   ],
 };
 
-export const mockProspectDetails: Record<number, ProspectDetail> = {
+export const mockProspectDetails = {
   1: {
     id: 1,
     fullName: "Lando Norris",
@@ -86,8 +86,15 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
       { id: 1, type: "Visite", date: "2026-04-28", time: "10:30", status: "Scheduled" },
       { id: 2, type: "Call", date: "2026-04-30", time: "15:00", status: "Planned" },
     ],
-    feedback: [
-      { id: 1, date: "2026-04-18", satisfaction: "High", comment: "Tres interesse par les biens avec terrasse et parking." },
+    wishes: [
+      {
+        id: 1,
+        date: "2026-04-18",
+        source: "FORM",
+        submitted: true,
+        title: "Souhait renseigne par formulaire",
+        summary: "Appartement | Prix: 450000 - 650000 MAD | Chambres: 2 - 4",
+      },
     ],
     propertyRecords: [
       {
@@ -172,7 +179,7 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
     meetings: [
       { id: 1, type: "Call", date: "2026-04-29", time: "12:00", status: "Scheduled" },
     ],
-    feedback: [],
+    wishes: [],
     propertyRecords: [
       {
         id: 201,
@@ -234,7 +241,7 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
     temperature: "COLD",
     interactions: [],
     meetings: [],
-    feedback: [],
+    wishes: [],
     propertyRecords: [],
   },
   4: {
@@ -259,8 +266,15 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
     meetings: [
       { id: 1, type: "Visite", date: "2026-05-02", time: "11:15", status: "Scheduled" },
     ],
-    feedback: [
-      { id: 1, date: "2026-04-19", satisfaction: "Very High", comment: "Souhaite des dossiers complets et une reactivite maximale." },
+    wishes: [
+      {
+        id: 1,
+        date: "2026-04-19",
+        source: "AGREEMENT",
+        submitted: true,
+        title: "Accord apres visite - Residence Cap Spartel",
+        summary: "Prix: 31500 - 38500 MAD | Surface: 90 - 110 m2 | Securite",
+      },
     ],
     propertyRecords: [
       {
@@ -305,4 +319,4 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
       },
     ],
   },
-};
+} as unknown as Record<number, ProspectDetail>;

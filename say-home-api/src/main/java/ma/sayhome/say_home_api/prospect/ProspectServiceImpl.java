@@ -1,7 +1,6 @@
 package ma.sayhome.say_home_api.prospect;
 
 import ma.sayhome.say_home_api.appointment.Appointment;
-import ma.sayhome.say_home_api.feedback.ProspectFeedbackService;
 import ma.sayhome.say_home_api.leadScore.LeadScoreService;
 import ma.sayhome.say_home_api.leadScore.LeadScoreSummary;
 import ma.sayhome.say_home_api.pipeline.PipelineStage;
@@ -10,7 +9,6 @@ import ma.sayhome.say_home_api.prospect.dto.CreateProspectInteractionRequest;
 import ma.sayhome.say_home_api.prospect.dto.CreateProspectRequest;
 import ma.sayhome.say_home_api.prospect.dto.LeadScoreMetricsResponse;
 import ma.sayhome.say_home_api.prospect.dto.ProspectDetailResponse;
-import ma.sayhome.say_home_api.prospect.dto.ProspectFeedbackResponse;
 import ma.sayhome.say_home_api.prospect.dto.ProspectFiltersResponse;
 import ma.sayhome.say_home_api.prospect.dto.ProspectInteractionResponse;
 import ma.sayhome.say_home_api.prospect.dto.ProspectListItemResponse;
@@ -26,6 +24,7 @@ import ma.sayhome.say_home_api.shared.enums.ProspectStatus;
 import ma.sayhome.say_home_api.shared.enums.Role;
 import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.user.UserRepository;
+import ma.sayhome.say_home_api.wish.WantedPropertyService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -49,7 +48,7 @@ public class ProspectServiceImpl implements ProspectService {
     private final ProspectInteractionRepository prospectInteractionRepository;
     private final ProspectPropertyRecordService prospectPropertyRecordService;
     private final LeadScoreService leadScoreService;
-    private final ProspectFeedbackService feedbackService;
+    private final WantedPropertyService wantedPropertyService;
 
     public ProspectServiceImpl(
             ProspectRepository prospectRepository,
@@ -58,7 +57,7 @@ public class ProspectServiceImpl implements ProspectService {
             ProspectInteractionRepository prospectInteractionRepository,
             ProspectPropertyRecordService prospectPropertyRecordService,
             LeadScoreService leadScoreService,
-            ProspectFeedbackService feedbackService
+            WantedPropertyService wantedPropertyService
     ) {
         this.prospectRepository = prospectRepository;
         this.userRepository = userRepository;
@@ -66,7 +65,7 @@ public class ProspectServiceImpl implements ProspectService {
         this.prospectInteractionRepository = prospectInteractionRepository;
         this.prospectPropertyRecordService = prospectPropertyRecordService;
         this.leadScoreService = leadScoreService;
-        this.feedbackService = feedbackService;
+        this.wantedPropertyService = wantedPropertyService;
     }
 
     public ProspectListResponse getProspects(
@@ -156,7 +155,7 @@ public class ProspectServiceImpl implements ProspectService {
                 buildPropertyInsights(propertyRecords, appointments),
                 interactions,
                 meetings,
-                feedbackService.findByProspectId(id),
+                wantedPropertyService.findByProspectId(id),
                 propertyRecords
         );
     }

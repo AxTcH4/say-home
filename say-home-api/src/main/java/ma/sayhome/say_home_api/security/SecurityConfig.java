@@ -43,7 +43,7 @@ public class SecurityConfig {
                                 "/api/contact"
                         ).permitAll()
                         .requestMatchers(
-                                "/api/feedback/*"
+                                "/api/wishes/*"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/properties",

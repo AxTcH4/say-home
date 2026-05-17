@@ -1,6 +1,5 @@
 package ma.sayhome.say_home_api.prospectProperty;
 
-import ma.sayhome.say_home_api.feedback.ProspectFeedbackService;
 import ma.sayhome.say_home_api.leadScore.LeadScoreService;
 import ma.sayhome.say_home_api.property.Property;
 import ma.sayhome.say_home_api.property.PropertyRepository;
@@ -53,7 +52,6 @@ public class ProspectPropertyRecordService {
     private final ProspectPropertyClosingDocumentService closingDocumentService;
     private final PropertyMediaServiceImpl propertyMediaService;
     private final LeadScoreService leadScoreService;
-    private final ProspectFeedbackService feedbackService;
 
     public ProspectPropertyRecordService(
             ProspectPropertyRecordRepository recordRepository,
@@ -65,8 +63,7 @@ public class ProspectPropertyRecordService {
             ProspectPropertyDocumentTemplateService documentTemplateService,
             ProspectPropertyClosingDocumentService closingDocumentService,
             PropertyMediaServiceImpl propertyMediaService,
-            LeadScoreService leadScoreService,
-            ProspectFeedbackService feedbackService
+            LeadScoreService leadScoreService
     ) {
         this.recordRepository = recordRepository;
         this.prospectRepository = prospectRepository;
@@ -78,7 +75,6 @@ public class ProspectPropertyRecordService {
         this.closingDocumentService = closingDocumentService;
         this.propertyMediaService = propertyMediaService;
         this.leadScoreService = leadScoreService;
-        this.feedbackService = feedbackService;
     }
 
     public ProspectPropertyRecordResponse createRecord(CreateProspectPropertyRecordRequest request) {
@@ -261,7 +257,6 @@ public class ProspectPropertyRecordService {
 
         ProspectPropertyDocument beforeDocument = ensurePreAssignmentDocument(record, nextStatus);
         closingDocumentService.ensureGenerated(record, beforeDocument);
-        feedbackService.requestForRecord(record, nextStatus.name());
     }
 
     private ProspectPropertyDocument ensurePreAssignmentDocument(

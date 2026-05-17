@@ -179,26 +179,43 @@ export async function requestVisitCancellation(id: number, payload: {
   return data.data;
 }
 
-export async function getFeedbackForm(token: string) {
-  const res = await fetch(buildUrl(`/feedback/${token}`), {
+export async function getWishForm(token: string) {
+  const res = await fetch(buildUrl(`/wishes/${token}`), {
     method: "GET",
     credentials: "include",
     cache: "no-store",
   });
 
   if (!res.ok) {
-    throw new Error(await readError(res, "Unable to load feedback form"));
+    throw new Error(await readError(res, "Unable to load wish form"));
   }
 
   const data = await readJson(res);
   return data?.data ?? null;
 }
 
-export async function submitFeedback(
+export async function submitWish(
   token: string,
-  payload: { sentiment: "POSITIVE" | "NEGATIVE"; comment?: string },
+  payload: {
+    type?: string;
+    secteur?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    minSurface?: number;
+    maxSurface?: number;
+    minRooms?: number;
+    maxRooms?: number;
+    minBathrooms?: number;
+    maxBathrooms?: number;
+    climatisation?: boolean;
+    piscine?: boolean;
+    jardin?: boolean;
+    garage?: boolean;
+    securite?: boolean;
+    systemeDomotiqueComplet?: boolean;
+  },
 ) {
-  const res = await fetch(buildUrl(`/feedback/${token}`), {
+  const res = await fetch(buildUrl(`/wishes/${token}`), {
     method: "POST",
     credentials: "include",
     headers: {
@@ -208,7 +225,7 @@ export async function submitFeedback(
   });
 
   if (!res.ok) {
-    throw new Error(await readError(res, "Unable to submit feedback"));
+    throw new Error(await readError(res, "Unable to submit wish"));
   }
 
   const data = await readJson(res);

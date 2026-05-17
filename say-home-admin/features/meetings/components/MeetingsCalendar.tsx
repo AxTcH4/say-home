@@ -83,6 +83,18 @@ export function MeetingsCalendar({ events, view, anchorDate }: MeetingsCalendarP
     router.refresh();
   };
 
+  const handleCompleteWithAgreement = async (id: number) => {
+    await meetingService.completeWithAgreement(id);
+    setOpenMenuId(null);
+    router.refresh();
+  };
+
+  const handleCompleteWithNoAgreement = async (id: number) => {
+    await meetingService.completeWithNoAgreement(id);
+    setOpenMenuId(null);
+    router.refresh();
+  };
+
   if (view === "month") {
     return (
       <section className="overflow-hidden rounded-[20px] border border-[#e7edf5] bg-white shadow-[0_12px_35px_rgba(20,32,60,0.06)]">
@@ -92,6 +104,8 @@ export function MeetingsCalendar({ events, view, anchorDate }: MeetingsCalendarP
           onDelete={handleDelete}
           onCancel={handleCancel}
           onComplete={handleComplete}
+          onCompleteWithAgreement={handleCompleteWithAgreement}
+          onCompleteWithNoAgreement={handleCompleteWithNoAgreement}
           openMenuId={openMenuId}
           onToggleMenu={setOpenMenuId}
         />
@@ -229,14 +243,35 @@ export function MeetingsCalendar({ events, view, anchorDate }: MeetingsCalendarP
                                 <XCircle className="h-4 w-4" />
                                 Cancel
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => handleComplete(event.id)}
-                                className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-sm text-[#22734f] transition hover:bg-[#f2fbf5]"
-                              >
-                                <CalendarCheck2 className="h-4 w-4" />
-                                Finish
-                              </button>
+                                {event.type?.toUpperCase() === "VISIT" ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCompleteWithAgreement(event.id)}
+                                      className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-sm text-[#22734f] transition hover:bg-[#f2fbf5]"
+                                    >
+                                      <CalendarCheck2 className="h-4 w-4" />
+                                      Accord trouve
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCompleteWithNoAgreement(event.id)}
+                                      className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-sm text-[#8a5a12] transition hover:bg-[#fff7ed]"
+                                    >
+                                      <CalendarCheck2 className="h-4 w-4" />
+                                      Pas d'accord
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleComplete(event.id)}
+                                    className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-sm text-[#22734f] transition hover:bg-[#f2fbf5]"
+                                  >
+                                    <CalendarCheck2 className="h-4 w-4" />
+                                    Finish
+                                  </button>
+                                )}
                               <button
                                 type="button"
                                 onClick={() => handleDelete(event.id)}
@@ -267,6 +302,8 @@ function MonthView({
   eventsByDate,
   onCancel,
   onComplete,
+  onCompleteWithAgreement,
+  onCompleteWithNoAgreement,
   onDelete,
   openMenuId,
   onToggleMenu,
@@ -275,6 +312,8 @@ function MonthView({
   eventsByDate: Record<string, MeetingEvent[]>;
   onCancel: (id: number) => Promise<void>;
   onComplete: (id: number) => Promise<void>;
+  onCompleteWithAgreement: (id: number) => Promise<void>;
+  onCompleteWithNoAgreement: (id: number) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
   openMenuId: number | null;
   onToggleMenu: (id: number | null) => void;
@@ -344,14 +383,35 @@ function MonthView({
                             <XCircle className="h-4 w-4" />
                             Cancel
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => onComplete(event.id)}
-                            className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-sm text-[#22734f] hover:bg-[#f2fbf5]"
-                          >
-                            <CalendarCheck2 className="h-4 w-4" />
-                            Finish
-                          </button>
+                          {event.type?.toUpperCase() === "VISIT" ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => onCompleteWithAgreement(event.id)}
+                                className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-sm text-[#22734f] hover:bg-[#f2fbf5]"
+                              >
+                                <CalendarCheck2 className="h-4 w-4" />
+                                Accord trouve
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onCompleteWithNoAgreement(event.id)}
+                                className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-sm text-[#8a5a12] hover:bg-[#fff7ed]"
+                              >
+                                <CalendarCheck2 className="h-4 w-4" />
+                                Pas d'accord
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => onComplete(event.id)}
+                              className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-sm text-[#22734f] hover:bg-[#f2fbf5]"
+                            >
+                              <CalendarCheck2 className="h-4 w-4" />
+                              Finish
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => onDelete(event.id)}

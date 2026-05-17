@@ -22,7 +22,7 @@ public class MatchingEngineController extends ControllerBase {
     }
 
     @GetMapping("/api/properties/search")
-    @CrossOrigin(origins = "http://localhost:3000")
+    @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
     public ResponseEntity<ApiResponse<List<SearchEngineResult>>> search(@Valid @ModelAttribute SearchRequest request) {
         if (request.getTitle() != null) {
             request.setTitle(request.getTitle().trim().toLowerCase());

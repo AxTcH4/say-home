@@ -36,14 +36,14 @@ interface PropertyOption {
   status?: string | null;
 }
 
-type TabKey = "info" | "properties" | "interactions" | "meetings" | "feedback";
+type TabKey = "info" | "properties" | "interactions" | "meetings" | "wishes";
 
 const tabs: { key: TabKey; label: string }[] = [
   { key: "info", label: "Info" },
   { key: "properties", label: "Biens" },
   { key: "interactions", label: "Interactions" },
   { key: "meetings", label: "Meetings" },
-  { key: "feedback", label: "Feedback" },
+  { key: "wishes", label: "Wishes" },
 ];
 
 const propertySections: {
@@ -363,13 +363,14 @@ export function ProspectDetailTabs({ prospect }: ProspectDetailTabsProps) {
           />
         )}
 
-        {activeTab === "feedback" && (
+        {activeTab === "wishes" && (
           <DataList
-            emptyText="No feedback yet."
-            items={prospectState.feedback.map((feedback) => ({
-              id: feedback.id,
-              title: `${feedback.satisfaction} - ${feedback.date}`,
-              subtitle: feedback.comment,
+            emptyText="No wishes yet."
+            items={prospectState.wishes.map((wish) => ({
+              id: wish.id,
+              title: `${wish.title} - ${wish.date}`,
+              subtitle: wish.summary,
+              detail: `${wish.source}${wish.submitted ? "" : " - formulaire en attente"}`,
             }))}
           />
         )}

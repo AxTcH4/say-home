@@ -16,6 +16,9 @@ public class UserDTO {
     private String role;
 
     public static UserDTO toDTO(User user) {
+        if (user == null) {
+            return null;
+        }
         UserDTO userDTO = new UserDTO();
         userDTO.setId(user.getId());
         userDTO.setFirstName(user.getFirstName());

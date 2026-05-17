@@ -24,7 +24,7 @@ public record ProspectDetailResponse(
         List<ProspectPropertyInsightResponse> propertyInsights,
         List<ProspectInteractionResponse> interactions,
         List<ProspectMeetingResponse> meetings,
-        List<ProspectFeedbackResponse> feedback,
+        List<ProspectWishResponse> wishes,
         List<ProspectPropertyRecordResponse> propertyRecords
 ) {
 }

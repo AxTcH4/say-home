@@ -71,11 +71,13 @@ export interface ProspectMeeting {
   propertyTitle: string;
 }
 
-export interface ProspectFeedback {
+export interface ProspectWish {
   id: number;
   date: string;
-  satisfaction: string;
-  comment: string;
+  source: string;
+  submitted: boolean;
+  title: string;
+  summary: string;
 }
 
 export type ProspectPropertyRelationStatus =
@@ -202,7 +204,7 @@ export interface ProspectDetail {
   }[];
   interactions: ProspectInteraction[];
   meetings: ProspectMeeting[];
-  feedback: ProspectFeedback[];
+  wishes: ProspectWish[];
   propertyRecords: ProspectPropertyRecord[];
 }
 

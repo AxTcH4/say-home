@@ -33,6 +33,12 @@ public class Appointment extends EntityBase {
     @Column(name = "client_requested_date")
     private LocalDateTime clientRequestedDate;
 
+    @Column(name = "wish_request_token", unique = true, length = 120)
+    private String wishRequestToken;
+
+    @Column(name = "wish_form_sent_at")
+    private LocalDateTime wishFormSentAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AppointmentStatus status;

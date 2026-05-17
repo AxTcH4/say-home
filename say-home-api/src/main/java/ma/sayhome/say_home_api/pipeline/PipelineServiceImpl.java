@@ -1,6 +1,5 @@
 package ma.sayhome.say_home_api.pipeline;
 
-import ma.sayhome.say_home_api.feedback.ProspectFeedbackService;
 import ma.sayhome.say_home_api.pipeline.dto.PipelineBoardResponse;
 import ma.sayhome.say_home_api.pipeline.dto.PipelineCardResponse;
 import ma.sayhome.say_home_api.pipeline.dto.PipelineColumnResponse;
@@ -30,16 +29,12 @@ public class PipelineServiceImpl implements PipelineService {
 
     private final ProspectRepository prospectRepository;
     private final PipelineStageRepository pipelineStageRepository;
-    private final ProspectFeedbackService feedbackService;
-
     public PipelineServiceImpl(
             ProspectRepository prospectRepository,
-            PipelineStageRepository pipelineStageRepository,
-            ProspectFeedbackService feedbackService
+            PipelineStageRepository pipelineStageRepository
     ) {
         this.prospectRepository = prospectRepository;
         this.pipelineStageRepository = pipelineStageRepository;
-        this.feedbackService = feedbackService;
     }
 
     @Override
@@ -119,9 +114,6 @@ public class PipelineServiceImpl implements PipelineService {
         prospect.setStatus(nextStatus);
         prospect.setStage(resolveStageForStatus(nextStatus));
         prospectRepository.save(prospect);
-        if (nextStatus == ProspectStatus.LOST) {
-            feedbackService.requestForProspect(prospect, nextStatus.name());
-        }
         return getBoard(null, null, null);
     }
 

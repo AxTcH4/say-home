@@ -113,6 +113,18 @@ public class AppointmentController extends ControllerBase {
         return ok(appointmentService.completeAppointment(id));
     }
 
+    @PatchMapping("/{id}/complete-agreement")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> completeWithAgreement(@PathVariable Integer id) {
+        return ok(appointmentService.completeAppointmentWithAgreement(id));
+    }
+
+    @PatchMapping("/{id}/complete-no-agreement")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> completeWithNoAgreement(@PathVariable Integer id) {
+        return ok(appointmentService.completeAppointmentWithNoAgreement(id));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteAppointment(@PathVariable Integer id) {

@@ -12,6 +12,7 @@ import ma.sayhome.say_home_api.shared.exceptions.BadRequestException;
 import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
 import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.user.UserRepository;
+import ma.sayhome.say_home_api.wish.PropertyRecommendationService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,17 +27,20 @@ public class PropertyServiceImpl {
     private final PropertyMediaServiceImpl propertyMediaService;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final PropertyRecommendationService propertyRecommendationService;
 
     public PropertyServiceImpl(
             PropertyRepository propertyRepository,
             PropertyMediaServiceImpl propertyMediaService,
             UserRepository userRepository,
-            NotificationService notificationService
+            NotificationService notificationService,
+            PropertyRecommendationService propertyRecommendationService
     ) {
         this.propertyRepository = propertyRepository;
         this.propertyMediaService = propertyMediaService;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.propertyRecommendationService = propertyRecommendationService;
     }
 
     public PropertyDTO create(PropertyReqDTO dto, List<MultipartFile> files) throws IOException {
@@ -48,6 +52,7 @@ public class PropertyServiceImpl {
         Property saved = propertyRepository.save(entity);
 
         propertyMediaService.uploadAll(files, saved);
+        propertyRecommendationService.recommendFor(saved);
 
         PropertyDTO resultDTO = PropertyDTO.toDTO(saved);
         assingMedia(resultDTO);

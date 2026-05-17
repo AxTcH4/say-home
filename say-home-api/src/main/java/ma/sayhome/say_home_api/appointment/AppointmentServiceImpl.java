@@ -22,6 +22,7 @@ import ma.sayhome.say_home_api.shared.enums.ProspectStatus;
 import ma.sayhome.say_home_api.shared.enums.Role;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import ma.sayhome.say_home_api.wish.WantedPropertyService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.MailException;
@@ -51,6 +52,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final PipelineStageRepository pipelineStageRepository;
     private final NotificationService notificationService;
     private final JavaMailSender mailSender;
+    private final WantedPropertyService wantedPropertyService;
 
     @Value("${spring.mail.username}")
     private String senderEmail;
@@ -62,7 +64,8 @@ public class AppointmentServiceImpl implements AppointmentService {
             PropertyRepository propertyRepository,
             PipelineStageRepository pipelineStageRepository,
             NotificationService notificationService,
-            JavaMailSender mailSender
+            JavaMailSender mailSender,
+            WantedPropertyService wantedPropertyService
     ) {
         this.appointmentRepository = appointmentRepository;
         this.prospectRepository = prospectRepository;
@@ -71,6 +74,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         this.pipelineStageRepository = pipelineStageRepository;
         this.notificationService = notificationService;
         this.mailSender = mailSender;
+        this.wantedPropertyService = wantedPropertyService;
     }
 
     public AppointmentsBoardResponse getBoard() {
@@ -270,6 +274,30 @@ public class AppointmentServiceImpl implements AppointmentService {
         Appointment saved = appointmentRepository.save(appointment);
         notifyClientForStatus(saved, "Votre rendez-vous est maintenant termine.");
         sendClientEmail(saved, "Rendez-vous termine", "Votre rendez-vous a bien ete marque comme termine.");
+        return toDetail(saved);
+    }
+
+    public AppointmentDetailResponse completeAppointmentWithAgreement(Integer id) {
+        assertAdmin();
+        Appointment appointment = getRequiredAppointment(id);
+        appointment.setStatus(AppointmentStatus.COMPLETED);
+        clearClientRequest(appointment);
+        Appointment saved = appointmentRepository.save(appointment);
+        wantedPropertyService.createFromAgreement(saved);
+        notifyClientForStatus(saved, "Votre visite est terminee et vos preferences ont ete prises en compte.");
+        sendClientEmail(saved, "Visite terminee", "Merci pour votre visite. Nous utiliserons ce bien comme reference pour mieux cibler vos futures recommandations.");
+        return toDetail(saved);
+    }
+
+    public AppointmentDetailResponse completeAppointmentWithNoAgreement(Integer id) {
+        assertAdmin();
+        Appointment appointment = getRequiredAppointment(id);
+        appointment.setStatus(AppointmentStatus.COMPLETED);
+        clearClientRequest(appointment);
+        Appointment saved = appointmentRepository.save(appointment);
+        wantedPropertyService.requestFromNoAgreement(saved);
+        notifyClientForStatus(saved, "Votre visite est terminee. Nous vous avons envoye un formulaire pour mieux comprendre vos souhaits.");
+        sendClientEmail(saved, "Visite terminee", "Merci pour votre visite. Nous vous avons envoye un formulaire pour nous aider a mieux comprendre les caracteristiques du bien que vous recherchez.");
         return toDetail(saved);
     }
 
