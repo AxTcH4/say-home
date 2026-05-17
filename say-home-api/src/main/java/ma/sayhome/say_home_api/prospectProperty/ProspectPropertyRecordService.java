@@ -32,10 +32,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -94,7 +97,16 @@ public class ProspectPropertyRecordService {
         ProspectPropertyRecord record = new ProspectPropertyRecord();
         record.setProspect(prospect);
         record.setProperty(property);
-        applyRecordPayload(record, request.status, request.finalPrice, request.notes);
+        applyRecordPayload(
+                record,
+                request.status,
+                request.finalPrice,
+                request.monthlyRent,
+                request.securityDeposit,
+                parseLeaseStartDate(request.leaseStartDate),
+                request.leaseDurationMonths,
+                request.notes
+        );
         ProspectPropertyRecord saved = recordRepository.save(record);
         createAutomaticStatusInteraction(saved, null, request.status);
 
@@ -112,7 +124,16 @@ public class ProspectPropertyRecordService {
         }
 
         ProspectPropertyStatus previousStatus = record.getStatus();
-        applyRecordPayload(record, request.status, request.finalPrice, request.notes);
+        applyRecordPayload(
+                record,
+                request.status,
+                request.finalPrice,
+                request.monthlyRent,
+                request.securityDeposit,
+                parseLeaseStartDate(request.leaseStartDate),
+                request.leaseDurationMonths,
+                request.notes
+        );
         ProspectPropertyRecord saved = recordRepository.save(record);
         generateClosingDocumentIfNeeded(saved, previousStatus, request.status);
         createAutomaticStatusInteraction(saved, previousStatus, request.status);
@@ -190,6 +211,46 @@ public class ProspectPropertyRecordService {
         return toResponse(getRequiredRecord(recordId));
     }
 
+    public void markAbandonedForProspectProperty(Integer prospectId, Integer propertyId, String notes) {
+        ProspectPropertyRecord record = recordRepository.findByProspectIdAndPropertyId(prospectId, propertyId)
+                .orElseGet(() -> {
+                    Prospect prospect = prospectRepository.findById(prospectId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Prospect not found"));
+                    Property property = propertyRepository.findById(propertyId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+
+                    ProspectPropertyRecord created = new ProspectPropertyRecord();
+                    created.setProspect(prospect);
+                    created.setProperty(property);
+                    created.setStatus(ProspectPropertyStatus.FAVORITE);
+                    created.setUpdatedAt(LocalDateTime.now());
+                    return recordRepository.save(created);
+                });
+
+        ProspectPropertyStatus previousStatus = record.getStatus();
+        record.setStatus(ProspectPropertyStatus.ABANDONED);
+        if (notes != null && !notes.isBlank()) {
+            record.setNotes(notes.trim());
+        }
+        record.setUpdatedAt(LocalDateTime.now());
+        ProspectPropertyRecord saved = recordRepository.save(record);
+        createAutomaticStatusInteraction(saved, previousStatus, ProspectPropertyStatus.ABANDONED);
+        syncPropertyStatus(saved.getProperty().getId());
+        syncProspectStatus(saved.getProspect().getId());
+        refreshLeadScoreQuietly(saved.getProspect().getId());
+    }
+
+    public void refreshProspectsAfterPropertyCleanup(Set<Integer> prospectIds) {
+        if (prospectIds == null || prospectIds.isEmpty()) {
+            return;
+        }
+
+        for (Integer prospectId : new LinkedHashSet<>(prospectIds)) {
+            syncProspectStatus(prospectId);
+            refreshLeadScoreQuietly(prospectId);
+        }
+    }
+
     private ProspectPropertyRecord getRequiredRecord(Integer recordId) {
         return recordRepository.findById(recordId)
                 .orElseThrow(() -> new ResourceNotFoundException("Prospect property record not found"));
@@ -199,12 +260,57 @@ public class ProspectPropertyRecordService {
             ProspectPropertyRecord record,
             ProspectPropertyStatus status,
             Float finalPrice,
+            Float monthlyRent,
+            Float securityDeposit,
+            LocalDateTime leaseStartDate,
+            Integer leaseDurationMonths,
             String notes
     ) {
+        validateFinancialPayload(status, finalPrice, monthlyRent, securityDeposit, leaseStartDate, leaseDurationMonths);
         record.setStatus(status);
         record.setFinalPrice(finalPrice);
+        record.setMonthlyRent(monthlyRent);
+        record.setSecurityDeposit(securityDeposit);
+        record.setLeaseStartDate(leaseStartDate);
+        record.setLeaseDurationMonths(leaseDurationMonths);
         record.setNotes(notes == null ? null : notes.trim());
         record.setUpdatedAt(LocalDateTime.now());
+    }
+
+    private void validateFinancialPayload(
+            ProspectPropertyStatus status,
+            Float finalPrice,
+            Float monthlyRent,
+            Float securityDeposit,
+            LocalDateTime leaseStartDate,
+            Integer leaseDurationMonths
+    ) {
+        if (status == ProspectPropertyStatus.RENTED) {
+            if (monthlyRent == null || monthlyRent <= 0) {
+                throw new BadRequestException("Renseigne le loyer mensuel pour finaliser une location.");
+            }
+            if (leaseStartDate == null) {
+                throw new BadRequestException("Renseigne la date de debut du bail.");
+            }
+            if (leaseDurationMonths == null || leaseDurationMonths <= 0) {
+                throw new BadRequestException("Renseigne la duree du bail en mois.");
+            }
+        }
+
+        if (status == ProspectPropertyStatus.BOUGHT && finalPrice == null) {
+            throw new BadRequestException("Renseigne le prix final pour finaliser un achat.");
+        }
+
+        if (securityDeposit != null && securityDeposit < 0) {
+            throw new BadRequestException("La caution ne peut pas etre negative.");
+        }
+    }
+
+    private LocalDateTime parseLeaseStartDate(String leaseStartDate) {
+        if (leaseStartDate == null || leaseStartDate.isBlank()) {
+            return null;
+        }
+        return LocalDate.parse(leaseStartDate).atStartOfDay();
     }
 
     private void syncPropertyStatus(Integer propertyId) {
@@ -240,6 +346,9 @@ public class ProspectPropertyRecordService {
             nextStatus = ProspectStatus.NEGOTIATING;
         } else if (records.stream().anyMatch(record -> record.getStatus() == ProspectPropertyStatus.FAVORITE)) {
             nextStatus = ProspectStatus.QUALIFIED;
+        } else if (!records.isEmpty()
+                && records.stream().allMatch(record -> record.getStatus() == ProspectPropertyStatus.ABANDONED)) {
+            nextStatus = ProspectStatus.CONTACTED;
         }
 
         prospect.setStatus(nextStatus);
@@ -309,6 +418,10 @@ public class ProspectPropertyRecordService {
                 property.getStatus().name(),
                 record.getStatus().name(),
                 record.getFinalPrice(),
+                record.getMonthlyRent(),
+                record.getSecurityDeposit(),
+                formatDateTime(record.getLeaseStartDate()),
+                record.getLeaseDurationMonths(),
                 record.getNotes(),
                 formatDateTime(record.getCreatedAt()),
                 formatDateTime(record.getUpdatedAt()),
@@ -329,6 +442,7 @@ public class ProspectPropertyRecordService {
         }
 
         if (previousStatus == ProspectPropertyStatus.NEGOTIATING
+                && nextStatus != ProspectPropertyStatus.ABANDONED
                 && nextStatus != ProspectPropertyStatus.BOUGHT
                 && nextStatus != ProspectPropertyStatus.RENTED) {
             saveInteraction(record, ProspectPropertyInteractionType.NEGOTIATION_CANCELLED,
@@ -340,6 +454,8 @@ public class ProspectPropertyRecordService {
                     "Le bien a ete ajoute aux favoris du prospect.");
             case NEGOTIATING -> saveInteraction(record, ProspectPropertyInteractionType.NEGOTIATION_STARTED,
                     "Une negociation a ete ouverte pour ce bien.");
+            case ABANDONED -> saveInteraction(record, ProspectPropertyInteractionType.NEGOTIATION_CANCELLED,
+                    "Le dossier sur ce bien a ete abandonne.");
             case BOUGHT -> saveInteraction(record, ProspectPropertyInteractionType.PURCHASE_COMPLETED,
                     "Le bien a ete marque comme achete pour ce prospect.");
             case RENTED -> saveInteraction(record, ProspectPropertyInteractionType.RENT_COMPLETED,

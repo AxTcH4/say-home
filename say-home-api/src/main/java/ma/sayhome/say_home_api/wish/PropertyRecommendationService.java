@@ -4,6 +4,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import ma.sayhome.say_home_api.property.Property;
 import ma.sayhome.say_home_api.prospect.Prospect;
+import ma.sayhome.say_home_api.shared.enums.PropertyOfferType;
 import ma.sayhome.say_home_api.shared.enums.PropertyRecommendationStatus;
 import ma.sayhome.say_home_api.shared.enums.PropertyType;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,6 +62,13 @@ public class PropertyRecommendationService {
 
     private int calculateMatchScore(Property property, WantedProperty wish) {
         int score = 0;
+
+        if (wish.getOfferType() != null) {
+            if (wish.getOfferType() != property.getOfferType()) {
+                return -1;
+            }
+            score += 20;
+        }
 
         if (wish.getType() != null) {
             if (wish.getType() != property.getType()) {
@@ -160,7 +168,8 @@ public class PropertyRecommendationService {
                     <li><strong>Bien:</strong> %s</li>
                     <li><strong>Type:</strong> %s</li>
                     <li><strong>Secteur:</strong> %s</li>
-                    <li><strong>Prix:</strong> %.0f MAD</li>
+                    <li><strong>Offre:</strong> %s</li>
+                    <li><strong>Prix:</strong> %.0f MAD%s</li>
                     <li><strong>Chambres:</strong> %d</li>
                     <li><strong>Surface:</strong> %d m2</li>
                   </ul>
@@ -171,7 +180,9 @@ public class PropertyRecommendationService {
                 property.getTitle(),
                 property.getType() == null ? "" : property.getType().name(),
                 property.getSecteur() == null ? "" : property.getSecteur().name(),
+                property.getOfferType() == null ? "" : formatOfferType(property.getOfferType()),
                 property.getPrice() == null ? 0f : property.getPrice(),
+                property.getOfferType() == PropertyOfferType.RENT ? " / mois" : "",
                 property.getRooms() == null ? 0 : property.getRooms(),
                 property.getSurface() == null ? 0 : property.getSurface(),
                 propertyLink
@@ -187,5 +198,12 @@ public class PropertyRecommendationService {
             mailSender.send(message);
         } catch (MessagingException | MailException ignored) {
         }
+    }
+
+    private String formatOfferType(PropertyOfferType offerType) {
+        return switch (offerType) {
+            case SALE -> "A vendre";
+            case RENT -> "A louer";
+        };
     }
 }

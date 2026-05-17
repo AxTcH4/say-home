@@ -1,6 +1,7 @@
 package ma.sayhome.say_home_api.prospectProperty;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 import ma.sayhome.say_home_api.shared.enums.ProspectPropertyStatus;
 
 import java.util.List;
@@ -11,4 +12,6 @@ public interface ProspectPropertyRecordRepository extends JpaRepository<Prospect
     List<ProspectPropertyRecord> findByPropertyId(Integer propertyId);
     Optional<ProspectPropertyRecord> findByProspectIdAndPropertyId(Integer prospectId, Integer propertyId);
     long countByProspectIdAndStatus(Integer prospectId, ProspectPropertyStatus status);
+    @Transactional
+    void deleteByPropertyId(Integer propertyId);
 }

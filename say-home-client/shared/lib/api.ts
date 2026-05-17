@@ -197,6 +197,7 @@ export async function getWishForm(token: string) {
 export async function submitWish(
   token: string,
   payload: {
+    offerType?: string;
     type?: string;
     secteur?: string;
     minPrice?: number;

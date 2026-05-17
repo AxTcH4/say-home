@@ -43,6 +43,18 @@ public class ProspectPropertyRecord extends EntityBase {
 
     private Float finalPrice;
 
+    @Column(name = "monthly_rent")
+    private Float monthlyRent;
+
+    @Column(name = "security_deposit")
+    private Float securityDeposit;
+
+    @Column(name = "lease_start_date")
+    private LocalDateTime leaseStartDate;
+
+    @Column(name = "lease_duration_months")
+    private Integer leaseDurationMonths;
+
     @Column(length = 2000)
     private String notes;
 

@@ -17,7 +17,9 @@ import ma.sayhome.say_home_api.property.Property;
 import ma.sayhome.say_home_api.property.PropertyRepository;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.prospect.ProspectRepository;
+import ma.sayhome.say_home_api.prospectProperty.ProspectPropertyRecordService;
 import ma.sayhome.say_home_api.shared.enums.AppointmentStatus;
+import ma.sayhome.say_home_api.shared.enums.AppointmentOutcome;
 import ma.sayhome.say_home_api.shared.enums.ProspectStatus;
 import ma.sayhome.say_home_api.shared.enums.Role;
 import jakarta.mail.MessagingException;
@@ -53,6 +55,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final NotificationService notificationService;
     private final JavaMailSender mailSender;
     private final WantedPropertyService wantedPropertyService;
+    private final ProspectPropertyRecordService prospectPropertyRecordService;
 
     @Value("${spring.mail.username}")
     private String senderEmail;
@@ -65,7 +68,8 @@ public class AppointmentServiceImpl implements AppointmentService {
             PipelineStageRepository pipelineStageRepository,
             NotificationService notificationService,
             JavaMailSender mailSender,
-            WantedPropertyService wantedPropertyService
+            WantedPropertyService wantedPropertyService,
+            ProspectPropertyRecordService prospectPropertyRecordService
     ) {
         this.appointmentRepository = appointmentRepository;
         this.prospectRepository = prospectRepository;
@@ -75,6 +79,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         this.notificationService = notificationService;
         this.mailSender = mailSender;
         this.wantedPropertyService = wantedPropertyService;
+        this.prospectPropertyRecordService = prospectPropertyRecordService;
     }
 
     public AppointmentsBoardResponse getBoard() {
@@ -119,6 +124,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         Appointment appointment = new Appointment();
         applyRequest(appointment, request);
         appointment.setStatus(AppointmentStatus.SCHEDULED);
+        appointment.setOutcome(null);
         Appointment saved = appointmentRepository.save(appointment);
         clearClientRequest(saved);
         return toDetail(saved);
@@ -129,6 +135,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         Appointment appointment = getRequiredAppointment(id);
         applyRequest(appointment, request);
         appointment.setStatus(AppointmentStatus.SCHEDULED);
+        appointment.setOutcome(null);
         clearClientRequest(appointment);
         Appointment saved = appointmentRepository.save(appointment);
         notifyClientForStatus(saved, "Votre demande de rendez-vous a ete acceptee et planifiee.");
@@ -151,9 +158,35 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         Prospect prospect = getOrCreateProspectForUser(currentUser, property);
         LocalDateTime appointmentDateTime = parseAppointmentDateTime(request.date, request.time);
+        List<Appointment> existingAppointments =
+                appointmentRepository.findByProspectUserIdOrderByCreatedAtDesc(currentUser.getId());
 
         if (appointmentDateTime.isBefore(LocalDateTime.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot request a meeting in the past");
+        }
+
+        boolean hasActiveRequestForSameProperty = existingAppointments.stream()
+                .filter(appointment -> isActiveClientAppointmentStatus(appointment.getStatus()))
+                .anyMatch(appointment -> appointment.getProperty() != null
+                        && appointment.getProperty().getId() != null
+                        && appointment.getProperty().getId().equals(property.getId()));
+
+        if (hasActiveRequestForSameProperty) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Vous avez deja une demande active pour ce bien."
+            );
+        }
+
+        boolean hasConflictAtSameTime = existingAppointments.stream()
+                .filter(appointment -> isActiveClientAppointmentStatus(appointment.getStatus()))
+                .anyMatch(appointment -> appointment.getDate() != null && appointment.getDate().equals(appointmentDateTime));
+
+        if (hasConflictAtSameTime) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Vous avez deja un rendez-vous actif sur ce creneau."
+            );
         }
 
         Appointment appointment = new Appointment();
@@ -259,6 +292,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         assertAdmin();
         Appointment appointment = getRequiredAppointment(id);
         appointment.setStatus(AppointmentStatus.CANCELLED);
+        appointment.setOutcome(null);
         clearClientRequest(appointment);
         Appointment saved = appointmentRepository.save(appointment);
         notifyClientForStatus(saved, "Votre rendez-vous a ete annule.");
@@ -270,6 +304,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         assertAdmin();
         Appointment appointment = getRequiredAppointment(id);
         appointment.setStatus(AppointmentStatus.COMPLETED);
+        appointment.setOutcome(null);
         clearClientRequest(appointment);
         Appointment saved = appointmentRepository.save(appointment);
         notifyClientForStatus(saved, "Votre rendez-vous est maintenant termine.");
@@ -281,6 +316,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         assertAdmin();
         Appointment appointment = getRequiredAppointment(id);
         appointment.setStatus(AppointmentStatus.COMPLETED);
+        appointment.setOutcome(AppointmentOutcome.AGREEMENT);
         clearClientRequest(appointment);
         Appointment saved = appointmentRepository.save(appointment);
         wantedPropertyService.createFromAgreement(saved);
@@ -293,8 +329,16 @@ public class AppointmentServiceImpl implements AppointmentService {
         assertAdmin();
         Appointment appointment = getRequiredAppointment(id);
         appointment.setStatus(AppointmentStatus.COMPLETED);
+        appointment.setOutcome(AppointmentOutcome.NO_AGREEMENT);
         clearClientRequest(appointment);
         Appointment saved = appointmentRepository.save(appointment);
+        if (saved.getProspect() != null && saved.getProperty() != null) {
+            prospectPropertyRecordService.markAbandonedForProspectProperty(
+                    saved.getProspect().getId(),
+                    saved.getProperty().getId(),
+                    "Pas d'accord apres la visite."
+            );
+        }
         wantedPropertyService.requestFromNoAgreement(saved);
         notifyClientForStatus(saved, "Votre visite est terminee. Nous vous avons envoye un formulaire pour mieux comprendre vos souhaits.");
         sendClientEmail(saved, "Visite terminee", "Merci pour votre visite. Nous vous avons envoye un formulaire pour nous aider a mieux comprendre les caracteristiques du bien que vous recherchez.");
@@ -607,6 +651,13 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     private boolean isPendingAdminAction(AppointmentStatus status) {
         return status == AppointmentStatus.REQUESTED
+                || status == AppointmentStatus.RESCHEDULE_REQUESTED
+                || status == AppointmentStatus.CANCELLATION_REQUESTED;
+    }
+
+    private boolean isActiveClientAppointmentStatus(AppointmentStatus status) {
+        return status == AppointmentStatus.REQUESTED
+                || status == AppointmentStatus.SCHEDULED
                 || status == AppointmentStatus.RESCHEDULE_REQUESTED
                 || status == AppointmentStatus.CANCELLATION_REQUESTED;
     }

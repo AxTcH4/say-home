@@ -13,6 +13,7 @@ type WishFormData = {
 };
 
 const propertyTypes = ["RIAD", "VILLA", "APPARTEMENT", "STUDIO"] as const;
+const offerTypes = ["SALE", "RENT"] as const;
 const secteurs = [
   "PALMERAIE",
   "TARGA",
@@ -33,6 +34,7 @@ export default function WishPage() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [values, setValues] = useState({
+    offerType: "",
     type: "",
     secteur: "",
     minPrice: "",
@@ -93,6 +95,7 @@ export default function WishPage() {
     setError(null);
     try {
       await submitWish(token, {
+        offerType: values.offerType || undefined,
         type: values.type || undefined,
         secteur: values.secteur || undefined,
         minPrice: values.minPrice ? Number(values.minPrice) : undefined,
@@ -170,6 +173,16 @@ export default function WishPage() {
         ) : (
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
+              <SelectField
+                label="Type d'offre"
+                value={values.offerType}
+                onChange={(value) => setValues((current) => ({ ...current, offerType: value }))}
+                options={offerTypes.map((value) => ({
+                  value,
+                  label: value === "RENT" ? "A louer" : "A vendre",
+                }))}
+              />
+
               <SelectField
                 label="Type de bien"
                 value={values.type}

@@ -40,6 +40,15 @@ const PROPERTY_SECTEUR_OPTIONS = [
   { value: "MABROUKA", label: "Mabrouka" },
 ] as const;
 
+const PROPERTY_OFFER_TYPE_OPTIONS = [
+  { value: "SALE", label: "A vendre" },
+  { value: "RENT", label: "A louer" },
+] as const;
+
+const PROPERTY_OFFER_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  PROPERTY_OFFER_TYPE_OPTIONS.map((option) => [option.value, option.label]),
+);
+
 const PROPERTY_TYPE_LABELS: Record<string, string> = Object.fromEntries(
   PROPERTY_TYPE_OPTIONS.map((option) => [option.value, option.label]),
 );
@@ -117,6 +126,7 @@ function AddPropertyModal({
     description: "",
     type: "",
     secteur: "",
+    offerType: "SALE",
     price: "",
     surface: "",
     rooms: "",
@@ -173,6 +183,7 @@ function AddPropertyModal({
         description: form.description,
         type: form.type,
         secteur: form.secteur,
+        offerType: form.offerType,
         price: parseFloat(form.price),
         surface: parseInt(form.surface, 10),
         rooms: parseInt(form.rooms, 10),
@@ -280,6 +291,21 @@ function AddPropertyModal({
             </div>
 
             <div>
+              <label className="mb-1 block text-xs text-gray-500">Type d'offre</label>
+              <select
+                className="w-full rounded border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#2C1A0E]"
+                value={form.offerType}
+                onChange={(e) => set("offerType", e.target.value)}
+              >
+                {PROPERTY_OFFER_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="mb-1 block text-xs text-gray-500">Secteur / Ville</label>
               <select
                 className="w-full rounded border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#2C1A0E]"
@@ -296,7 +322,9 @@ function AddPropertyModal({
             </div>
 
             <div>
-              <label className="mb-1 block text-xs text-gray-500">Prix (MAD) *</label>
+              <label className="mb-1 block text-xs text-gray-500">
+                {form.offerType === "RENT" ? "Loyer mensuel (MAD) *" : "Prix de vente (MAD) *"}
+              </label>
               <input
                 type="number"
                 min={0}
@@ -492,9 +520,15 @@ function PropertyDetailsModal({
               </p>
             </div>
             <div>
-              <p className="text-gray-400">Price</p>
+                <p className="text-gray-400">Price</p>
+                <p className="mt-1 font-medium text-[#1a1a1a]">
+                {property.price?.toLocaleString("fr-MA")} MAD{property.offerType === "RENT" ? " / mois" : ""}
+                </p>
+              </div>
+            <div>
+              <p className="text-gray-400">Offre</p>
               <p className="mt-1 font-medium text-[#1a1a1a]">
-                {property.price?.toLocaleString("fr-MA")} MAD
+                {PROPERTY_OFFER_TYPE_LABELS[property.offerType] ?? property.offerType ?? "-"}
               </p>
             </div>
             <div>
@@ -566,6 +600,7 @@ function EditPropertyModal({
     description: property.description ?? "",
     type: property.type ?? "",
     secteur: property.secteur ?? "",
+    offerType: property.offerType ?? "SALE",
     price: String(property.price ?? ""),
     surface: String(property.surface ?? ""),
     rooms: String(property.rooms ?? ""),
@@ -597,6 +632,7 @@ function EditPropertyModal({
         description: form.description,
         type: form.type,
         secteur: form.secteur,
+        offerType: form.offerType,
         price: parseFloat(form.price),
         surface: parseInt(form.surface, 10),
         rooms: parseInt(form.rooms, 10),
@@ -670,6 +706,21 @@ function EditPropertyModal({
             </div>
 
             <div>
+              <label className="mb-1 block text-xs text-gray-500">Type d'offre</label>
+              <select
+                className="w-full rounded border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#2C1A0E]"
+                value={form.offerType}
+                onChange={(e) => set("offerType", e.target.value)}
+              >
+                {PROPERTY_OFFER_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="mb-1 block text-xs text-gray-500">Secteur / Ville</label>
               <select
                 className="w-full rounded border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#2C1A0E]"
@@ -686,7 +737,9 @@ function EditPropertyModal({
             </div>
 
             <div>
-              <label className="mb-1 block text-xs text-gray-500">Prix (MAD) *</label>
+              <label className="mb-1 block text-xs text-gray-500">
+                {form.offerType === "RENT" ? "Loyer mensuel (MAD) *" : "Prix de vente (MAD) *"}
+              </label>
               <input
                 type="number"
                 min={0}
@@ -1235,9 +1288,12 @@ export default function Properties() {
                     <p className="text-xs text-gray-400">
                       {PROPERTY_TYPE_LABELS[property.type] ?? property.type ?? "-"}
                     </p>
+                    <p className="text-xs text-gray-400">
+                      {PROPERTY_OFFER_TYPE_LABELS[property.offerType] ?? property.offerType ?? "-"}
+                    </p>
                   </td>
                   <td className="px-4 py-3 font-semibold text-[#1a1a1a]">
-                    {property.price?.toLocaleString("fr-MA")} MAD
+                    {property.price?.toLocaleString("fr-MA")} MAD{property.offerType === "RENT" ? " / mois" : ""}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{property.surface} m2</td>
                   <td className="px-4 py-3">

@@ -5,6 +5,7 @@ import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.property.Property;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.shared.EntityBase;
+import ma.sayhome.say_home_api.shared.enums.AppointmentOutcome;
 import ma.sayhome.say_home_api.shared.enums.AppointmentStatus;
 
 import java.time.LocalDateTime;
@@ -38,6 +39,10 @@ public class Appointment extends EntityBase {
 
     @Column(name = "wish_form_sent_at")
     private LocalDateTime wishFormSentAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "outcome")
+    private AppointmentOutcome outcome;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

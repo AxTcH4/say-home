@@ -18,6 +18,7 @@ import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.property.PropertySecteurConverter;
 import ma.sayhome.say_home_api.property.PropertyTypeConverter;
 import ma.sayhome.say_home_api.shared.EntityBase;
+import ma.sayhome.say_home_api.shared.enums.PropertyOfferType;
 import ma.sayhome.say_home_api.shared.enums.PropertySecteur;
 import ma.sayhome.say_home_api.shared.enums.PropertyType;
 import ma.sayhome.say_home_api.shared.enums.WantedPropertySource;
@@ -59,6 +60,10 @@ public class WantedProperty extends EntityBase {
 
     @Convert(converter = PropertySecteurConverter.class)
     private PropertySecteur secteur;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "offer_type")
+    private PropertyOfferType offerType;
 
     @Column(name = "min_price")
     private Float minPrice;

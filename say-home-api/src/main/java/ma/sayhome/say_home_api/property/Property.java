@@ -8,6 +8,7 @@ import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.matchingEngine.matchResult.MatchResult;
 import ma.sayhome.say_home_api.property.propertyMedia.PropertyMedia;
 import ma.sayhome.say_home_api.shared.EntityBase;
+import ma.sayhome.say_home_api.shared.enums.PropertyOfferType;
 import ma.sayhome.say_home_api.shared.enums.PropertySecteur;
 import ma.sayhome.say_home_api.shared.enums.PropertyStatus;
 import ma.sayhome.say_home_api.shared.enums.PropertyType;
@@ -50,6 +51,10 @@ public class Property extends EntityBase {
 
     @Column(nullable = false)
     private Float price;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "offer_type", nullable = false)
+    private PropertyOfferType offerType = PropertyOfferType.SALE;
 
     @Column
     private Boolean climatisation = false;

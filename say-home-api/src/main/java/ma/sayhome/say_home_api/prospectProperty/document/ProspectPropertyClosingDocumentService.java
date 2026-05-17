@@ -151,16 +151,24 @@ public class ProspectPropertyClosingDocumentService {
         Property property = record.getProperty();
         String ownerName = resolveOwnerName(property);
         String tenantName = buildProspectName(prospect);
-        String monthlyRent = formatMoney(record.getFinalPrice() != null ? record.getFinalPrice() : property.getPrice()) + " MAD";
-        String caution = formatMoney((record.getFinalPrice() != null ? record.getFinalPrice() : property.getPrice()) * 2) + " MAD";
+        float effectiveMonthlyRent = record.getMonthlyRent() != null ? record.getMonthlyRent() : property.getPrice();
+        float effectiveSecurityDeposit = record.getSecurityDeposit() != null
+                ? record.getSecurityDeposit()
+                : effectiveMonthlyRent * 2;
+        int leaseDurationMonths = record.getLeaseDurationMonths() != null ? record.getLeaseDurationMonths() : 12;
+        LocalDate leaseStartDate = record.getLeaseStartDate() != null
+                ? record.getLeaseStartDate().toLocalDate()
+                : LocalDate.now();
+        String monthlyRent = formatMoney(effectiveMonthlyRent) + " MAD";
+        String caution = formatMoney(effectiveSecurityDeposit) + " MAD";
 
         lines.add("Proprietaire : " + ownerName);
         lines.add("Locataire : " + tenantName);
         lines.add("Adresse du bien : " + safeValue(property.getTitle()) + ", " + safeValue(property.getSecteur() != null ? property.getSecteur().name() : null));
-        lines.add("Duree : 12 mois");
+        lines.add("Duree : " + leaseDurationMonths + " mois");
         lines.add("Loyer mensuel : " + monthlyRent);
         lines.add("Caution : " + caution);
-        lines.add("Date de debut : " + formatDate(LocalDate.now()));
+        lines.add("Date de debut : " + formatDate(leaseStartDate));
         lines.add("");
         lines.add("Le locataire accepte les conditions de location du logement.");
         lines.add("");

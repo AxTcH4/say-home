@@ -62,6 +62,11 @@ const propertySections: {
     emptyText: "Aucun bien en negociation.",
   },
   {
+    key: "ABANDONED",
+    label: "Abandonnes",
+    emptyText: "Aucun bien abandonne.",
+  },
+  {
     key: "BOUGHT",
     label: "Biens achetes",
     emptyText: "Aucun achat finalise.",
@@ -76,9 +81,21 @@ const propertySections: {
 const relationStyles: Record<ProspectPropertyRelationStatus, string> = {
   FAVORITE: "bg-[#eff6ff] text-[#1d4ed8]",
   NEGOTIATING: "bg-[#fff7ed] text-[#c2410c]",
+  ABANDONED: "bg-[#fee2e2] text-[#b91c1c]",
   BOUGHT: "bg-[#ecfdf5] text-[#047857]",
   RENTED: "bg-[#f5f3ff] text-[#6d28d9]",
 };
+
+const recordActionButtons: {
+  key: ProspectPropertyRelationStatus;
+  label: string;
+}[] = [
+  { key: "FAVORITE", label: "Favori" },
+  { key: "NEGOTIATING", label: "Negociation" },
+  { key: "ABANDONED", label: "Abandonne" },
+  { key: "BOUGHT", label: "Achete" },
+  { key: "RENTED", label: "Loue" },
+];
 
 const temperatureStyles = {
   HOT: "bg-[#ecfdf5] text-[#047857]",
@@ -124,9 +141,13 @@ export function ProspectDetailTabs({ prospect }: ProspectDetailTabsProps) {
   const [assigningProperty, setAssigningProperty] = useState(false);
   const [assignForm, setAssignForm] = useState({
     propertyId: "",
-    status: "FAVORITE" as ProspectPropertyRelationStatus,
     finalPrice: "",
+    monthlyRent: "",
+    securityDeposit: "",
+    leaseStartDate: "",
+    leaseDurationMonths: "",
     notes: "",
+    documentType: "BEFORE_SALE_DOCUMENT" as ProspectPropertyDocumentType,
     documentFile: null as File | null,
   });
 
@@ -147,9 +168,26 @@ export function ProspectDetailTabs({ prospect }: ProspectDetailTabsProps) {
     [prospectState.propertyRecords],
   );
 
+  const agreedPropertyIds = useMemo(() => {
+    const ids = prospectState.meetings
+      .filter((meeting) => meeting.outcome === "AGREEMENT" && meeting.propertyId)
+      .map((meeting) => meeting.propertyId as number);
+
+    return new Set(ids);
+  }, [prospectState.meetings]);
+
   const assignableProperties = useMemo(
-    () => properties.filter((property) => !assignedPropertyIds.has(property.id)),
-    [assignedPropertyIds, properties],
+    () =>
+      properties.filter((property) => {
+        if (assignedPropertyIds.has(property.id)) {
+          return false;
+        }
+        if (agreedPropertyIds.size > 0) {
+          return agreedPropertyIds.has(property.id);
+        }
+        return true;
+      }),
+    [agreedPropertyIds, assignedPropertyIds, properties],
   );
 
   async function loadProperties() {
@@ -184,54 +222,38 @@ export function ProspectDetailTabs({ prospect }: ProspectDetailTabsProps) {
       return;
     }
 
-    const needsClosingFlow =
-      assignForm.status === "BOUGHT" || assignForm.status === "RENTED";
-
-    if (needsClosingFlow && !assignForm.documentFile) {
-      toast.error("Ajoute un document avant de finaliser l'affectation.");
-      return;
-    }
-
     setAssigningProperty(true);
     try {
       const createdRecord = await prospectService.assignProperty({
         prospectId: prospectState.id,
         propertyId: Number(assignForm.propertyId),
-        status: needsClosingFlow ? "NEGOTIATING" : assignForm.status,
+        status: "FAVORITE",
         finalPrice: assignForm.finalPrice ? Number(assignForm.finalPrice) : null,
+        monthlyRent: assignForm.monthlyRent ? Number(assignForm.monthlyRent) : null,
+        securityDeposit: assignForm.securityDeposit
+          ? Number(assignForm.securityDeposit)
+          : null,
+        leaseStartDate: assignForm.leaseStartDate || null,
+        leaseDurationMonths: assignForm.leaseDurationMonths
+          ? Number(assignForm.leaseDurationMonths)
+          : null,
         notes: assignForm.notes.trim() || null,
       });
-
       if (assignForm.documentFile) {
-        const preDocumentType =
-          assignForm.status === "BOUGHT"
-            ? "BEFORE_SALE_DOCUMENT"
-            : "BEFORE_RENTAL_DOCUMENT";
-        await prospectService.uploadPropertyDocuments(
-          createdRecord.id,
-          preDocumentType,
-          [assignForm.documentFile],
-        );
+        await prospectService.uploadPropertyDocuments(createdRecord.id, assignForm.documentType, [
+          assignForm.documentFile,
+        ]);
       }
-
-      if (needsClosingFlow) {
-        await prospectService.updatePropertyRecord(createdRecord.id, {
-          status: assignForm.status,
-          finalPrice: assignForm.finalPrice ? Number(assignForm.finalPrice) : null,
-          notes: assignForm.notes.trim() || null,
-        });
-      }
-
-      toast.success(
-        needsClosingFlow
-          ? "Affectation finalisee et document genere."
-          : "Bien affecte au prospect.",
-      );
+      toast.success("Bien affecte au prospect. Utilise les boutons du dossier pour faire evoluer son statut.");
       setAssignForm({
         propertyId: "",
-        status: "FAVORITE",
         finalPrice: "",
+        monthlyRent: "",
+        securityDeposit: "",
+        leaseStartDate: "",
+        leaseDurationMonths: "",
         notes: "",
+        documentType: "BEFORE_SALE_DOCUMENT",
         documentFile: null,
       });
       await refreshProspect();
@@ -580,9 +602,13 @@ function PropertyPortfolio({
   properties: PropertyOption[];
   assignForm: {
     propertyId: string;
-    status: ProspectPropertyRelationStatus;
     finalPrice: string;
+    monthlyRent: string;
+    securityDeposit: string;
+    leaseStartDate: string;
+    leaseDurationMonths: string;
     notes: string;
+    documentType: ProspectPropertyDocumentType;
     documentFile: File | null;
   };
   assigningProperty: boolean;
@@ -591,9 +617,13 @@ function PropertyPortfolio({
   onAssignFormChange: Dispatch<
     SetStateAction<{
       propertyId: string;
-      status: ProspectPropertyRelationStatus;
       finalPrice: string;
+      monthlyRent: string;
+      securityDeposit: string;
+      leaseStartDate: string;
+      leaseDurationMonths: string;
       notes: string;
+      documentType: ProspectPropertyDocumentType;
       documentFile: File | null;
     }>
   >;
@@ -613,6 +643,37 @@ function PropertyPortfolio({
   ) => Promise<void>;
   onDeleteRecord: (recordId: number, propertyTitle: string) => Promise<void>;
 }) {
+  const [activeSection, setActiveSection] =
+    useState<ProspectPropertyRelationStatus>("FAVORITE");
+
+  const sectionCounts = useMemo(
+    () =>
+      propertySections.reduce<Record<ProspectPropertyRelationStatus, number>>(
+        (accumulator, section) => {
+          accumulator[section.key] = records.filter(
+            (record) => record.relationStatus === section.key,
+          ).length;
+          return accumulator;
+        },
+        {
+          FAVORITE: 0,
+          NEGOTIATING: 0,
+          ABANDONED: 0,
+          BOUGHT: 0,
+          RENTED: 0,
+        },
+      ),
+    [records],
+  );
+
+  const activeSectionConfig =
+    propertySections.find((section) => section.key === activeSection) ??
+    propertySections[0];
+
+  const activeSectionItems = records.filter(
+    (record) => record.relationStatus === activeSection,
+  );
+
   return (
     <div className="space-y-6">
       <section className="rounded-[18px] border border-[#e7edf5] bg-[#fbfcfe] px-5 py-5">
@@ -622,7 +683,7 @@ function PropertyPortfolio({
               Affecter un bien au prospect
             </h3>
             <p className="mt-1 text-sm text-[#70819a]">
-              Ajoute un bien au dossier commercial puis fais evoluer son statut.
+              S'il y a deja eu un rendez-vous avec accord, seuls les biens valides apres visite sont proposables ici.
             </p>
           </div>
           {refreshingProspect && (
@@ -660,43 +721,6 @@ function PropertyPortfolio({
             </select>
           </label>
 
-          <label className="space-y-2 text-sm text-[#55657d]">
-            <span className="block font-medium text-[#172033]">Statut initial</span>
-            <select
-              value={assignForm.status}
-              onChange={(event) =>
-                onAssignFormChange((current) => ({
-                  ...current,
-                  status: event.target.value as ProspectPropertyRelationStatus,
-                }))
-              }
-              className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
-            >
-              {propertySections.map((section) => (
-                <option key={section.key} value={section.key}>
-                  {section.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="space-y-2 text-sm text-[#55657d]">
-            <span className="block font-medium text-[#172033]">Prix final</span>
-            <input
-              type="number"
-              min="0"
-              value={assignForm.finalPrice}
-              onChange={(event) =>
-                onAssignFormChange((current) => ({
-                  ...current,
-                  finalPrice: event.target.value,
-                }))
-              }
-              placeholder="Ex: 650000"
-              className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
-            />
-          </label>
-
           <label className="space-y-2 text-sm text-[#55657d] lg:col-span-2">
             <span className="block font-medium text-[#172033]">Notes</span>
             <textarea
@@ -714,6 +738,106 @@ function PropertyPortfolio({
           </label>
 
           <label className="space-y-2 text-sm text-[#55657d]">
+            <span className="block font-medium text-[#172033]">Prix final cible (achat)</span>
+            <input
+              type="number"
+              min="0"
+              value={assignForm.finalPrice}
+              onChange={(event) =>
+                onAssignFormChange((current) => ({
+                  ...current,
+                  finalPrice: event.target.value,
+                }))
+              }
+              placeholder="Ex: 650000"
+              className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
+            />
+          </label>
+
+          <label className="space-y-2 text-sm text-[#55657d]">
+            <span className="block font-medium text-[#172033]">Loyer mensuel cible (location)</span>
+            <input
+              type="number"
+              min="0"
+              value={assignForm.monthlyRent}
+              onChange={(event) =>
+                onAssignFormChange((current) => ({
+                  ...current,
+                  monthlyRent: event.target.value,
+                }))
+              }
+              placeholder="Ex: 8000"
+              className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
+            />
+          </label>
+
+          <label className="space-y-2 text-sm text-[#55657d]">
+            <span className="block font-medium text-[#172033]">Caution prevue</span>
+            <input
+              type="number"
+              min="0"
+              value={assignForm.securityDeposit}
+              onChange={(event) =>
+                onAssignFormChange((current) => ({
+                  ...current,
+                  securityDeposit: event.target.value,
+                }))
+              }
+              placeholder="Ex: 16000"
+              className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
+            />
+          </label>
+
+          <label className="space-y-2 text-sm text-[#55657d]">
+            <span className="block font-medium text-[#172033]">Debut de bail prevu</span>
+            <input
+              type="date"
+              value={assignForm.leaseStartDate}
+              onChange={(event) =>
+                onAssignFormChange((current) => ({
+                  ...current,
+                  leaseStartDate: event.target.value,
+                }))
+              }
+              className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
+            />
+          </label>
+
+          <label className="space-y-2 text-sm text-[#55657d]">
+            <span className="block font-medium text-[#172033]">Duree du bail (mois)</span>
+            <input
+              type="number"
+              min="1"
+              value={assignForm.leaseDurationMonths}
+              onChange={(event) =>
+                onAssignFormChange((current) => ({
+                  ...current,
+                  leaseDurationMonths: event.target.value,
+                }))
+              }
+              placeholder="Ex: 12"
+              className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
+            />
+          </label>
+
+          <label className="space-y-2 text-sm text-[#55657d]">
+            <span className="block font-medium text-[#172033]">Type du document avant</span>
+            <select
+              value={assignForm.documentType}
+              onChange={(event) =>
+                onAssignFormChange((current) => ({
+                  ...current,
+                  documentType: event.target.value as ProspectPropertyDocumentType,
+                }))
+              }
+              className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
+            >
+              <option value="BEFORE_SALE_DOCUMENT">Document avant vente</option>
+              <option value="BEFORE_RENTAL_DOCUMENT">Document avant location</option>
+            </select>
+          </label>
+
+          <label className="space-y-2 text-sm text-[#55657d] lg:col-span-2">
             <span className="block font-medium text-[#172033]">Document PDF avant affectation</span>
             <input
               type="file"
@@ -727,7 +851,7 @@ function PropertyPortfolio({
               className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-2.5 text-sm text-[#172033] outline-none transition file:mr-4 file:rounded-[10px] file:border-0 file:bg-[#2c1a0e] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
             />
             <span className="block text-xs text-[#70819a]">
-              PDF uniquement. Requis pour achat ou location.
+              Optionnel a l'affectation, mais requis avant finalisation en achat ou location.
             </span>
           </label>
 
@@ -739,49 +863,76 @@ function PropertyPortfolio({
             >
               {assigningProperty ? "Affectation..." : "Affecter le bien"}
             </button>
+            <p className="mt-2 text-xs text-[#70819a]">
+              Le bien est ajoute d'abord au dossier en favori. Utilise ensuite `Achete` pour une vente definitive ou `Loue` pour une location avec loyer, date de debut et duree.
+            </p>
           </div>
         </form>
       </section>
 
-      {propertySections.map((section) => {
-        const sectionItems = records.filter(
-          (record) => record.relationStatus === section.key,
-        );
+      <section className="space-y-4">
+        <div>
+          <h3 className="text-base font-semibold text-[#172033]">
+            Dossiers par etape
+          </h3>
+          <p className="mt-1 text-sm text-[#70819a]">
+            Navigue entre les etapes du parcours immobilier du prospect.
+          </p>
+        </div>
 
-        return (
-          <section key={section.key} className="space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-semibold text-[#172033]">
-                  {section.label}
-                </h3>
-                <p className="mt-1 text-sm text-[#70819a]">
-                  {sectionItems.length} dossier{sectionItems.length > 1 ? "s" : ""}
-                </p>
-              </div>
-            </div>
+        <div className="flex flex-wrap gap-3">
+          {propertySections.map((section) => {
+            const active = section.key === activeSection;
+            const count = sectionCounts[section.key];
 
-            {sectionItems.length === 0 ? (
-              <div className="rounded-[14px] border border-dashed border-[#d9e2ef] bg-[#fbfcfe] px-4 py-5 text-sm text-[#70819a]">
-                {section.emptyText}
-              </div>
-            ) : (
-              <div className="grid gap-4">
-                {sectionItems.map((record) => (
-                  <PropertyRecordCard
-                    key={record.id}
-                    record={record}
-                    onUpdateRecord={onUpdateRecord}
-                    onAddInteraction={onAddInteraction}
-                    onUploadDocuments={onUploadDocuments}
-                    onDeleteRecord={onDeleteRecord}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-        );
-      })}
+            return (
+              <button
+                key={section.key}
+                type="button"
+                onClick={() => setActiveSection(section.key)}
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                  active
+                    ? "border-[#2c1a0e] bg-[#2c1a0e] text-white"
+                    : "border-[#dbe5f0] bg-white text-[#172033] hover:border-[#c8d4e3] hover:bg-[#f8fafc]"
+                }`}
+              >
+                {section.label} ({count})
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h4 className="text-base font-semibold text-[#172033]">
+              {activeSectionConfig.label}
+            </h4>
+            <p className="mt-1 text-sm text-[#70819a]">
+              {activeSectionItems.length} dossier
+              {activeSectionItems.length > 1 ? "s" : ""}
+            </p>
+          </div>
+        </div>
+
+        {activeSectionItems.length === 0 ? (
+          <div className="rounded-[14px] border border-dashed border-[#d9e2ef] bg-[#fbfcfe] px-4 py-5 text-sm text-[#70819a]">
+            {activeSectionConfig.emptyText}
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {activeSectionItems.map((record) => (
+              <PropertyRecordCard
+                key={record.id}
+                record={record}
+                onUpdateRecord={onUpdateRecord}
+                onAddInteraction={onAddInteraction}
+                onUploadDocuments={onUploadDocuments}
+                onDeleteRecord={onDeleteRecord}
+              />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -816,8 +967,13 @@ function PropertyRecordCard({
   const [savingRecord, setSavingRecord] = useState(false);
   const [savingInteraction, setSavingInteraction] = useState(false);
   const [editForm, setEditForm] = useState({
-    status: record.relationStatus,
     finalPrice: record.finalPrice ? String(record.finalPrice) : "",
+    monthlyRent: record.monthlyRent ? String(record.monthlyRent) : "",
+    securityDeposit: record.securityDeposit ? String(record.securityDeposit) : "",
+    leaseStartDate: record.leaseStartDate ? record.leaseStartDate.slice(0, 10) : "",
+    leaseDurationMonths: record.leaseDurationMonths
+      ? String(record.leaseDurationMonths)
+      : "",
     notes: record.notes ?? "",
   });
   const [interactionForm, setInteractionForm] = useState({
@@ -832,11 +988,23 @@ function PropertyRecordCard({
 
   useEffect(() => {
     setEditForm({
-      status: record.relationStatus,
       finalPrice: record.finalPrice ? String(record.finalPrice) : "",
+      monthlyRent: record.monthlyRent ? String(record.monthlyRent) : "",
+      securityDeposit: record.securityDeposit ? String(record.securityDeposit) : "",
+      leaseStartDate: record.leaseStartDate ? record.leaseStartDate.slice(0, 10) : "",
+      leaseDurationMonths: record.leaseDurationMonths
+        ? String(record.leaseDurationMonths)
+        : "",
       notes: record.notes ?? "",
     });
-  }, [record.finalPrice, record.notes, record.relationStatus]);
+  }, [
+    record.finalPrice,
+    record.monthlyRent,
+    record.securityDeposit,
+    record.leaseStartDate,
+    record.leaseDurationMonths,
+    record.notes,
+  ]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -854,8 +1022,16 @@ function PropertyRecordCard({
     setSavingRecord(true);
     try {
       await onUpdateRecord(record.id, {
-        status: editForm.status,
+        status: record.relationStatus,
         finalPrice: editForm.finalPrice ? Number(editForm.finalPrice) : null,
+        monthlyRent: editForm.monthlyRent ? Number(editForm.monthlyRent) : null,
+        securityDeposit: editForm.securityDeposit
+          ? Number(editForm.securityDeposit)
+          : null,
+        leaseStartDate: editForm.leaseStartDate || null,
+        leaseDurationMonths: editForm.leaseDurationMonths
+          ? Number(editForm.leaseDurationMonths)
+          : null,
         notes: editForm.notes.trim() || null,
       });
       setIsEditing(false);
@@ -904,6 +1080,42 @@ function PropertyRecordCard({
       });
     } finally {
       setUploadingDocument(false);
+    }
+  }
+
+  const hasBeforeSaleDocument = record.expectedDocuments.some(
+    (document) => document.type === "BEFORE_SALE_DOCUMENT" && document.uploaded,
+  );
+  const hasBeforeRentalDocument = record.expectedDocuments.some(
+    (document) => document.type === "BEFORE_RENTAL_DOCUMENT" && document.uploaded,
+  );
+
+  function isActionDisabled(nextStatus: ProspectPropertyRelationStatus) {
+    if (nextStatus === record.relationStatus) {
+      return true;
+    }
+    if (nextStatus === "BOUGHT") {
+      return !hasBeforeSaleDocument;
+    }
+    if (nextStatus === "RENTED") {
+      return !hasBeforeRentalDocument;
+    }
+    return false;
+  }
+
+  async function handleQuickStatusChange(nextStatus: ProspectPropertyRelationStatus) {
+    try {
+      await onUpdateRecord(record.id, {
+        status: nextStatus,
+        finalPrice: record.finalPrice ?? null,
+        monthlyRent: record.monthlyRent ?? null,
+        securityDeposit: record.securityDeposit ?? null,
+        leaseStartDate: record.leaseStartDate ?? null,
+        leaseDurationMonths: record.leaseDurationMonths ?? null,
+        notes: record.notes ?? null,
+      });
+    } catch {
+      // parent toast already handles the feedback
     }
   }
 
@@ -984,32 +1196,66 @@ function PropertyRecordCard({
               label="Prix final"
               value={record.finalPrice ? formatAmount(record.finalPrice) : "Non renseigne"}
             />
+            <Metric
+              label="Loyer mensuel"
+              value={record.monthlyRent ? `${formatAmount(record.monthlyRent)} / mois` : "Non renseigne"}
+            />
+            <Metric
+              label="Caution"
+              value={record.securityDeposit ? formatAmount(record.securityDeposit) : "Non renseigne"}
+            />
+            <Metric
+              label="Debut bail"
+              value={record.leaseStartDate ? formatDateLabel(record.leaseStartDate) : "Non renseigne"}
+            />
+            <Metric
+              label="Duree bail"
+              value={record.leaseDurationMonths ? `${record.leaseDurationMonths} mois` : "Non renseigne"}
+            />
             <Metric label="Statut du bien" value={record.propertyStatus} />
             <Metric label="Derniere mise a jour" value={formatDateLabel(record.updatedAt)} />
           </div>
 
+          <div className="mt-5 rounded-[14px] border border-[#e7edf5] bg-white px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7d8ca2]">
+              Etapes du dossier
+            </p>
+            <p className="mt-1 text-sm text-[#70819a]">
+              Fais evoluer ce bien dans le parcours commercial du prospect.
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {recordActionButtons.map((action) => {
+                const active = record.relationStatus === action.key;
+                const disabled = isActionDisabled(action.key);
+
+                return (
+                  <button
+                    key={action.key}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => void handleQuickStatusChange(action.key)}
+                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                      active
+                        ? "border-[#2c1a0e] bg-[#2c1a0e] text-white"
+                        : "border-[#dbe5f0] bg-white text-[#172033] hover:border-[#c8d4e3] hover:bg-[#f8fafc]"
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    {action.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {!hasBeforeSaleDocument || !hasBeforeRentalDocument ? (
+              <p className="mt-3 text-xs text-[#70819a]">
+                Pour finaliser en achat ou location, ajoute d'abord le document PDF avant affectation correspondant. Une location exige aussi loyer, caution, date de debut et duree du bail.
+              </p>
+            ) : null}
+          </div>
+
           {isEditing ? (
             <form onSubmit={handleSubmitRecord} className="mt-5 grid gap-3 lg:grid-cols-2">
-              <label className="space-y-2 text-sm text-[#55657d]">
-                <span className="block font-medium text-[#172033]">Statut du dossier</span>
-                <select
-                  value={editForm.status}
-                  onChange={(event) =>
-                    setEditForm((current) => ({
-                      ...current,
-                      status: event.target.value as ProspectPropertyRelationStatus,
-                    }))
-                  }
-                  className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
-                >
-                  {propertySections.map((section) => (
-                    <option key={section.key} value={section.key}>
-                      {section.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
               <label className="space-y-2 text-sm text-[#55657d]">
                 <span className="block font-medium text-[#172033]">Prix final</span>
                 <input
@@ -1020,6 +1266,69 @@ function PropertyRecordCard({
                     setEditForm((current) => ({
                       ...current,
                       finalPrice: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
+                />
+              </label>
+
+              <label className="space-y-2 text-sm text-[#55657d]">
+                <span className="block font-medium text-[#172033]">Loyer mensuel</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={editForm.monthlyRent}
+                  onChange={(event) =>
+                    setEditForm((current) => ({
+                      ...current,
+                      monthlyRent: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
+                />
+              </label>
+
+              <label className="space-y-2 text-sm text-[#55657d]">
+                <span className="block font-medium text-[#172033]">Caution</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={editForm.securityDeposit}
+                  onChange={(event) =>
+                    setEditForm((current) => ({
+                      ...current,
+                      securityDeposit: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
+                />
+              </label>
+
+              <label className="space-y-2 text-sm text-[#55657d]">
+                <span className="block font-medium text-[#172033]">Date de debut du bail</span>
+                <input
+                  type="date"
+                  value={editForm.leaseStartDate}
+                  onChange={(event) =>
+                    setEditForm((current) => ({
+                      ...current,
+                      leaseStartDate: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
+                />
+              </label>
+
+              <label className="space-y-2 text-sm text-[#55657d]">
+                <span className="block font-medium text-[#172033]">Duree du bail (mois)</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={editForm.leaseDurationMonths}
+                  onChange={(event) =>
+                    setEditForm((current) => ({
+                      ...current,
+                      leaseDurationMonths: event.target.value,
                     }))
                   }
                   className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
@@ -1037,9 +1346,9 @@ function PropertyRecordCard({
                       notes: event.target.value,
                     }))
                   }
-                  className="w-full resize-none rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
-                />
-              </label>
+              className="w-full resize-none rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-3 text-sm text-[#172033] outline-none transition focus:border-[#2c1a0e]"
+            />
+          </label>
 
               <div className="flex gap-3 lg:col-span-2">
                 <button
@@ -1363,6 +1672,8 @@ function formatRelationStatus(status: ProspectPropertyRelationStatus) {
       return "Favori";
     case "NEGOTIATING":
       return "En negociation";
+    case "ABANDONED":
+      return "Abandonne";
     case "BOUGHT":
       return "Achete";
     case "RENTED":

@@ -2,10 +2,15 @@ package ma.sayhome.say_home_api.property;
 
 import jakarta.transaction.Transactional;
 import ma.sayhome.say_home_api.notification.NotificationService;
+import ma.sayhome.say_home_api.appointment.AppointmentRepository;
+import ma.sayhome.say_home_api.matchingEngine.matchResult.MatchResultRepository;
 import ma.sayhome.say_home_api.property.dto.PropertyDTO;
 import ma.sayhome.say_home_api.property.dto.PropertyReqDTO;
 import ma.sayhome.say_home_api.property.propertyMedia.PropertyMediaServiceImpl;
+import ma.sayhome.say_home_api.prospectProperty.ProspectPropertyRecordService;
+import ma.sayhome.say_home_api.prospectProperty.ProspectPropertyRecordRepository;
 import ma.sayhome.say_home_api.shared.enums.PropertyType;
+import ma.sayhome.say_home_api.shared.enums.PropertyOfferType;
 import ma.sayhome.say_home_api.shared.enums.PropertyStatus;
 import ma.sayhome.say_home_api.shared.enums.Role;
 import ma.sayhome.say_home_api.shared.exceptions.BadRequestException;
@@ -13,12 +18,16 @@ import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
 import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.user.UserRepository;
 import ma.sayhome.say_home_api.wish.PropertyRecommendationService;
+import ma.sayhome.say_home_api.wish.PropertyRecommendationRepository;
+import ma.sayhome.say_home_api.wish.WantedPropertyRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -28,23 +37,42 @@ public class PropertyServiceImpl {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final PropertyRecommendationService propertyRecommendationService;
+    private final ProspectPropertyRecordRepository prospectPropertyRecordRepository;
+    private final ProspectPropertyRecordService prospectPropertyRecordService;
+    private final PropertyRecommendationRepository propertyRecommendationRepository;
+    private final WantedPropertyRepository wantedPropertyRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final MatchResultRepository matchResultRepository;
 
     public PropertyServiceImpl(
             PropertyRepository propertyRepository,
             PropertyMediaServiceImpl propertyMediaService,
             UserRepository userRepository,
             NotificationService notificationService,
-            PropertyRecommendationService propertyRecommendationService
+            PropertyRecommendationService propertyRecommendationService,
+            ProspectPropertyRecordRepository prospectPropertyRecordRepository,
+            ProspectPropertyRecordService prospectPropertyRecordService,
+            PropertyRecommendationRepository propertyRecommendationRepository,
+            WantedPropertyRepository wantedPropertyRepository,
+            AppointmentRepository appointmentRepository,
+            MatchResultRepository matchResultRepository
     ) {
         this.propertyRepository = propertyRepository;
         this.propertyMediaService = propertyMediaService;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.propertyRecommendationService = propertyRecommendationService;
+        this.prospectPropertyRecordRepository = prospectPropertyRecordRepository;
+        this.prospectPropertyRecordService = prospectPropertyRecordService;
+        this.propertyRecommendationRepository = propertyRecommendationRepository;
+        this.wantedPropertyRepository = wantedPropertyRepository;
+        this.appointmentRepository = appointmentRepository;
+        this.matchResultRepository = matchResultRepository;
     }
 
     public PropertyDTO create(PropertyReqDTO dto, List<MultipartFile> files) throws IOException {
         Property entity = PropertyReqDTO.toEntity(dto);
+        validateOfferPricing(entity.getOfferType(), entity.getPrice());
         normalizeAmenities(entity);
 
         User agent = resolveAssignedAgent(dto.getAgentName());
@@ -71,6 +99,7 @@ public class PropertyServiceImpl {
         property.setType(dto.getType());
         property.setSecteur(dto.getSecteur());
         property.setPrice(dto.getPrice());
+        property.setOfferType(dto.getOfferType() != null ? dto.getOfferType() : PropertyOfferType.SALE);
         property.setSurface(dto.getSurface());
         property.setRooms(dto.getRooms());
         property.setBathrooms(dto.getBathrooms());
@@ -81,6 +110,7 @@ public class PropertyServiceImpl {
         property.setSecurite(Boolean.TRUE.equals(dto.getSecurite()));
         property.setSystemeDomotiqueComplet(Boolean.TRUE.equals(dto.getSystemeDomotiqueComplet()));
         normalizeAmenities(property);
+        validateOfferPricing(property.getOfferType(), property.getPrice());
 
         if (dto.getStatus() != null) {
             property.setStatus(dto.getStatus());
@@ -107,8 +137,22 @@ public class PropertyServiceImpl {
         Property property = propertyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Property with id " + id + " not found"));
 
+        Set<Integer> impactedProspectIds = new LinkedHashSet<>();
+        prospectPropertyRecordRepository.findByPropertyId(id).forEach(record -> impactedProspectIds.add(record.getProspect().getId()));
+        appointmentRepository.findByPropertyId(id).forEach(appointment -> {
+            if (appointment.getProspect() != null && appointment.getProspect().getId() != null) {
+                impactedProspectIds.add(appointment.getProspect().getId());
+            }
+        });
+
+        propertyRecommendationRepository.deleteByPropertyId(id);
+        wantedPropertyRepository.clearReferenceProperty(id);
+        prospectPropertyRecordRepository.deleteByPropertyId(id);
+        appointmentRepository.deleteByPropertyId(id);
+        matchResultRepository.deleteByPropertyId(id);
         propertyMediaService.deleteAllByPropertyId(id);
         propertyRepository.delete(property);
+        prospectPropertyRecordService.refreshProspectsAfterPropertyCleanup(impactedProspectIds);
     }
 
     public List<PropertyDTO> findAll() {
@@ -157,5 +201,18 @@ public class PropertyServiceImpl {
         }
 
         return agent;
+    }
+
+    private void validateOfferPricing(PropertyOfferType offerType, Float price) {
+        if (offerType == null) {
+            throw new BadRequestException("Le type d'offre est obligatoire.");
+        }
+        if (price == null || price <= 0) {
+            throw new BadRequestException(
+                    offerType == PropertyOfferType.RENT
+                            ? "Le loyer mensuel est obligatoire."
+                            : "Le prix de vente est obligatoire."
+            );
+        }
     }
 }

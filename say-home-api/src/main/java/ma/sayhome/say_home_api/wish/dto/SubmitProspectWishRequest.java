@@ -1,6 +1,7 @@
 package ma.sayhome.say_home_api.wish.dto;
 
 public class SubmitProspectWishRequest {
+    public String offerType;
     public String type;
     public String secteur;
     public Float minPrice;

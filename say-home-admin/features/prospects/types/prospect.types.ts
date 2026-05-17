@@ -64,11 +64,13 @@ export interface ProspectInteraction {
 
 export interface ProspectMeeting {
   id: number;
+  propertyId?: number | null;
   type: string;
   date: string;
   time: string;
   status: string;
   propertyTitle: string;
+  outcome?: "AGREEMENT" | "NO_AGREEMENT" | null;
 }
 
 export interface ProspectWish {
@@ -83,6 +85,7 @@ export interface ProspectWish {
 export type ProspectPropertyRelationStatus =
   | "FAVORITE"
   | "NEGOTIATING"
+  | "ABANDONED"
   | "BOUGHT"
   | "RENTED";
 
@@ -148,6 +151,10 @@ export interface ProspectPropertyRecord {
   propertyStatus: string;
   relationStatus: ProspectPropertyRelationStatus;
   finalPrice?: number | null;
+  monthlyRent?: number | null;
+  securityDeposit?: number | null;
+  leaseStartDate?: string | null;
+  leaseDurationMonths?: number | null;
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -218,12 +225,20 @@ export interface AssignProspectPropertyPayload {
   propertyId: number;
   status: ProspectPropertyRelationStatus;
   finalPrice?: number | null;
+  monthlyRent?: number | null;
+  securityDeposit?: number | null;
+  leaseStartDate?: string | null;
+  leaseDurationMonths?: number | null;
   notes?: string | null;
 }
 
 export interface UpdateProspectPropertyPayload {
   status: ProspectPropertyRelationStatus;
   finalPrice?: number | null;
+  monthlyRent?: number | null;
+  securityDeposit?: number | null;
+  leaseStartDate?: string | null;
+  leaseDurationMonths?: number | null;
   notes?: string | null;
 }
 

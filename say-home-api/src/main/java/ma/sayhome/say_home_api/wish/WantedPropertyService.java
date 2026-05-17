@@ -7,6 +7,7 @@ import ma.sayhome.say_home_api.appointment.AppointmentRepository;
 import ma.sayhome.say_home_api.property.Property;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.prospect.dto.ProspectWishResponse;
+import ma.sayhome.say_home_api.shared.enums.PropertyOfferType;
 import ma.sayhome.say_home_api.shared.enums.PropertySecteur;
 import ma.sayhome.say_home_api.shared.enums.PropertyType;
 import ma.sayhome.say_home_api.shared.enums.WantedPropertySource;
@@ -59,6 +60,7 @@ public class WantedPropertyService {
         wish.setSource(WantedPropertySource.AGREEMENT);
         wish.setSubmitted(true);
         wish.setSubmittedAt(LocalDateTime.now());
+        wish.setOfferType(property.getOfferType());
         wish.setType(property.getType());
         wish.setSecteur(property.getSecteur());
         wish.setMinPrice(adjustFloat(property.getPrice(), 0.9f));
@@ -128,6 +130,7 @@ public class WantedPropertyService {
         wish.setReferenceProperty(appointment.getProperty());
         wish.setSource(WantedPropertySource.FORM);
         wish.setToken(token);
+        wish.setOfferType(parseOfferType(request.offerType));
         wish.setType(parseType(request.type));
         wish.setSecteur(parseSecteur(request.secteur));
         wish.setMinPrice(request.minPrice);
@@ -221,6 +224,7 @@ public class WantedPropertyService {
 
     private String buildWishSummary(WantedProperty wish) {
         StringBuilder summary = new StringBuilder();
+        append(summary, wish.getOfferType() != null ? formatOfferType(wish.getOfferType()) : null);
         append(summary, wish.getType() != null ? formatType(wish.getType()) : null);
         append(summary, wish.getSecteur() != null ? formatSecteur(wish.getSecteur()) : null);
         append(summary, formatRange("Prix", wish.getMinPrice(), wish.getMaxPrice(), "MAD"));
@@ -277,6 +281,13 @@ public class WantedPropertyService {
         return PropertyType.fromStorageValue(value);
     }
 
+    private PropertyOfferType parseOfferType(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return PropertyOfferType.valueOf(value.trim().toUpperCase());
+    }
+
     private PropertySecteur parseSecteur(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -322,6 +333,13 @@ public class WantedPropertyService {
             case VILLA -> "Villa";
             case APPARTEMENT -> "Appartement";
             case STUDIO -> "Studio";
+        };
+    }
+
+    private String formatOfferType(PropertyOfferType offerType) {
+        return switch (offerType) {
+            case SALE -> "A vendre";
+            case RENT -> "A louer";
         };
     }
 

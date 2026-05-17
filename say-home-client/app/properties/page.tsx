@@ -62,7 +62,7 @@ export default function PropertiesPage() {
     type: p.type,
     secteur: p.secteur,
     medias: p.medias,
-    price: `${p.price} MAD`,
+    price: `${p.price} MAD${p.offerType === "RENT" ? " / mois" : ""}`,
     surface: p.surface ? `${p.surface} M2` : "N/A",
     rooms: p.rooms ? `${p.rooms} chambre(s)` : "N/A",
   });
@@ -154,7 +154,7 @@ export default function PropertiesPage() {
           type: item.property.type || "N/A",
           secteur: item.property.secteur || "Unknown location",
           title: item.property.title,
-          price: `${item.property.price} MAD`,
+          price: `${item.property.price} MAD${item.property.offerType === "RENT" ? " / mois" : ""}`,
           surface: item.property.surface ? `${item.property.surface} M2` : "N/A",
           rooms: item.property.rooms ? `${item.property.rooms} chambre(s)` : "N/A",
           medias: item.property.medias,

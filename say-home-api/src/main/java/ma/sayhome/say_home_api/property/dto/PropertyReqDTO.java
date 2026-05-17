@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import ma.sayhome.say_home_api.property.Property;
+import ma.sayhome.say_home_api.shared.enums.PropertyOfferType;
 import ma.sayhome.say_home_api.shared.enums.PropertySecteur;
 import ma.sayhome.say_home_api.shared.enums.PropertyStatus;
 import ma.sayhome.say_home_api.shared.enums.PropertyType;
@@ -18,6 +19,7 @@ public class PropertyReqDTO {
     private PropertyType type;
     private PropertySecteur secteur;
     private Float price;
+    private PropertyOfferType offerType;
     private Integer surface;
     private Integer rooms;
     private Integer bathrooms;
@@ -39,6 +41,7 @@ public class PropertyReqDTO {
         property.setType(propertyDTO.getType());
         property.setSecteur(propertyDTO.getSecteur());
         property.setPrice(propertyDTO.getPrice());
+        property.setOfferType(propertyDTO.getOfferType() != null ? propertyDTO.getOfferType() : PropertyOfferType.SALE);
         property.setSurface(propertyDTO.getSurface());
         property.setRooms(propertyDTO.getRooms());
         property.setBathrooms(propertyDTO.getBathrooms());

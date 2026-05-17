@@ -390,11 +390,13 @@ public class ProspectServiceImpl implements ProspectService {
 
         return new ProspectMeetingResponse(
                 appointment.getId(),
+                appointment.getProperty() != null ? appointment.getProperty().getId() : null,
                 appointment.getMeetingType(),
                 formatDate(date),
                 time != null ? TIME_FORMATTER.format(time) : "",
                 appointment.getStatus().name(),
-                appointment.getProperty() != null ? appointment.getProperty().getTitle() : ""
+                appointment.getProperty() != null ? appointment.getProperty().getTitle() : "",
+                appointment.getOutcome() != null ? appointment.getOutcome().name() : null
         );
     }
 

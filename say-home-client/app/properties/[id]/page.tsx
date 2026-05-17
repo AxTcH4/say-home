@@ -11,7 +11,21 @@ import PropertyCard from "../../../features/properties/components/PropertyCard";
 import { createVisitRequest, getMyVisitRequests, getPropertyById } from "@/shared/lib/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
-type VisitRequestStatus = "REQUESTED" | "SCHEDULED" | "REFUSED" | "CANCELLED" | "COMPLETED";
+type VisitRequestStatus =
+  | "REQUESTED"
+  | "SCHEDULED"
+  | "RESCHEDULE_REQUESTED"
+  | "CANCELLATION_REQUESTED"
+  | "REFUSED"
+  | "CANCELLED"
+  | "COMPLETED";
+
+const ACTIVE_REQUEST_STATUSES: VisitRequestStatus[] = [
+  "REQUESTED",
+  "SCHEDULED",
+  "RESCHEDULE_REQUESTED",
+  "CANCELLATION_REQUESTED",
+];
 
 interface VisitRequestItem {
   id: number;
@@ -32,6 +46,14 @@ const statusCopy: Record<VisitRequestStatus, { label: string; classes: string }>
   SCHEDULED: {
     label: "Acceptee",
     classes: "bg-[#e9f7ef] text-[#1d7f4f] border-[#bfe1ce]",
+  },
+  RESCHEDULE_REQUESTED: {
+    label: "Modification demandee",
+    classes: "bg-[#fff5db] text-[#8d6510] border-[#f0dba2]",
+  },
+  CANCELLATION_REQUESTED: {
+    label: "Annulation demandee",
+    classes: "bg-[#eef2f7] text-[#607080] border-[#d7dde6]",
   },
   REFUSED: {
     label: "Refusee",
@@ -135,9 +157,15 @@ export default function PropertyDetailPage() {
 
   const propertyRequests = useMemo(
     () =>
-      requests.filter((request) => String(request.propertyId) === String(property?.id)),
+      requests.filter(
+        (request) =>
+          String(request.propertyId) === String(property?.id) &&
+          ACTIVE_REQUEST_STATUSES.includes(request.status),
+      ),
     [requests, property?.id]
   );
+
+  const hasActiveRequestForProperty = propertyRequests.length > 0;
 
   const handleRequestVisit = async () => {
     if (!property?.id) return;
@@ -150,6 +178,11 @@ export default function PropertyDetailPage() {
 
     if (!form.date || !form.time) {
       toast.error("Choisissez une date et une heure pour la visite.");
+      return;
+    }
+
+    if (hasActiveRequestForProperty) {
+      toast.error("Vous avez deja une demande active pour ce bien.");
       return;
     }
 
@@ -231,7 +264,9 @@ export default function PropertyDetailPage() {
                   <span>{(SECTEUR_LABELS[property.secteur] ?? property.secteur) || "Marrakech, Maroc"}</span>
                 </div>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{property.price} MAD</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {property.price} MAD{property.offerType === "RENT" ? " / mois" : ""}
+              </p>
             </div>
 
             <div className="my-8 flex flex-wrap gap-8 border-y border-gray-100 py-5">
@@ -309,11 +344,11 @@ export default function PropertyDetailPage() {
                 </label>
                 <button
                   type="button"
-                  disabled={requestLoading}
+                  disabled={requestLoading || hasActiveRequestForProperty}
                   onClick={handleRequestVisit}
                   className="flex w-full items-center justify-center gap-2 rounded-[2px] bg-[#2C1A0E] py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
                 >
-                  <Calendar size={14} /> {requestLoading ? "Envoi en cours..." : "Reserver maintenant"}
+                  <Calendar size={14} /> {requestLoading ? "Envoi en cours..." : hasActiveRequestForProperty ? "Demande deja active" : "Reserver maintenant"}
                 </button>
               </div>
 

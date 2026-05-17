@@ -7,5 +7,9 @@ public class CreateProspectPropertyRecordRequest {
     public Integer propertyId;
     public ProspectPropertyStatus status;
     public Float finalPrice;
+    public Float monthlyRent;
+    public Float securityDeposit;
+    public String leaseStartDate;
+    public Integer leaseDurationMonths;
     public String notes;
 }
