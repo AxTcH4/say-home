@@ -151,17 +151,17 @@ export function ProspectDetailTabs({ prospect }: ProspectDetailTabsProps) {
     documentFile: null as File | null,
   });
 
-  useEffect(() => {
-    setProspectState(prospect);
-  }, [prospect]);
-
-  useEffect(() => {
-    if (activeTab !== "properties" || properties.length > 0) {
-      return;
+  async function loadProperties() {
+    setLoadingProperties(true);
+    try {
+      const result = await propertyService.getAll();
+      setProperties((result.data ?? []) as PropertyOption[]);
+    } catch {
+      toast.error("Impossible de charger la liste des biens.");
+    } finally {
+      setLoadingProperties(false);
     }
-
-    void loadProperties();
-  }, [activeTab, properties.length]);
+  }
 
   const assignedPropertyIds = useMemo(
     () => new Set(prospectState.propertyRecords.map((record) => record.propertyId)),
@@ -189,18 +189,6 @@ export function ProspectDetailTabs({ prospect }: ProspectDetailTabsProps) {
       }),
     [agreedPropertyIds, assignedPropertyIds, properties],
   );
-
-  async function loadProperties() {
-    setLoadingProperties(true);
-    try {
-      const result = await propertyService.getAll();
-      setProperties((result.data ?? []) as PropertyOption[]);
-    } catch {
-      toast.error("Impossible de charger la liste des biens.");
-    } finally {
-      setLoadingProperties(false);
-    }
-  }
 
   async function refreshProspect() {
     setRefreshingProspect(true);
@@ -339,6 +327,13 @@ export function ProspectDetailTabs({ prospect }: ProspectDetailTabsProps) {
     }
   }
 
+  const handleTabChange = (tab: TabKey) => {
+    setActiveTab(tab);
+    if (tab === "properties" && properties.length === 0) {
+      void loadProperties();
+    }
+  };
+
   return (
     <div className="rounded-[18px] border border-[#e7edf5] bg-white shadow-[0_12px_35px_rgba(20,32,60,0.06)]">
       <div className="flex flex-wrap gap-2 border-b border-[#edf2f8] px-5 py-4">
@@ -346,7 +341,7 @@ export function ProspectDetailTabs({ prospect }: ProspectDetailTabsProps) {
           <button
             key={tab.key}
             type="button"
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => handleTabChange(tab.key)}
             className={`rounded-[10px] px-4 py-2 text-sm font-semibold transition ${
               activeTab === tab.key
                 ? "bg-[#2c1a0e] text-white"
@@ -683,7 +678,7 @@ function PropertyPortfolio({
               Affecter un bien au prospect
             </h3>
             <p className="mt-1 text-sm text-[#70819a]">
-              S'il y a deja eu un rendez-vous avec accord, seuls les biens valides apres visite sont proposables ici.
+              S&apos;il y a deja eu un rendez-vous avec accord, seuls les biens valides apres visite sont proposables ici.
             </p>
           </div>
           {refreshingProspect && (
@@ -851,7 +846,7 @@ function PropertyPortfolio({
               className="w-full rounded-[12px] border border-[#dbe5f0] bg-white px-3 py-2.5 text-sm text-[#172033] outline-none transition file:mr-4 file:rounded-[10px] file:border-0 file:bg-[#2c1a0e] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
             />
             <span className="block text-xs text-[#70819a]">
-              Optionnel a l'affectation, mais requis avant finalisation en achat ou location.
+              Optionnel a l&apos;affectation, mais requis avant finalisation en achat ou location.
             </span>
           </label>
 
@@ -864,7 +859,7 @@ function PropertyPortfolio({
               {assigningProperty ? "Affectation..." : "Affecter le bien"}
             </button>
             <p className="mt-2 text-xs text-[#70819a]">
-              Le bien est ajoute d'abord au dossier en favori. Utilise ensuite `Achete` pour une vente definitive ou `Loue` pour une location avec loyer, date de debut et duree.
+              Le bien est ajoute d&apos;abord au dossier en favori. Utilise ensuite `Achete` pour une vente definitive ou `Loue` pour une location avec loyer, date de debut et duree.
             </p>
           </div>
         </form>
@@ -922,7 +917,7 @@ function PropertyPortfolio({
           <div className="grid gap-4">
             {activeSectionItems.map((record) => (
               <PropertyRecordCard
-                key={record.id}
+                key={`${record.id}-${record.updatedAt}`}
                 record={record}
                 onUpdateRecord={onUpdateRecord}
                 onAddInteraction={onAddInteraction}
@@ -985,26 +980,6 @@ function PropertyRecordCard({
     file: null as File | null,
   });
   const [uploadingDocument, setUploadingDocument] = useState(false);
-
-  useEffect(() => {
-    setEditForm({
-      finalPrice: record.finalPrice ? String(record.finalPrice) : "",
-      monthlyRent: record.monthlyRent ? String(record.monthlyRent) : "",
-      securityDeposit: record.securityDeposit ? String(record.securityDeposit) : "",
-      leaseStartDate: record.leaseStartDate ? record.leaseStartDate.slice(0, 10) : "",
-      leaseDurationMonths: record.leaseDurationMonths
-        ? String(record.leaseDurationMonths)
-        : "",
-      notes: record.notes ?? "",
-    });
-  }, [
-    record.finalPrice,
-    record.monthlyRent,
-    record.securityDeposit,
-    record.leaseStartDate,
-    record.leaseDurationMonths,
-    record.notes,
-  ]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1249,7 +1224,7 @@ function PropertyRecordCard({
 
             {!hasBeforeSaleDocument || !hasBeforeRentalDocument ? (
               <p className="mt-3 text-xs text-[#70819a]">
-                Pour finaliser en achat ou location, ajoute d'abord le document PDF avant affectation correspondant. Une location exige aussi loyer, caution, date de debut et duree du bail.
+                Pour finaliser en achat ou location, ajoute d&apos;abord le document PDF avant affectation correspondant. Une location exige aussi loyer, caution, date de debut et duree du bail.
               </p>
             ) : null}
           </div>
@@ -1482,7 +1457,7 @@ function PropertyRecordCard({
               className="mt-4 grid gap-3 lg:grid-cols-[220px,1fr]"
             >
               <label className="space-y-2 text-sm text-[#55657d]">
-                <span className="block font-medium text-[#172033]">Type d'action</span>
+                <span className="block font-medium text-[#172033]">Type d&apos;action</span>
                 <select
                   value={interactionForm.type}
                   onChange={(event) =>

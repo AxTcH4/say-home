@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useEffect, useMemo, useState } from "react";
 import { storage } from "@/shared/lib/storage";
 import { authService } from "../services/auth.service";
 import type { AuthUser, LoginPayload } from "../types/auth.types";
@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
@@ -37,9 +37,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setToken(null);
     }
-  };
+  }, []);
 
-  const login = async (payload: LoginPayload) => {
+  const login = useCallback(async (payload: LoginPayload) => {
     const response = await authService.login(payload);
 
     if (!response.user) {
@@ -62,9 +62,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       duration: 3000,
       position: "bottom-center",
     });
-  };
+  }, [router]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await authService.logout();
 
     storage.clearAuth();
@@ -75,12 +75,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       position: "bottom-center",
     });
     router.push(APP_ROUTES.LOGIN);
-  };
+  }, [router]);
 
-  const setCurrentUser = (currentUser: AuthUser) => {
+  const setCurrentUser = useCallback((currentUser: AuthUser) => {
     storage.setUser(currentUser);
     setUser(currentUser);
-  };
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshUser,
       setCurrentUser,
     }),
-    [user, token, isLoading],
+    [user, token, isLoading, login, logout, refreshUser, setCurrentUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, @next/next/no-img-element, react-hooks/set-state-in-effect */
 
 import { useEffect, useRef, useState } from "react";
 import { propertyService } from "@/features/properties/services/propertyService";
@@ -11,7 +12,7 @@ import { toast } from "sonner";
 // <<<<<<< HEAD
 const MAX_PROPERTY_IMAGES = 10;
 // =======
-// ─── Edit Media Modal ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Edit Media Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function EditMediaModal({ property, onClose, onUpdated }: { property: any; onClose: () => void; onUpdated: () => void }) {
   const [files, setFiles] = useState<FileList | null>(null);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -28,7 +29,7 @@ function EditMediaModal({ property, onClose, onUpdated }: { property: any; onClo
 
   const handleUpload = async () => {
     if (!files || files.length === 0) {
-      toast.error("Sélectionnez au moins une photo.");
+      toast.error("SÃ©lectionnez au moins une photo.");
       return;
     }
     setSaving(true);
@@ -36,7 +37,7 @@ function EditMediaModal({ property, onClose, onUpdated }: { property: any; onClo
       const fd = new FormData();
       for (let i = 0; i < files.length; i++) fd.append("files", files[i]);
       await propertyService.addMedia(property.id, fd);
-      toast.success("Photos ajoutées avec succès !");
+      toast.success("Photos ajoutÃ©es avec succÃ¨s !");
       onUpdated();
       onClose();
     } catch {
@@ -51,7 +52,7 @@ function EditMediaModal({ property, onClose, onUpdated }: { property: any; onClo
       <div className="bg-white rounded-[3px] shadow-xl w-[560px] max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <div>
-            <p className="font-semibold text-[#1a1a1a]">Photos — {property.title}</p>
+            <p className="font-semibold text-[#1a1a1a]">Photos â€” {property.title}</p>
             <p className="text-xs text-gray-400 mt-0.5">{property.medias?.length ?? 0} photo(s) existante(s)</p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
@@ -88,11 +89,11 @@ function EditMediaModal({ property, onClose, onUpdated }: { property: any; onClo
               onClick={() => fileRef.current?.click()}
               className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-[2px] py-8 cursor-pointer hover:border-[#2C1A0E] hover:bg-[#faf8f5] transition"
             >
-              <span className="text-3xl">📷</span>
+              <span className="text-3xl">ðŸ“·</span>
               <p className="text-sm text-gray-500">
                 Cliquez ou glissez vos photos ici
               </p>
-              <p className="text-xs text-gray-400">JPEG · PNG · WebP · Sélection multiple</p>
+              <p className="text-xs text-gray-400">JPEG Â· PNG Â· WebP Â· SÃ©lection multiple</p>
             </div>
             <input
               ref={fileRef}
@@ -104,11 +105,11 @@ function EditMediaModal({ property, onClose, onUpdated }: { property: any; onClo
             />
           </div>
 
-          {/* Aperçu des nouvelles photos */}
+          {/* AperÃ§u des nouvelles photos */}
           {previews.length > 0 && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
-                Aperçu ({previews.length} photo(s) sélectionnée(s))
+                AperÃ§u ({previews.length} photo(s) sÃ©lectionnÃ©e(s))
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {previews.map((src, i) => (
@@ -137,7 +138,7 @@ function EditMediaModal({ property, onClose, onUpdated }: { property: any; onClo
               onClick={handleUpload}
               className="px-5 py-2 text-sm bg-[#2C1A0E] text-white rounded hover:bg-[#3d2416] transition disabled:opacity-50"
             >
-              {saving ? "Upload en cours…" : `Ajouter ${previews.length > 0 ? `(${previews.length})` : ""}`}
+              {saving ? "Upload en coursâ€¦" : `Ajouter ${previews.length > 0 ? `(${previews.length})` : ""}`}
             </button>
           </div>
         </div>
@@ -1478,16 +1479,8 @@ export default function Properties() {
                         title="Supprimer"
                         onClick={() => handleDelete(property)}
                         className="text-red-400 transition hover:text-red-700"
-                      />
-                        Supprimer
-{/* ======= */}
-                      <button
-                        title="Gérer les photos"
-                        onClick={() => setEditMediaProperty(p)}
-                        className="text-gray-400 hover:text-[#2C1A0E] transition"
                       >
-                        🖼️
-{/* >>>>>>> f39e34d (matching-ia) */}
+                        Supprimer
                       </button>
                     </div>
                   </td>

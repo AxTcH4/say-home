@@ -53,7 +53,7 @@ export interface CreateProspectPayload {
   assignedAgentId?: number | null;
 }
 
-export interface UpdateProspectPayload extends CreateProspectPayload {}
+export type UpdateProspectPayload = CreateProspectPayload;
 
 export interface ProspectInteraction {
   id: number;

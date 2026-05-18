@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { APP_ROUTES } from "@/shared/lib/routes";
 import { userService } from "../services/user.service";
 import type { CreateUserPayload, UpdateUserPayload } from "../types/user.types";
 

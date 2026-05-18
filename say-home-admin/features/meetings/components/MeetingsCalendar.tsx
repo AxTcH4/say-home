@@ -259,7 +259,7 @@ export function MeetingsCalendar({ events, view, anchorDate }: MeetingsCalendarP
                                       className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-sm text-[#8a5a12] transition hover:bg-[#fff7ed]"
                                     >
                                       <CalendarCheck2 className="h-4 w-4" />
-                                      Pas d'accord
+                                      Pas d&apos;accord
                                     </button>
                                   </>
                                 ) : (
@@ -399,7 +399,7 @@ function MonthView({
                                 className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-sm text-[#8a5a12] hover:bg-[#fff7ed]"
                               >
                                 <CalendarCheck2 className="h-4 w-4" />
-                                Pas d'accord
+                                Pas d&apos;accord
                               </button>
                             </>
                           ) : (
@@ -487,11 +487,6 @@ function getMonday(date: Date) {
   copy.setDate(copy.getDate() + diff);
   copy.setHours(0, 0, 0, 0);
   return copy;
-}
-
-function parseDate(value: string) {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day);
 }
 
 function toCalendarDay(date: Date, isCurrentMonth: boolean): CalendarDay {

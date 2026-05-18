@@ -11,6 +11,9 @@ export const ticketService = {
       "/helpdesk/tickets/me",
     );
 
-    return (data.data ?? []).map(({ prospect: _prospect, ...ticket }) => ticket);
+    return (data.data ?? []).map(({ prospect, ...ticket }) => {
+      void prospect;
+      return ticket;
+    });
   },
 };

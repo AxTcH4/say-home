@@ -272,6 +272,7 @@ function InfoPill({ label, value }: { label: string; value: string }) {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function DocumentItem({ document }: { document: RealEstateDocument }) {
   return (
     <a
@@ -311,6 +312,7 @@ function FinalDocumentItem({ document }: { document: RealEstateDocument }) {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ExpectedDocumentItem({
   document,
 }: {

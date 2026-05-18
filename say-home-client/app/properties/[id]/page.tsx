@@ -8,7 +8,12 @@ import { toast } from "sonner";
 import Navbar from "../../../shared/components/Navbar";
 import Footer from "../../../shared/components/Footer";
 import PropertyCard from "../../../features/properties/components/PropertyCard";
-import { createVisitRequest, getMyVisitRequests, getPropertyById } from "@/shared/lib/api";
+import {
+  createVisitRequest,
+  getMyVisitRequests,
+  getPropertyById,
+  PropertyListItem,
+} from "@/shared/lib/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 type VisitRequestStatus =
@@ -87,15 +92,31 @@ const SECTEUR_LABELS: Record<string, string> = {
   MABROUKA: "Mabrouka",
 };
 
-function isVillaOrRiad(type?: string) {
+function getSecteurLabel(secteur?: string | null) {
+  if (!secteur) {
+    return "Marrakech, Maroc";
+  }
+
+  return SECTEUR_LABELS[secteur] ?? secteur;
+}
+
+function getTypeLabel(type?: string | null) {
+  if (!type) {
+    return "Bien";
+  }
+
+  return TYPE_LABELS[type] ?? type;
+}
+
+function isVillaOrRiad(type?: string | null) {
   return type === "VILLA" || type === "RIAD";
 }
 
-function isStudio(type?: string) {
+function isStudio(type?: string | null) {
   return type === "STUDIO";
 }
 
-function getAmenities(property: any) {
+function getAmenities(property: PropertyListItem) {
   return [
     property.climatisation ? "Climatisation" : null,
     isVillaOrRiad(property.type) && property.piscine ? "Piscine" : null,
@@ -103,15 +124,15 @@ function getAmenities(property: any) {
     !isStudio(property.type) && property.garage ? "Garage" : null,
     property.securite ? "Securite" : null,
     property.systemeDomotiqueComplet ? "Systeme domotique complet" : null,
-  ].filter(Boolean);
+  ].filter((item): item is string => Boolean(item));
 }
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const [property, setProperty] = useState<any>(null);
-  const [similar, setSimilar] = useState<any[]>([]);
+  const [property, setProperty] = useState<PropertyListItem | null>(null);
+  const [similar, setSimilar] = useState<PropertyListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState<VisitRequestItem[]>([]);
   const [requestLoading, setRequestLoading] = useState(false);
@@ -261,7 +282,7 @@ export default function PropertyDetailPage() {
                 <h1 className="text-3xl font-semibold text-gray-900">{property.title}</h1>
                 <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
                   <MapPin size={15} />
-                  <span>{(SECTEUR_LABELS[property.secteur] ?? property.secteur) || "Marrakech, Maroc"}</span>
+                  <span>{getSecteurLabel(property.secteur)}</span>
                 </div>
               </div>
               <p className="text-2xl font-bold text-gray-900">
@@ -273,7 +294,7 @@ export default function PropertyDetailPage() {
               <Metric icon="/chambres.svg" label={`${property.rooms} chambres`} />
               <Metric icon="/shower.svg" label={`${property.bathrooms ?? 0} salles de bain`} />
               <Metric icon="/surface.svg" label={`${property.surface} m2`} />
-              <Metric icon="/location.svg" label={TYPE_LABELS[property.type] ?? property.type ?? "Bien"} />
+              <Metric icon="/location.svg" label={getTypeLabel(property.type)} />
             </div>
 
             <div className="mb-8">
@@ -423,7 +444,7 @@ export default function PropertyDetailPage() {
           <div className="mb-10 mt-16">
             <h2 className="mb-6 text-2xl font-semibold text-gray-900">Proprietes similaires</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {similar.map((item: any, index: number) => (
+              {similar.map((item, index: number) => (
                 <PropertyCard key={index} {...item} />
               ))}
             </div>

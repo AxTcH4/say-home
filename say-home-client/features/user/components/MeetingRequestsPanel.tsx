@@ -360,7 +360,7 @@ export default function MeetingRequestsPanel({ compact = false }: { compact?: bo
               Mes demandes de visite
             </h2>
             <p className="mt-2 text-sm text-[#666666]">
-              Retrouvez l'etat de vos rendez-vous et les biens que vous avez demandes.
+              Retrouvez l&apos;etat de vos rendez-vous et les biens que vous avez demandes.
             </p>
           </div>
           <div className="rounded-[2px] bg-white px-4 py-3 text-sm font-semibold text-[#2f1b10]">

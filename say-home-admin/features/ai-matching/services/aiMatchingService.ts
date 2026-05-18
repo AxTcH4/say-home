@@ -13,13 +13,26 @@ export interface SearchParams {
   minRooms?: number;
 }
 
+interface ImageMatchResult {
+  [key: string]: unknown;
+}
+
+interface ExtractedImageCriteria {
+  [key: string]: unknown;
+}
+
+interface SearchByImageResponse {
+  results: ImageMatchResult[];
+  extracted: ExtractedImageCriteria;
+}
+
 export const aiMatchingService = {
   async search(params: SearchParams) {
     const res = await apiClient.get("/properties/search", { params });
     return res.data;
   },
 
-  async searchByImage(file: File): Promise<{ results: any[]; extracted: Record<string, any> }> {
+  async searchByImage(file: File): Promise<SearchByImageResponse> {
     const body = new FormData();
     body.append("file", file);
     const res = await fetch(`${AI_URL}/search/match-by-image`, {

@@ -3,7 +3,7 @@
 import { getWishForm, submitWish } from "@/shared/lib/api";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 type WishFormData = {
   token: string;
@@ -80,12 +80,8 @@ export default function WishPage() {
     };
   }, [params]);
 
-  const showVillaFields = useMemo(
-    () => values.type === "VILLA" || values.type === "RIAD",
-    [values.type],
-  );
-
-  const showGarage = useMemo(() => values.type !== "STUDIO", [values.type]);
+  const showVillaFields = values.type === "VILLA" || values.type === "RIAD";
+  const showGarage = values.type !== "STUDIO";
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -167,7 +163,7 @@ export default function WishPage() {
               href="/"
               className="mt-5 inline-flex rounded-[12px] bg-[#2c1a0e] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#3a2415]"
             >
-              Retour a l'accueil
+              Retour a l&apos;accueil
             </Link>
           </div>
         ) : (

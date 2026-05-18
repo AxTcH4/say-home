@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from leadScore.service import predict_prospect
 
@@ -8,26 +8,26 @@ router = APIRouter()
 
 class ProspectRequest(BaseModel):
 
-    nb_interactions: int
-    temps_site: int
-    pages_visitees: int
+    nb_interactions: int = Field(ge=0)
+    temps_site: int = Field(ge=0)
+    pages_visitees: int = Field(ge=0)
 
-    favoris_count: int
-    rdv_confirmes: int
-    messages_envoyes: int
+    favoris_count: int = Field(ge=0)
+    rdv_confirmes: int = Field(ge=0)
+    messages_envoyes: int = Field(ge=0)
 
-    budget_prospect: float
-    ecart_budget_prix: float
+    budget_prospect: float = Field(ge=0)
+    ecart_budget_prix: float = Field(ge=0)
 
-    nb_negociations: int
-    dossier_complet: int
+    nb_negociations: int = Field(ge=0)
+    dossier_complet: int = Field(ge=0)
 
 
 @router.post("/predict")
 def predict(data: ProspectRequest):
 
     result = predict_prospect(
-        data.dict()
+        data.model_dump()
     )
 
     return result

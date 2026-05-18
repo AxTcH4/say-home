@@ -132,7 +132,7 @@ export default function TicketsList() {
                 Mes demandes
               </h2>
               <p className="mt-2 text-sm text-[#666666]">
-                Suivez vos reclamations, questions et demandes d'aide.
+                Suivez vos reclamations, questions et demandes d&apos;aide.
               </p>
             </div>
             <div className="rounded-[2px] bg-white px-4 py-3 text-sm font-semibold text-[#2f1b10]">
@@ -198,7 +198,7 @@ export default function TicketsList() {
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-[#666666]">
                     {activeFilter === "ongoing"
-                      ? "Vos demandes actives apparaitront ici des qu'elles seront creees."
+                      ? "Vos demandes actives apparaitront ici des qu&apos;elles seront creees."
                       : "Les tickets termines seront historises ici pour votre suivi."}
                   </p>
                 </div>
@@ -215,7 +215,7 @@ export default function TicketsList() {
               <p className="mt-2 max-w-[540px] text-sm leading-6 text-[#666666]">
                 Si vous avez une question sur un bien, une visite ou votre
                 compte, envoyez-nous un message. Votre demande sera traitee par
-                l'equipe Say Home.
+                l&apos;equipe Say Home.
               </p>
             </div>
           )}

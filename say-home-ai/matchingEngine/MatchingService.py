@@ -2,9 +2,25 @@ import os
 import joblib
 import numpy as np
 from DbHelper import DbHelper
+import logging
+
+logger = logging.getLogger(__name__)
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "matching_model.pkl")
-_model = joblib.load(MODEL_PATH)
+_model = None
+
+def _load_model():
+    global _model
+    if _model is None:
+        if not os.path.exists(MODEL_PATH):
+            raise FileNotFoundError(f"Matching model not found at {MODEL_PATH}")
+        try:
+            _model = joblib.load(MODEL_PATH)
+            logger.info("Matching model loaded successfully")
+        except Exception as e:
+            logger.error(f"Failed to load matching model: {e}")
+            raise RuntimeError("Unable to load matching model") from e
+    return _model
 
 MIN_SCORE = 0.15  # drop results below 15% probability
 
@@ -81,7 +97,7 @@ class MatchingService:
                 price_diff_pct, surface_diff, rooms_diff
             ]])
 
-            proba = _model.predict_proba(features)[0][1]  # 0-1
+            proba = _load_model().predict_proba(features)[0][1]  # 0-1
 
             results.append({
                 "property": {

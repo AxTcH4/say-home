@@ -1,11 +1,11 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useRouter } from "next/navigation";
 export default function Navbar({ onHero }: { onHero: boolean }) {
-  const { user, isAuthenticated } = useAuth();
-  const { logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const router = useRouter();
   
   //init the scrolling state
@@ -16,10 +16,6 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
     const last = user?.lastName.trim().charAt(0);
     return `${first}${last}`.toUpperCase() || "SH";
   }, [user?.firstName, user?.lastName]);
-  useEffect(() => {
-    console.log(user);
-  }, [user]);
-
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > window.innerHeight * 0.95); // adjust 80 to your hero height
@@ -37,9 +33,11 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
       >
         {/* Logo SAY HOME */}
         <Link href="/" className="flex items-center gap-2">
-          <img
+          <Image
             src="/logo-w-o-bg.png"
             alt="SAY Home"
+            width={80}
+            height={80}
             className={`w-20 h-20 mt-1 ${scrolled || !onHero ? "invert-0" : "invert-100"} `}
           />
         </Link>
@@ -89,7 +87,7 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
                 href="/auth/signup"
                 className="w-fit px-6 py-[9px] text-sm bg-[#2C1A0E] text-white  hover:scale-110 transition rounded-[1px]"
               >
-                S'inscrire
+                S&apos;inscrire
               </Link>
             </>
           ) : (

@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight, Check } from "lucide-react";
+import Link from "next/link";
 import RevealSection from "./RevealSection";
 
 export default function HomeVisitCta() {
@@ -23,15 +24,15 @@ export default function HomeVisitCta() {
                 Vous voulez aller plus vite sur votre prochaine visite ?
               </h2>
               <p className="mt-6 max-w-2xl text-[clamp(1rem,1.4vw,1.4rem)] leading-8 text-white/78">
-                Parcourez les biens, envoyez vos demandes et laissez l'equipe confirmer les visites selon les disponibilites.
+                Parcourez les biens, envoyez vos demandes et laissez l&apos;equipe confirmer les visites selon les disponibilites.
               </p>
 
-              <a
+              <Link
                 href="/properties"
                 className="mt-8 inline-flex items-center gap-3 rounded-full bg-white px-8 py-4 text-base font-semibold text-[#2f1b10] transition duration-300 hover:-translate-y-0.5 hover:translate-x-1"
               >
                 Voir les proprietes <ArrowRight className="h-5 w-5" />
-              </a>
+              </Link>
             </div>
 
             <div className="border-[#6e5748] lg:border-l lg:pl-10">

@@ -17,9 +17,6 @@ export function useAccount(userId?: number) {
 
   useEffect(() => {
     if (!userId) {
-      setProfile(null);
-      setSummary(null);
-      setRealEstate([]);
       return;
     }
 
@@ -61,10 +58,10 @@ export function useAccount(userId?: number) {
   }, [userId]);
 
   return {
-    profile,
-    summary,
-    realEstate,
-    loading,
-    error,
+    profile: userId ? profile : null,
+    summary: userId ? summary : null,
+    realEstate: userId ? realEstate : [],
+    loading: userId ? loading : false,
+    error: userId ? error : "",
   };
 }

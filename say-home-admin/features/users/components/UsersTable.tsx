@@ -12,7 +12,7 @@ interface UsersTableProps {
   total: number;
 }
 
-function roleStyle(role: string) {
+function roleStyle() {
   return "bg-[#dfe9ff] text-[#2f66da]";
 }
 
@@ -57,7 +57,7 @@ export function UsersTable({ users, total }: UsersTableProps) {
                 </td>
                 <td className="px-5 py-4 text-sm text-[#61728b]">{user.email}</td>
                 <td className="px-5 py-4">
-                  <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${roleStyle(user.role)}`}>
+                  <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${roleStyle()}`}>
                     {user.role}
                   </span>
                 </td>

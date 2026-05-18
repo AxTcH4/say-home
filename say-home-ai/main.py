@@ -2,39 +2,64 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from matchingEngine.MatchingRouter import router as matching_engine_router
 from contextlib import asynccontextmanager
-import sys
 from chatbot.helpers.Embedder import Embedder
-import sys
 from chatbot.helpers.QdrantStorage import QdrantStorage
-# from leadScore.router import router as lead_score_router
+from leadScore.router import router as lead_score_router
 from chatbot.router import router as chatbot_router
 from chatbot.service import ChatbotService
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    embedder = Embedder()
-    storage = QdrantStorage()
-    embedder.indexFolder("docs/", storage)
-
-    app.state.embedder = embedder
-    app.state.storage = storage
-    app.state.chatbot_service = ChatbotService(embedder, storage)
-
-
-    yield
-    print("shutting down...")
-app = FastAPI(lifespan=lifespan)
-from leadScore.router import router as lead_score_router
-
-# from chatbot.router import router as chatbot_router
 from dotenv import load_dotenv
+import logging
+import os
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        logger.info("Initializing embedder and storage...")
+        embedder = Embedder()
+        storage = QdrantStorage()
 
+        if not os.path.exists("docs/"):
+            logger.warning("docs/ directory not found, skipping indexing")
+            app.state.embedder = embedder
+            app.state.storage = storage
+            app.state.chatbot_service = ChatbotService(embedder, storage)
+        else:
+            logger.info("Indexing documentation...")
+            embedder.indexFolder("docs/", storage)
+            app.state.embedder = embedder
+            app.state.storage = storage
+            app.state.chatbot_service = ChatbotService(embedder, storage)
+            logger.info("Initialization complete")
+    except Exception as e:
+        logger.error(f"Failed to initialize app resources: {e}")
+        raise
 
-# app.include_router(lead_score_router, prefix="/lead-score")
-app.include_router(chatbot_router, prefix="/chatbot")
+    yield
+
+    try:
+        logger.info("Shutting down...")
+        # Add cleanup code here if needed
+    except Exception as e:
+        logger.error(f"Error during shutdown: {e}")
+
+app = FastAPI(lifespan=lifespan)
+
+# ======================================================
+# CORS Middleware
+# ======================================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
 # ======================================================
 # Matching Engine
 # ======================================================
@@ -57,15 +82,10 @@ app.include_router(
 # Chatbot
 # ======================================================
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
-    allow_methods=["GET", "POST"],
-    allow_headers=["*"],
+app.include_router(
+    chatbot_router,
+    prefix="/chatbot"
 )
-
-app.include_router(matching_engine_router, prefix="/search")
-
 
 # ======================================================
 # Health Check
@@ -76,4 +96,3 @@ def health():
     return {
         'status': 'ok'
     }
-

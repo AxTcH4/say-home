@@ -1,6 +1,40 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
+export interface PropertyListItem {
+  id: number;
+  title: string;
+  description?: string | null;
+  type?: string | null;
+  secteur?: string | null;
+  medias: string[];
+  price?: number | null;
+  offerType?: string | null;
+  surface?: number | null;
+  rooms?: number | null;
+  bathrooms?: number | null;
+  climatisation?: boolean | null;
+  piscine?: boolean | null;
+  jardin?: boolean | null;
+  garage?: boolean | null;
+  securite?: boolean | null;
+  systemeDomotiqueComplet?: boolean | null;
+  agent?: {
+    firstName: string;
+    lastName: string;
+  } | null;
+}
+
+export interface PropertySearchResult {
+  property: PropertyListItem;
+  score: number;
+}
+
+interface ApiEnvelope<T> {
+  data?: T;
+  similar?: PropertyListItem[];
+}
+
 function buildUrl(path: string) {
   return `${API_BASE_URL}${path}`;
 }
@@ -57,13 +91,13 @@ export async function searchProperties(data: {
     };
   }
 
-  return await res.json();
+  return (await res.json()) as ApiEnvelope<PropertySearchResult[]>;
 }
 
 export async function getAllProperties(filters?: {
   minPrice?: string;
   maxPrice?: string;
-}) {
+}): Promise<PropertyListItem[]> {
   const params = new URLSearchParams(
     Object.entries(filters ?? {}).filter(([, value]) => value != null && value !== "")
   ).toString();
@@ -72,7 +106,7 @@ export async function getAllProperties(filters?: {
     credentials: "include",
   });
 
-  if (res.status === 404) return null;
+  if (res.status === 404) return [];
   if (!res.ok) {
     const errorMessage = await readError(
       res,
@@ -86,18 +120,23 @@ export async function getAllProperties(filters?: {
     throw new Error("Invalid properties response");
   }
 
-  return data.data ?? [];
+  return (data.data ?? []) as PropertyListItem[];
 }
 
-export async function getPropertyById(id: string) {
+export async function getPropertyById(
+  id: string,
+): Promise<{ property: PropertyListItem | null; similar: PropertyListItem[] } | null> {
   const res = await fetch(buildUrl(`/properties/${id}`), {
     method: "GET",
     credentials: "include",
   });
 
   if (res.status === 404) return null;
-  const data = await res.json();
-  return { property: data.data, similar: data.similar };
+  const data = (await res.json()) as ApiEnvelope<PropertyListItem>;
+  return {
+    property: data.data ?? null,
+    similar: data.similar ?? [],
+  };
 }
 
 export async function createVisitRequest(payload: {

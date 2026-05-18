@@ -206,17 +206,12 @@ function DatePickerField({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (!value) return;
-    const selected = parseYmd(value);
-    setVisibleMonth(new Date(selected.getFullYear(), selected.getMonth(), 1));
-  }, [value]);
-
   const selectedDate = value ? parseYmd(value) : null;
   const days = useMemo(() => buildCalendarDays(visibleMonth), [visibleMonth]);
   const today = startOfToday();
 
   const selectDate = (date: Date) => {
+    setVisibleMonth(new Date(date.getFullYear(), date.getMonth(), 1));
     onChange(toYmd(date));
     setOpen(false);
   };

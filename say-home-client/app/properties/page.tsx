@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Filter, RotateCcw, Search, Sparkles } from "lucide-react";
 import { z } from "zod";
@@ -8,7 +8,14 @@ import { toast } from "sonner";
 import Navbar from "../../shared/components/Navbar";
 import Footer from "../../shared/components/Footer";
 import PropertyCard from "../../features/properties/components/PropertyCard";
-import { getAllProperties, logClickedProperty, logShownProperties, searchProperties } from "../../shared/lib/api";
+import {
+  getAllProperties,
+  logClickedProperty,
+  logShownProperties,
+  PropertyListItem,
+  PropertySearchResult,
+  searchProperties,
+} from "../../shared/lib/api";
 
 const searchSchema = z.object({
   title: z.string().optional(),
@@ -47,8 +54,21 @@ const PROPERTY_SECTEUR_OPTIONS = [
   { value: "mabrouka", label: "Mabrouka" },
 ];
 
+interface PropertyCardItem {
+  id: number;
+  description: string;
+  title: string;
+  type: string;
+  secteur: string;
+  medias: string[];
+  price: string;
+  surface: string;
+  rooms: string;
+  score?: number;
+}
+
 export default function PropertiesPage() {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<PropertyCardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<"404" | "400" | "500" | null>(null);
@@ -60,19 +80,19 @@ export default function PropertiesPage() {
     [items.length]
   );
 
-  const mapProperty = (p: any) => ({
+  const mapProperty = (p: PropertyListItem): PropertyCardItem => ({
     id: p.id,
-    description: p.description,
+    description: p.description || "Aucune description",
     title: p.title,
-    type: p.type,
-    secteur: p.secteur,
-    medias: p.medias,
+    type: p.type || "N/A",
+    secteur: p.secteur || "Unknown location",
+    medias: p.medias ?? [],
     price: `${p.price} MAD${p.offerType === "RENT" ? " / mois" : ""}`,
     surface: p.surface ? `${p.surface} M2` : "N/A",
     rooms: p.rooms ? `${p.rooms} chambre(s)` : "N/A",
   });
 
-  const fetchProperties = async () => {
+  const fetchProperties = useCallback(async () => {
     setLoading(true);
     setIsSimilar(false);
     try {
@@ -86,11 +106,11 @@ export default function PropertiesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchProperties();
-  }, []);
+    void fetchProperties();
+  }, [fetchProperties]);
 
   const handleSearch = async (event: { preventDefault: () => void }) => {
     event.preventDefault();
@@ -124,8 +144,9 @@ export default function PropertiesPage() {
       }
 
       const result = await searchProperties(data);
+      const failedResult = !result || ("status" in result && result.status >= 400);
 
-      if (!result || result.status === 500) {
+      if (failedResult && result?.status === 500) {
         setItems([]);
         setError("500");
         toast.error("Une erreur est survenue pendant la recherche.", {
@@ -135,7 +156,7 @@ export default function PropertiesPage() {
         return;
       }
 
-      if (result.status === 400) {
+      if (failedResult && result.status === 400) {
         setItems([]);
         setError("400");
         toast.error("Un ou plusieurs champs sont invalides.", {
@@ -145,7 +166,7 @@ export default function PropertiesPage() {
         return;
       }
 
-      if (result.status === 404 || !result.data?.length) {
+      if ((failedResult && result.status === 404) || !("data" in result) || !result.data?.length) {
         setItems([]);
         setError("404");
         toast.error("Aucun bien ne correspond a votre recherche.", {
@@ -155,10 +176,10 @@ export default function PropertiesPage() {
         return;
       }
 
-      const similar = result.data.every((item: any) => item.score < 0.15);
+      const similar = result.data.every((item: PropertySearchResult) => item.score < 0.15);
       setIsSimilar(similar);
 
-      const mapped = result.data.map((item: any) => ({
+      const mapped = result.data.map((item: PropertySearchResult): PropertyCardItem => ({
         id: item.property.id,
         description: item.property.description || "Aucune description",
         type: item.property.type || "N/A",
@@ -174,7 +195,7 @@ export default function PropertiesPage() {
       setError(null);
 
       logShownProperties(
-        mapped.map((i: any) => i.id),
+        mapped.map((i) => i.id),
         {
           type: filters.type || undefined,
           secteur: filters.secteur || undefined,
@@ -411,7 +432,7 @@ export default function PropertiesPage() {
                   </div>
                 )}
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {items.map((item: any, index: number) => (
+                  {items.map((item, index: number) => (
                     <PropertyCard
                       key={index}
                       {...item}

@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { APP_ROUTES } from "@/shared/lib/routes";
 import { usePathname, useRouter } from "next/navigation";

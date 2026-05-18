@@ -4,6 +4,36 @@ import Link from 'next/link';
 import PropertyCard from '../../properties/components/PropertyCard';
 import { getLatestProperties } from '@/shared/lib/api';
 
+type LatestPropertyApiItem = {
+  id: number;
+  description?: string;
+  medias: string[];
+  type: string;
+  offerType: string;
+  secteur: string;
+  title: string;
+  price?: number;
+  surface?: number;
+  rooms?: number;
+};
+
+type LatestPropertyCard = {
+  id: number;
+  description: string;
+  medias: string[];
+  type: string;
+  offerType: string;
+  secteur: string;
+  title: string;
+  price: string;
+  surface: string;
+  rooms: string;
+};
+
+type LatestPropertiesResponse = {
+  data: LatestPropertyApiItem[];
+} | null;
+
 const filters = [
   'Villas a vendre',
   'Villas a louer',
@@ -15,20 +45,20 @@ const filters = [
 
 export default function LatestProperties() {
   const [activeFilter, setActiveFilter] = useState(filters[0]);
-  const [properties, setProperties] = useState<any[]>([]);
+  const [properties, setProperties] = useState<LatestPropertyCard[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProperties = async () => {
       setLoading(true);
       try {
-        const result = await getLatestProperties();
+        const result = (await getLatestProperties()) as LatestPropertiesResponse;
 
-        if (result.data === null || result.data.length === 0) {
+        if (!result?.data || result.data.length === 0) {
           setProperties([]);
         } else {
           setProperties(
-            result.data.map((p: any) => ({
+            result.data.map((p) => ({
               id: p.id,
               description: p.description || 'Location',
               medias: p.medias,
@@ -52,7 +82,7 @@ export default function LatestProperties() {
   }, []);
 
   const filteredProperties = useMemo(() => {
-    return properties.filter((property: any) => {
+    return properties.filter((property) => {
       switch (activeFilter) {
         case 'Villas a vendre':
           return property.type === 'VILLA' && property.offerType === 'SALE';
@@ -83,7 +113,7 @@ export default function LatestProperties() {
       <div className="mb-10 flex flex-wrap justify-center gap-3">
         {filters.map((filter) => (
           <button
-            key={filter.label}
+            key={filter}
             onClick={() => setActiveFilter(filter)}
             style={{ fontSize: 'clamp(0.7rem, 1.2vw, 0.875rem)' }}
             className={`rounded-full border px-5 py-2 font-medium transition ${
@@ -92,13 +122,13 @@ export default function LatestProperties() {
                 : 'border-gray-800 bg-white text-gray-800 hover:bg-gray-100'
             }`}
           >
-            {filter.label}
+            {filter}
           </button>
         ))}
       </div>
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {!loading &&
-          filteredProperties.map((property: any) => (
+          filteredProperties.map((property) => (
             <PropertyCard key={property.id} {...property} />
           ))}
       </div>
@@ -108,7 +138,7 @@ export default function LatestProperties() {
           style={{ fontSize: 'clamp(0.7rem, 1.2vw, 0.875rem)' }}
           className="text-gray-600 hover:underline"
         >
-          Voir plus d'offres &rsaquo;
+          Voir plus d&apos;offres &rsaquo;
         </Link>
       </div>
     </section>

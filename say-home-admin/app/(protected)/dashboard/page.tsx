@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/immutability */
 import { useEffect, useState } from "react";
 import { dashboardService } from "@/features/dashboard/services/dashboardService";
 import { calculateTimeAgo } from "@/shared/lib/utils";

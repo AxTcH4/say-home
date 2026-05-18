@@ -11,6 +11,7 @@ interface UsersHeaderProps {
 export function UsersHeader({ total }: UsersHeaderProps) {
   const { user } = useAuth();
   const isAdmin = isAdminRole(user?.role);
+  void total;
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

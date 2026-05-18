@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { ProspectActionsMenu } from "./ProspectActionsMenu";
 import type { ProspectListItem } from "../types/prospect.types";

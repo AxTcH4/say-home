@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { hasManagementAccess } from "@/shared/lib/auth";

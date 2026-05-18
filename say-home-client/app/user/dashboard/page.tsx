@@ -11,7 +11,7 @@ export default function DashboardPage() {
 
         <p className="mt-3 max-w-[620px] text-sm leading-6 text-[#666666]">
           Accedez rapidement a votre profil, vos biens immobiliers et vos
-          demandes d'assistance.
+          demandes d&apos;assistance.
         </p>
       </div>
 

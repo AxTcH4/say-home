@@ -34,6 +34,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
@@ -43,6 +45,8 @@ import java.util.Optional;
 
 @Service
 public class HelpDeskServiceImp implements HelpDeskService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HelpDeskServiceImp.class);
+
     @Autowired
     private ChatMessageRepository chatMessageRepository;
 
@@ -131,9 +135,11 @@ public class HelpDeskServiceImp implements HelpDeskService {
 
         try {
             getBotReply(prospect, agentRequest, currentSession);
-        } catch (Exception e) {
-//            throw new RuntimeException(e);
-            e.printStackTrace();
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            LOGGER.warn("Chatbot reply retrieval was interrupted for session {}", currentSession.getId(), exception);
+        } catch (Exception exception) {
+            LOGGER.error("Failed to retrieve chatbot reply for session {}", currentSession.getId(), exception);
         }
 
         return MessageResponse.toDTO(message);
@@ -186,9 +192,8 @@ public class HelpDeskServiceImp implements HelpDeskService {
                     "/topic/session/" + currentSession.getId(),  // use currentSession directly
                     botMessage
             );
-        } catch (Exception e) {
-//            throw new RuntimeException(e);
-            e.printStackTrace();
+        } catch (Exception exception) {
+            LOGGER.error("Failed to get bot reply for session {}", currentSession.getId(), exception);
         }
     }
 

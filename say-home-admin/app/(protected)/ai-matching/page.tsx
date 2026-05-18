@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { apiClient } from "@/shared/lib/axios";
 import { aiMatchingService } from "@/features/ai-matching/services/aiMatchingService";

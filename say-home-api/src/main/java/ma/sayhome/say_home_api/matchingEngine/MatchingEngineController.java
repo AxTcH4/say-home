@@ -29,7 +29,7 @@ public class MatchingEngineController extends ControllerBase {
         }
 
         if (request.getMinPrice() != null && request.getMaxPrice() != null
-                && request.getMinPrice() > request.getMaxPrice() && request.getMaxPrice() != 0) {
+                && request.getMinPrice() > request.getMaxPrice() && request.getMaxPrice() != 0F) {
             throw new BadRequestException("Min price cannot be greater than max price");
         }
 

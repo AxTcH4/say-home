@@ -441,9 +441,9 @@ def repondre_visites(state: AgentState) -> AgentState:
 
         status = req.get("status", "UNKNOWN")
 
-        date = req.get("requesetedDate", "Date inconnue")
+        date = req.get("requestedDate", "Date inconnue")
 
-        time = req.get("requesetedTime", "Heure inconnue")
+        time = req.get("requestedTime", "Heure inconnue")
 
 
 
@@ -967,7 +967,7 @@ def recentrer_sav(state: AgentState) -> AgentState:
                     "Je suis un assistant SAV SAY Home. "
                     "Si vous avez un probleme en relation avec une de vos proprietes, "
                     "vos documents, vos rendez-vous ou le suivi de votre dossier, "
-                    "feel free to ask."
+                    "n'hésitez pas à me le faire savoir."
                 )
             )
         ]

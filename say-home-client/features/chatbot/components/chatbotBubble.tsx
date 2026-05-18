@@ -12,6 +12,32 @@ export interface Message {
   content: string;
   sender?: "PROSPECT" | "BOT";
   timestamp: Date;
+  isError?: boolean;
+}
+
+interface SessionMessage {
+  content: string;
+  sender: "PROSPECT" | "BOT";
+  createdAt: string;
+}
+
+interface ActiveSession {
+  id: number;
+  messages: SessionMessage[];
+}
+
+interface ActiveSessionResponse {
+  data?: ActiveSession;
+}
+
+interface SendMessageResponse {
+  data: {
+    data: {
+      session: {
+        id: number;
+      };
+    };
+  };
 }
 
 const CHAT_OPENED_KEY = "say_home_chat_opened_once";
@@ -19,7 +45,6 @@ const CHAT_OPENED_KEY = "say_home_chat_opened_once";
 export default function ChatBubble() {
   const [isOpen, setIsOpen] = useState(false);
   const [isBotTyping, setIsBotTyping] = useState(false);
-  const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -29,16 +54,52 @@ export default function ChatBubble() {
   const stompClient = useRef<Client | null>(null);
   const isOpenRef = useRef(false);
 
+  function connectWebSocket(sessionId: number) {
+    if (stompClient.current?.active) {
+      return;
+    }
+
+    const client = new Client({
+      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      onConnect: () => {
+        client.subscribe(`/topic/session/${sessionId}`, (message) => {
+          const raw = JSON.parse(message.body) as SessionMessage;
+          const botMessage: Message = {
+            content: raw.content,
+            sender: "BOT",
+            timestamp: new Date(raw.createdAt),
+          };
+
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+          }
+
+          setIsBotTyping(false);
+          setMessages((prev) => [...prev, botMessage]);
+
+          if (!isOpenRef.current) {
+            setUnreadCount((current) => current + 1);
+            toast.success(raw.content, {
+              duration: 3500,
+              position: "bottom-right",
+            });
+          }
+        });
+      },
+    });
+
+    client.activate();
+    stompClient.current = client;
+  }
+
   useEffect(() => {
     const loadSession = async () => {
       try {
-        const result = await chatbotService.getActiveSessions();
+        const result = (await chatbotService.getActiveSessions()) as ActiveSessionResponse;
         if (!result?.data) return;
 
         const session = result.data;
-        setActiveSessionId(session.id);
-
-        const history = session.messages.map((message: any) => ({
+        const history = session.messages.map((message) => ({
           content: message.content,
           sender: message.sender,
           timestamp: new Date(message.createdAt),
@@ -49,8 +110,9 @@ export default function ChatBubble() {
         const hasOpenedChat =
           window.localStorage.getItem(CHAT_OPENED_KEY) === "true";
         const unseenMessages = history.filter(
-          (message: Message) => message.sender === "BOT",
+          (message) => message.sender === "BOT",
         ).length;
+
         if (!hasOpenedChat && unseenMessages > 0) {
           setUnreadCount(unseenMessages);
         }
@@ -76,49 +138,9 @@ export default function ChatBubble() {
     isOpenRef.current = isOpen;
     if (isOpen) {
       inputRef.current?.focus();
-      setUnreadCount(0);
       window.localStorage.setItem(CHAT_OPENED_KEY, "true");
     }
   }, [isOpen]);
-
-  const connectWebSocket = (sessionId: number) => {
-    if (stompClient.current?.active) {
-      return;
-    }
-
-    const client = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
-      onConnect: () => {
-        client.subscribe(`/topic/session/${sessionId}`, (message) => {
-          const raw = JSON.parse(message.body);
-          const botMessage: Message = {
-            content: raw.content,
-            sender: "BOT",
-            timestamp: new Date(raw.createdAt ?? Date.now()),
-          };
-
-          if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-          }
-
-          setIsBotTyping(false);
-
-          setMessages((prev) => [...prev, botMessage]);
-
-          if (!isOpenRef.current) {
-            setUnreadCount((current) => current + 1);
-            toast.success(raw.content, {
-              duration: 3500,
-              position: "bottom-right",
-            });
-          }
-        });
-      },
-    });
-
-    client.activate();
-    stompClient.current = client;
-  };
 
   const handleSend = async () => {
     if (!inputValue.trim()) return;
@@ -132,20 +154,15 @@ export default function ChatBubble() {
     setMessages((prev) => [...prev, userMessage]);
 
     const messageContent = inputValue.trim();
-
     setInputValue("");
-
-    // show typing immediately
     setIsBotTyping(true);
 
-    // start timeout
     timeoutRef.current = setTimeout(() => {
       setIsBotTyping(false);
-
       setMessages((prev) => [
         ...prev,
         {
-          content: "Le serveur met trop de temps à répondre.",
+          content: "Le serveur met trop de temps a repondre.",
           sender: "BOT",
           timestamp: new Date(),
           isError: true,
@@ -154,40 +171,39 @@ export default function ChatBubble() {
     }, 25000);
 
     try {
-      const res = await chatbotService.sendMessage({
+      const res = (await chatbotService.sendMessage({
         ...userMessage,
         content: messageContent,
-      });
+      })) as SendMessageResponse;
 
       const id = res.data.data.session.id;
       if (!stompClient.current?.active) {
         connectWebSocket(id);
 
         setTimeout(async () => {
-          const latest = await chatbotService.getActiveSessions();
+          const latest =
+            (await chatbotService.getActiveSessions()) as ActiveSessionResponse;
           if (latest.data) {
-            const latestMessages = latest.data.messages.map((message: any) => ({
+            const latestMessages = latest.data.messages.map((message) => ({
               content: message.content,
               sender: message.sender,
               timestamp: new Date(message.createdAt),
             }));
-            
+
             if (timeoutRef.current) {
               clearTimeout(timeoutRef.current);
               setIsBotTyping(false);
-              setMessages((prev) => [...latestMessages]);
+              setMessages(latestMessages);
             }
           }
         }, 1000);
       }
-      setActiveSessionId(id);
-    } catch (error) {
+    } catch {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
 
       setIsBotTyping(false);
-
       setMessages((prev) => [
         ...prev,
         {
@@ -222,10 +238,9 @@ export default function ChatBubble() {
         <div className="flex items-center justify-between bg-amber-950 px-4 py-3">
           <div className="flex items-center gap-3">
             <div>
-              <p className="font-semibold text-sm text-white">
+              <p className="text-sm font-semibold text-white">
                 Nouvelle Conversation
               </p>
-              {/* <p className="text-xs text-blue-100">En ligne</p> */}
             </div>
           </div>
           <button
@@ -243,51 +258,48 @@ export default function ChatBubble() {
               <div className="flex h-15 w-15 items-center rounded-full bg-white/20 ">
                 <MessageCircle className="h-11 w-11 text-black" />
               </div>
-              <p className=" text-base pt-2 text-black font-semibold ">
+              <p className=" pt-2 text-base font-semibold text-black ">
                 Comment puis-je vous aider ?
               </p>
             </div>
           )}
 
           <div className="flex flex-col gap-3 ">
-            {messages &&
-              messages.map((message, index) => (
+            {messages.map((message, index) => (
+              <div
+                key={`${message.timestamp.toISOString()}-${index}`}
+                className={cn(
+                  "flex",
+                  message.sender === "PROSPECT"
+                    ? "justify-end"
+                    : "justify-start",
+                )}
+              >
                 <div
-                  key={`${message.timestamp ? new Date(message.timestamp).toISOString() : Date.now()}-${index}`}
                   className={cn(
-                    "flex",
+                    "max-w-[80%] rounded-[2px] px-4 py-2.5 text-[14px]",
                     message.sender === "PROSPECT"
-                      ? "justify-end"
-                      : "justify-start",
+                      ? "rounded bg-amber-950 text-white"
+                      : "rounded bg-white text-gray-800 shadow-sm",
                   )}
                 >
-                  <div
+                  <p className="whitespace-pre-wrap">{message.content}</p>
+                  <p
                     className={cn(
-                      "max-w-[80%] rounded-[2px] px-4 py-2.5 text-[14px]",
+                      "mt-1 text-[10px]",
                       message.sender === "PROSPECT"
-                        ? "rounded  bg-amber-950 text-white"
-                        : "rounded bg-white text-gray-800 shadow-sm",
+                        ? "text-blue-200"
+                        : "text-gray-400",
                     )}
                   >
-                    <p className="whitespace-pre-wrap">{message.content}</p>
-                    <p
-                      className={cn(
-                        "mt-1 text-[10px]",
-                        message.sender === "PROSPECT"
-                          ? "text-blue-200"
-                          : "text-gray-400",
-                      )}
-                    >
-                      {new Date(
-                        message.timestamp ?? Date.now(),
-                      ).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
+                    {message.timestamp.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
                 </div>
-              ))}
+              </div>
+            ))}
 
             {isBotTyping && (
               <div className="flex justify-start">
@@ -328,7 +340,15 @@ export default function ChatBubble() {
       </div>
 
       <button
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={() =>
+          setIsOpen((current) => {
+            const next = !current;
+            if (next) {
+              setUnreadCount(0);
+            }
+            return next;
+          })
+        }
         className={cn(
           "relative flex h-14 w-14 items-center justify-center rounded-full bg-taupe-950 text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-amber-950 hover:shadow-xl active:scale-95",
           isOpen && "rotate-90",

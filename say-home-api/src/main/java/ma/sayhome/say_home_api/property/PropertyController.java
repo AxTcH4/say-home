@@ -2,7 +2,7 @@ package ma.sayhome.say_home_api.property;
 
 import ma.sayhome.say_home_api.property.dto.PropertyDTO;
 import ma.sayhome.say_home_api.property.dto.PropertyReqDTO;
-import ma.sayhome.say_home_api.property.propertyMedia.PropertyMediaServiceImp;
+import ma.sayhome.say_home_api.property.propertyMedia.PropertyMediaServiceImpl;
 import ma.sayhome.say_home_api.shared.ApiResponse;
 import ma.sayhome.say_home_api.shared.ControllerBase;
 import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,10 +40,7 @@ public class PropertyController extends ControllerBase {
     }
 
     @Autowired
-    private PropertyServiceImp propertyService;
-
-    @Autowired
-    private PropertyMediaServiceImp propertyMediaService;
+    private PropertyMediaServiceImpl propertyMediaService;
 
     // GET /api/properties/latest - Home Page
     @GetMapping("/latest")

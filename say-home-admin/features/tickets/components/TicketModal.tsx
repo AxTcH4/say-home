@@ -1,4 +1,22 @@
+/* eslint-disable @next/next/no-img-element */
 import { X } from "lucide-react";
+
+interface TicketModalTicket {
+  id: number;
+  subject: string;
+  description: string;
+}
+
+interface TicketModalProps {
+  selectedTicket: TicketModalTicket;
+  onClose: () => void;
+  onConfirm: () => void;
+  editStatus: string;
+  setEditStatus: (value: string) => void;
+  isClosing: boolean;
+  editPriority: string;
+  setEditPriority: (value: string) => void;
+}
 
 export default function TicketModal({
   selectedTicket,
@@ -9,7 +27,7 @@ export default function TicketModal({
   isClosing,
   editPriority,
   setEditPriority,
-}: any) {
+}: TicketModalProps) {
   return (
     <div
       className={`transition-all duration-200 ease-in-out ${isClosing ? "opacity-0 scale-95" : "opacity-100 scale-100"} fixed inset-0 bg-black/50 flex items-center justify-center z-50`}
