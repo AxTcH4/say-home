@@ -12,7 +12,7 @@ public class SearchRequest {
     @Pattern(regexp = "^(villa|appartement|riad|studio)?$", message = "Type Invalide")
     private String type;
 
-    @Pattern(regexp = "^(palmeraie|targa|medina|route-d-ourika|agdal|hivernage|mabrouka)?$", message = "Secteur Invalide")
+    @Pattern(regexp = "^(gueliz|palmeraie|targa|medina|route-d-ourika|agdal|hivernage|mabrouka)?$", message = "Secteur Invalide")
     private String secteur;
 
     @DecimalMin(value = "0.0", inclusive = true, message = "Min price cannot be negative")

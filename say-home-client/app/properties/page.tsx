@@ -35,6 +35,24 @@ const defaultFilters = {
   minRooms: "",
 };
 
+const PROPERTY_TYPE_OPTIONS = [
+  { value: "villa", label: "Villa" },
+  { value: "appartement", label: "Appartement" },
+  { value: "riad", label: "Riad" },
+  { value: "studio", label: "Studio" },
+];
+
+const PROPERTY_SECTEUR_OPTIONS = [
+  { value: "gueliz", label: "Gueliz" },
+  { value: "palmeraie", label: "Palmeraie" },
+  { value: "targa", label: "Targa" },
+  { value: "medina", label: "Medina" },
+  { value: "route-d-ourika", label: "Route d'Ourika" },
+  { value: "agdal", label: "Agdal" },
+  { value: "hivernage", label: "Hivernage" },
+  { value: "mabrouka", label: "Mabrouka" },
+];
+
 export default function PropertiesPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,8 +129,9 @@ export default function PropertiesPage() {
       }
 
       const result = await searchProperties(data);
+      const failedResult = !result || ("status" in result && result.status >= 400);
 
-      if (!result || result.status === 500) {
+      if (failedResult && result?.status === 500) {
         setItems([]);
         setError("500");
         toast.error("Une erreur est survenue pendant la recherche.", {
@@ -122,7 +141,7 @@ export default function PropertiesPage() {
         return;
       }
 
-      if (result.status === 400) {
+      if (failedResult && result.status === 400) {
         setItems([]);
         setError("400");
         toast.error("Un ou plusieurs champs sont invalides.", {
@@ -132,7 +151,7 @@ export default function PropertiesPage() {
         return;
       }
 
-      if (result.status === 404 || !result.data?.length) {
+      if ((failedResult && result.status === 404) || !("data" in result) || !result.data?.length) {
         setItems([]);
         setError("404");
         toast.error("Aucun bien ne correspond a votre recherche.", {
@@ -208,7 +227,7 @@ export default function PropertiesPage() {
 
             <div className="grid gap-3 sm:grid-cols-3">
               <QuickStat label="Resultats visibles" value={resultsLabel} />
-              <QuickStat label="Secteurs suivis" value="Guéliz, Hivernage, Medina" />
+              <QuickStat label="Secteurs suivis" value="Palmeraie, Agdal, Hivernage" />
               <QuickStat label="Experience" value="Recherche rapide et claire" />
             </div>
           </div>
@@ -255,9 +274,11 @@ export default function PropertiesPage() {
                   className="w-full rounded-[2px] border border-[#d8d1c8] bg-[#fbfaf8] px-3 py-3 text-sm text-[#4a4038] outline-none"
                 >
                   <option value="">Selectionnez un type</option>
-                  <option value="villa">Villa</option>
-                  <option value="appartement">Appartement</option>
-                  <option value="riad">Riad</option>
+                  {PROPERTY_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </Field>
 
@@ -268,9 +289,11 @@ export default function PropertiesPage() {
                   className="w-full rounded-[2px] border border-[#d8d1c8] bg-[#fbfaf8] px-3 py-3 text-sm text-[#4a4038] outline-none"
                 >
                   <option value="">Selectionnez un secteur</option>
-                  <option value="gueliz">Gueliz</option>
-                  <option value="hivernage">Hivernage</option>
-                  <option value="medina">Medina</option>
+                  {PROPERTY_SECTEUR_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </Field>
 
@@ -293,7 +316,7 @@ export default function PropertiesPage() {
                 </div>
               </Field>
 
-              <Field label="Surface minimum (m²)">
+              <Field label="Surface minimum (m2)">
                 <input
                   type="number"
                   value={filters.minSurface}
@@ -335,8 +358,22 @@ export default function PropertiesPage() {
               </div>
 
               <div className="flex flex-wrap gap-2 text-xs font-medium text-[#6d6259]">
-                {filters.type && <FilterChip label={filters.type} />}
-                {filters.secteur && <FilterChip label={filters.secteur} />}
+                {filters.type && (
+                  <FilterChip
+                    label={
+                      PROPERTY_TYPE_OPTIONS.find((option) => option.value === filters.type)?.label ??
+                      filters.type
+                    }
+                  />
+                )}
+                {filters.secteur && (
+                  <FilterChip
+                    label={
+                      PROPERTY_SECTEUR_OPTIONS.find((option) => option.value === filters.secteur)
+                        ?.label ?? filters.secteur
+                    }
+                  />
+                )}
                 {(filters.minPrice || filters.maxPrice) && (
                   <FilterChip
                     label={`${filters.minPrice || "0"} - ${filters.maxPrice || "∞"} MAD`}
@@ -379,7 +416,7 @@ export default function PropertiesPage() {
                 {isSimilar && (
                   <div className="rounded-[2px] border border-amber-200 bg-amber-50 px-5 py-4">
                     <p className="text-sm font-semibold text-amber-800">
-                      Aucun resultat exact — voici les biens les plus proches de votre recherche.
+                      Aucun resultat exact - voici les biens les plus proches de votre recherche.
                     </p>
                   </div>
                 )}
