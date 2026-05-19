@@ -5,8 +5,10 @@ import PublicOnlyRoute from "@/shared/components/PublicOnlyRoute";
 import LoginForm from "@/features/auth/components/LoginForm";
 import Navbar from "@/shared/components/Navbar";
 import Footer from "@/shared/components/Footer";
+import { useEffect, useRef } from "react";
 
 export default function LoginPage() {
+
   return (
     <PublicOnlyRoute>
       <div className="mb-[10vh]">
@@ -30,11 +32,9 @@ export default function LoginPage() {
 
           <div className="hidden lg:block">
             <div className="overflow-hidden rounded-[2px] shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
-              <Image
-                src="/login-image.png"
-                alt="Lieu inspirant"
-                width={900}
-                height={620}
+              <img
+                src="/login-vid.gif"
+                alt="weq"
                 className="h-[620px] w-full object-cover"
               />
             </div>

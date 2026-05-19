@@ -8,6 +8,9 @@ import ma.sayhome.say_home_api.shared.exceptions.BadRequestException;
 import ma.sayhome.say_home_api.shared.exceptions.UnauthorizedException;
 import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.user.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -19,25 +22,30 @@ import java.util.UUID;
 
 @Service
 public class AuthServiceImpl implements AuthService {
-    private static final String SAY_HOME_EMAIL = "sayhome.app@gmail.com";
-    private static final String FRONTEND_URL = "http://localhost:3001";
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
     private final UserRepository userRepository;
     private final PendingRegistrationRepository pendingRegistrationRepository;
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
     private final JwtService jwtService;
+    private final String mailFrom;
+    private final String frontendUrl;
 
     public AuthServiceImpl(UserRepository userRepository,
                           PendingRegistrationRepository pendingRegistrationRepository,
                           PasswordEncoder passwordEncoder,
                           JavaMailSender mailSender,
-                          JwtService jwtService) {
+                          JwtService jwtService,
+                          @Value("${spring.mail.username:}") String mailFrom,
+                          @Value("${sayhome.client.url:http://localhost:3001}") String frontendUrl) {
         this.userRepository = userRepository;
         this.pendingRegistrationRepository = pendingRegistrationRepository;
         this.passwordEncoder = passwordEncoder;
         this.mailSender = mailSender;
         this.jwtService = jwtService;
+        this.mailFrom = mailFrom;
+        this.frontendUrl = frontendUrl;
     }
 
     @Override
@@ -97,7 +105,12 @@ public class AuthServiceImpl implements AuthService {
         pendingRegistration.setVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
 
         pendingRegistrationRepository.save(pendingRegistration);
-        sendRegistrationVerificationEmail(request.email, verificationToken);
+        try {
+            sendRegistrationVerificationEmail(request.email, verificationToken);
+        } catch (BadRequestException exception) {
+            pendingRegistrationRepository.delete(pendingRegistration);
+            throw exception;
+        }
 
         return new AuthDTO.AuthResponse("Verification email sent");
     }
@@ -154,7 +167,7 @@ public class AuthServiceImpl implements AuthService {
             user.setToken(resetToken);
             userRepository.save(user);
 
-            String resetLink = FRONTEND_URL + "/auth/reset-password?token=" + resetToken;
+            String resetLink = frontendUrl + "/auth/reset-password?token=" + resetToken;
 
             try {
                 sendHtmlEmail(
@@ -194,7 +207,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void sendRegistrationVerificationEmail(String email, String verificationToken) {
-        String verificationLink = FRONTEND_URL + "/auth/verify-email?token=" + verificationToken;
+        String verificationLink = frontendUrl + "/auth/verify-email?token=" + verificationToken;
 
         try {
             sendHtmlEmail(
@@ -210,14 +223,19 @@ public class AuthServiceImpl implements AuthService {
                     )
             );
         } catch (MailException | MessagingException ex) {
+            log.error("Unable to send verification email to {}", email, ex);
             throw new BadRequestException("Unable to send verification email");
         }
     }
 
     private void sendHtmlEmail(String to, String subject, String html) throws MessagingException {
+        if (mailFrom == null || mailFrom.isBlank()) {
+            throw new BadRequestException("Mail service is not configured");
+        }
+
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
-        helper.setFrom(SAY_HOME_EMAIL);
+        helper.setFrom(mailFrom);
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(html, true);
@@ -263,7 +281,7 @@ public class AuthServiceImpl implements AuthService {
                             </tr>
                             <tr>
                               <td style="background:#f1eee9;padding:18px 32px;text-align:center;font-size:12px;color:#777777;">
-                                Marrakech, Maroc - sayhome.app@gmail.com
+                                Marrakech, Maroc - %s
                               </td>
                             </tr>
                           </table>
@@ -272,6 +290,6 @@ public class AuthServiceImpl implements AuthService {
                     </table>
                   </body>
                 </html>
-                """.formatted(title, greeting, body, buttonUrl, buttonText, footnote, buttonUrl, buttonUrl);
+                """.formatted(title, greeting, body, buttonUrl, buttonText, footnote, buttonUrl, buttonUrl, mailFrom);
     }
 }

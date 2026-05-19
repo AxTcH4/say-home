@@ -155,7 +155,7 @@ export default function PropertyDetailPage() {
         setLoading(false);
       }
     };
-    fetchProperty();
+    void fetchProperty();
   }, [id]);
 
   useEffect(() => {
@@ -173,7 +173,7 @@ export default function PropertyDetailPage() {
       }
     };
 
-    loadRequests();
+    void loadRequests();
   }, [isAuthenticated]);
 
   const propertyRequests = useMemo(
@@ -183,7 +183,7 @@ export default function PropertyDetailPage() {
           String(request.propertyId) === String(property?.id) &&
           ACTIVE_REQUEST_STATUSES.includes(request.status),
       ),
-    [requests, property?.id]
+    [requests, property?.id],
   );
 
   const hasActiveRequestForProperty = propertyRequests.length > 0;
@@ -304,7 +304,7 @@ export default function PropertyDetailPage() {
               </p>
             </div>
 
-            <div className="mb-8">
+            <div className="mb-10">
               <h2 className="mb-3 text-lg font-semibold text-gray-900">Equipements & caracteristiques</h2>
               <div className="grid gap-3 md:grid-cols-2">
                 {getAmenities(property).length > 0 ? (
@@ -319,6 +319,46 @@ export default function PropertyDetailPage() {
                 )}
               </div>
             </div>
+
+              <div className="mb-8">
+              <h2 className="mb-3 text-lg font-semibold text-gray-900">Notre Engagement</h2>
+              <p className="text-sm leading-7 text-gray-600 max-w-2xl">
+                Chaque bien proposé sur SAY Home fait l'objet d'une 
+                vérification rigoureuse de ses documents juridiques, 
+                de son état général et de sa conformité. Vous visitez 
+                en toute confiance.
+              </p>
+            </div>
+
+              <div className="mb-8">
+                <h2 className="mb-3 text-lg font-semibold text-gray-900">Vous accompagner à chaque étape</h2>
+                <div className="flex gap-25" >
+                  <ol className=" md:list-disc">
+                  <li className="mb-2 flex items-start gap-3 text-sm text-gray-600">
+                  Visite organisée sous 48h
+                  </li>
+
+                  <li className="mb-2 flex items-start gap-3 text-sm text-gray-600">
+                    Conseiller dédié tout au long du processus
+                  </li>
+
+                  
+                </ol>
+                <ol className=" md:list-disc">
+                  <li className="mb-2 flex items-start gap-3 text-sm text-gray-600">
+                    Accompagnement juridique et administratif
+                  </li>
+                  
+                   <li className="mb-2 flex items-start gap-3 text-sm text-gray-600">
+                    Garantie "Satisfait ou remboursé" de 7 jours
+                  </li> 
+                </ol>
+                </div>
+                
+            </div>
+
+
+
           </div>
 
           <aside className="space-y-4">
@@ -369,7 +409,12 @@ export default function PropertyDetailPage() {
                   onClick={handleRequestVisit}
                   className="flex w-full items-center justify-center gap-2 rounded-[2px] bg-[#2C1A0E] py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
                 >
-                  <Calendar size={14} /> {requestLoading ? "Envoi en cours..." : hasActiveRequestForProperty ? "Demande deja active" : "Reserver maintenant"}
+                  <Calendar size={14} />{" "}
+                  {requestLoading
+                    ? "Envoi en cours..."
+                    : hasActiveRequestForProperty
+                      ? "Demande deja active"
+                      : "Reserver maintenant"}
                 </button>
               </div>
 
@@ -441,11 +486,11 @@ export default function PropertyDetailPage() {
         </div>
 
         {similar.length > 0 ? (
-          <div className="mb-10 mt-16">
+          <div className="mb-10">
             <h2 className="mb-6 text-2xl font-semibold text-gray-900">Proprietes similaires</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {similar.map((item, index: number) => (
-                <PropertyCard key={index} {...item} />
+              {similar.map((item) => (
+                <PropertyCard key={item.id} {...item} />
               ))}
             </div>
           </div>

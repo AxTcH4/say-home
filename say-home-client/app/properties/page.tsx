@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Filter, RotateCcw, Search, Sparkles } from "lucide-react";
 import { z } from "zod";
@@ -12,8 +12,6 @@ import {
   getAllProperties,
   logClickedProperty,
   logShownProperties,
-  PropertyListItem,
-  PropertySearchResult,
   searchProperties,
 } from "../../shared/lib/api";
 
@@ -37,38 +35,8 @@ const defaultFilters = {
   minRooms: "",
 };
 
-const PROPERTY_TYPE_OPTIONS = [
-  { value: "villa", label: "Villa" },
-  { value: "appartement", label: "Appartement" },
-  { value: "riad", label: "Riad" },
-  { value: "studio", label: "Studio" },
-];
-
-const PROPERTY_SECTEUR_OPTIONS = [
-  { value: "palmeraie", label: "Palmeraie" },
-  { value: "targa", label: "Targa" },
-  { value: "medina", label: "Medina" },
-  { value: "route-d-ourika", label: "Route d'Ourika" },
-  { value: "agdal", label: "Agdal" },
-  { value: "hivernage", label: "Hivernage" },
-  { value: "mabrouka", label: "Mabrouka" },
-];
-
-interface PropertyCardItem {
-  id: number;
-  description: string;
-  title: string;
-  type: string;
-  secteur: string;
-  medias: string[];
-  price: string;
-  surface: string;
-  rooms: string;
-  score?: number;
-}
-
 export default function PropertiesPage() {
-  const [items, setItems] = useState<PropertyCardItem[]>([]);
+  const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<"404" | "400" | "500" | null>(null);
@@ -77,22 +45,21 @@ export default function PropertiesPage() {
 
   const resultsLabel = useMemo(
     () => `${items.length} propriete${items.length > 1 ? "s" : ""}`,
-    [items.length]
+    [items.length],
   );
 
-  const mapProperty = (p: PropertyListItem): PropertyCardItem => ({
+  const mapProperty = (p: any) => ({
     id: p.id,
-    description: p.description || "Aucune description",
+    description: p.description,
     title: p.title,
-    type: p.type || "N/A",
-    secteur: p.secteur || "Unknown location",
-    medias: p.medias ?? [],
-    price: `${p.price} MAD${p.offerType === "RENT" ? " / mois" : ""}`,
+    secteur: p.secteur,
+    medias: p.medias,
+    price: `${p.price} MAD`,
     surface: p.surface ? `${p.surface} M2` : "N/A",
     rooms: p.rooms ? `${p.rooms} chambre(s)` : "N/A",
   });
 
-  const fetchProperties = useCallback(async () => {
+  const fetchProperties = async () => {
     setLoading(true);
     setIsSimilar(false);
     try {
@@ -106,11 +73,11 @@ export default function PropertiesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     void fetchProperties();
-  }, [fetchProperties]);
+  }, []);
 
   const handleSearch = async (event: { preventDefault: () => void }) => {
     event.preventDefault();
@@ -144,9 +111,8 @@ export default function PropertiesPage() {
       }
 
       const result = await searchProperties(data);
-      const failedResult = !result || ("status" in result && result.status >= 400);
 
-      if (failedResult && result?.status === 500) {
+      if (!result || result.status === 500) {
         setItems([]);
         setError("500");
         toast.error("Une erreur est survenue pendant la recherche.", {
@@ -156,7 +122,7 @@ export default function PropertiesPage() {
         return;
       }
 
-      if (failedResult && result.status === 400) {
+      if (result.status === 400) {
         setItems([]);
         setError("400");
         toast.error("Un ou plusieurs champs sont invalides.", {
@@ -166,7 +132,7 @@ export default function PropertiesPage() {
         return;
       }
 
-      if ((failedResult && result.status === 404) || !("data" in result) || !result.data?.length) {
+      if (result.status === 404 || !result.data?.length) {
         setItems([]);
         setError("404");
         toast.error("Aucun bien ne correspond a votre recherche.", {
@@ -176,10 +142,10 @@ export default function PropertiesPage() {
         return;
       }
 
-      const similar = result.data.every((item: PropertySearchResult) => item.score < 0.15);
+      const similar = result.data.every((item: any) => item.score < 0.15);
       setIsSimilar(similar);
 
-      const mapped = result.data.map((item: PropertySearchResult): PropertyCardItem => ({
+      const mapped = result.data.map((item: any) => ({
         id: item.property.id,
         description: item.property.description || "Aucune description",
         type: item.property.type || "N/A",
@@ -195,7 +161,7 @@ export default function PropertiesPage() {
       setError(null);
 
       logShownProperties(
-        mapped.map((i) => i.id),
+        mapped.map((i: any) => i.id),
         {
           type: filters.type || undefined,
           secteur: filters.secteur || undefined,
@@ -203,7 +169,7 @@ export default function PropertiesPage() {
           maxPrice: filters.maxPrice ? Number(filters.maxPrice) : undefined,
           minSurface: filters.minSurface ? Number(filters.minSurface) : undefined,
           minRooms: filters.minRooms ? Number(filters.minRooms) : undefined,
-        }
+        },
       );
     } catch (submitError) {
       console.error(submitError);
@@ -235,13 +201,14 @@ export default function PropertiesPage() {
                 Explorez des biens qui collent vraiment a votre projet.
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-7 text-[#6e6258]">
-                Affinez par type, secteur et budget pour trouver rapidement les biens les plus pertinents.
+                Affinez par type, secteur et budget pour trouver rapidement les biens les plus
+                pertinents.
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
               <QuickStat label="Resultats visibles" value={resultsLabel} />
-              <QuickStat label="Secteurs suivis" value="Palmeraie, Agdal, Hivernage" />
+              <QuickStat label="Secteurs suivis" value="Guéliz, Hivernage, Medina" />
               <QuickStat label="Experience" value="Recherche rapide et claire" />
             </div>
           </div>
@@ -288,11 +255,9 @@ export default function PropertiesPage() {
                   className="w-full rounded-[2px] border border-[#d8d1c8] bg-[#fbfaf8] px-3 py-3 text-sm text-[#4a4038] outline-none"
                 >
                   <option value="">Selectionnez un type</option>
-                  {PROPERTY_TYPE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
+                  <option value="villa">Villa</option>
+                  <option value="appartement">Appartement</option>
+                  <option value="riad">Riad</option>
                 </select>
               </Field>
 
@@ -303,11 +268,9 @@ export default function PropertiesPage() {
                   className="w-full rounded-[2px] border border-[#d8d1c8] bg-[#fbfaf8] px-3 py-3 text-sm text-[#4a4038] outline-none"
                 >
                   <option value="">Selectionnez un secteur</option>
-                  {PROPERTY_SECTEUR_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
+                  <option value="gueliz">Gueliz</option>
+                  <option value="hivernage">Hivernage</option>
+                  <option value="medina">Medina</option>
                 </select>
               </Field>
 
@@ -372,19 +335,8 @@ export default function PropertiesPage() {
               </div>
 
               <div className="flex flex-wrap gap-2 text-xs font-medium text-[#6d6259]">
-                {filters.type && (
-                  <FilterChip
-                    label={PROPERTY_TYPE_OPTIONS.find((option) => option.value === filters.type)?.label ?? filters.type}
-                  />
-                )}
-                {filters.secteur && (
-                  <FilterChip
-                    label={
-                      PROPERTY_SECTEUR_OPTIONS.find((option) => option.value === filters.secteur)?.label ??
-                      filters.secteur
-                    }
-                  />
-                )}
+                {filters.type && <FilterChip label={filters.type} />}
+                {filters.secteur && <FilterChip label={filters.secteur} />}
                 {(filters.minPrice || filters.maxPrice) && (
                   <FilterChip
                     label={`${filters.minPrice || "0"} - ${filters.maxPrice || "∞"} MAD`}
@@ -432,7 +384,7 @@ export default function PropertiesPage() {
                   </div>
                 )}
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {items.map((item, index: number) => (
+                  {items.map((item: any, index: number) => (
                     <PropertyCard
                       key={index}
                       {...item}

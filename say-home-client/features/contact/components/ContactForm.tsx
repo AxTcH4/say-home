@@ -7,6 +7,7 @@ import { contactService } from "../services/contact.service";
 export default function ContactForm() {
   const { user, isAuthenticated } = useAuth();
   const [mounted, setMounted] = useState(false);
+
   useEffect(() => setMounted(true), []);
 
   const [formData, setFormData] = useState({
@@ -33,9 +34,7 @@ export default function ContactForm() {
 
   const handleChange =
     (field: keyof typeof formData) =>
-    (
-      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setFormData((prev) => ({
         ...prev,
         [field]: e.target.value,
@@ -49,12 +48,7 @@ export default function ContactForm() {
 
     const { firstName, lastName, email, message } = formData;
 
-    if (
-      !firstName.trim() ||
-      !lastName.trim() ||
-      !email.trim() ||
-      !message.trim()
-    ) {
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !message.trim()) {
       setError("Tous les champs sont obligatoires.");
       return;
     }
@@ -88,18 +82,24 @@ export default function ContactForm() {
               email: "",
             }),
       }));
-    } catch (error) {
-      setError("Impossible d’envoyer votre message pour le moment.");
-      console.error(error);
+    } catch (submitError) {
+      setError("Impossible d'envoyer votre message pour le moment.");
+      console.error(submitError);
     } finally {
       setIsLoading(false);
     }
   };
-// className={`relative top-0 w-full h-[92vh] overflow-hidden transition-all duration-700 ease-out
- 
+
   return (
-    <div className={`rounded-[2px] bg-white p-8 shadow-[0_12px_30px_rgba(0,0,0,0.12)] transition-all duration-700 ease-out ${mounted ? "opacity-100 translate-y-0" : "opacity-0 "}`}>
-      <h2 className="text-[24px] font-semibold text-[#222222]">
+    <div
+      className={`rounded-[24px] border border-[#e7ddd2] bg-white p-8 shadow-[0_18px_40px_rgba(47,27,16,0.08)] transition-all duration-700 ease-out ${
+        mounted ? "translate-y-0 opacity-100" : "opacity-0"
+      }`}
+    >
+      <h2
+        className="text-[26px] font-semibold text-[#241912]"
+        style={{ fontFamily: "var(--font-display)" }}
+      >
         Envoyer un message
       </h2>
 
@@ -110,7 +110,8 @@ export default function ContactForm() {
             placeholder="Prénom"
             value={formData.firstName}
             onChange={handleChange("firstName")}
-            className="h-12 rounded-[2px] border border-[#d8d8d8] px-4 text-sm outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+            className="h-12 rounded-[14px] border border-[#ddd0c3] bg-[#fcf8f3] px-4 text-sm text-[#2a1d15] outline-none placeholder:text-[#a08f82] focus:border-[#8a6a50]"
+            style={{ fontFamily: "var(--font-body)" }}
           />
 
           <input
@@ -118,7 +119,8 @@ export default function ContactForm() {
             placeholder="Nom"
             value={formData.lastName}
             onChange={handleChange("lastName")}
-            className="h-12 rounded-[2px] border border-[#d8d8d8] px-4 text-sm outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+            className="h-12 rounded-[14px] border border-[#ddd0c3] bg-[#fcf8f3] px-4 text-sm text-[#2a1d15] outline-none placeholder:text-[#a08f82] focus:border-[#8a6a50]"
+            style={{ fontFamily: "var(--font-body)" }}
           />
         </div>
 
@@ -127,7 +129,8 @@ export default function ContactForm() {
           placeholder="yourname@example.com"
           value={formData.email}
           onChange={handleChange("email")}
-          className="h-12 w-full rounded-[2px] border border-[#d8d8d8] px-4 text-sm outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+          className="h-12 w-full rounded-[14px] border border-[#ddd0c3] bg-[#fcf8f3] px-4 text-sm text-[#2a1d15] outline-none placeholder:text-[#a08f82] focus:border-[#8a6a50]"
+          style={{ fontFamily: "var(--font-body)" }}
         />
 
         <textarea
@@ -135,17 +138,24 @@ export default function ContactForm() {
           placeholder="Écrivez votre message..."
           value={formData.message}
           onChange={handleChange("message")}
-          className="w-full resize-none rounded-[2px] border border-[#d8d8d8] px-4 py-4 text-sm outline-none placeholder:text-[#9a9a9a] focus:border-[#3b2418]"
+          className="w-full resize-none rounded-[18px] border border-[#ddd0c3] bg-[#fcf8f3] px-4 py-4 text-sm text-[#2a1d15] outline-none placeholder:text-[#a08f82] focus:border-[#8a6a50]"
+          style={{ fontFamily: "var(--font-body)" }}
         />
 
         {error && (
-          <div className="rounded-[2px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div
+            className="rounded-[14px] border border-red-300/40 bg-red-500/10 px-3 py-2 text-sm text-red-200"
+            style={{ fontFamily: "var(--font-body)" }}
+          >
             {error}
           </div>
         )}
 
         {success && (
-          <div className="rounded-[2px] border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+          <div
+            className="rounded-[14px] border border-green-300/40 bg-green-500/10 px-3 py-2 text-sm text-green-200"
+            style={{ fontFamily: "var(--font-body)" }}
+          >
             {success}
           </div>
         )}
@@ -153,7 +163,8 @@ export default function ContactForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="h-12 w-full rounded-[2px] bg-[#2f1b10] text-sm font-medium text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
+          className="h-12 w-full rounded-[14px] bg-[#2f1b10] text-sm font-medium text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
+          style={{ fontFamily: "var(--font-body)" }}
         >
           {isLoading ? "Envoi..." : "Envoyer"}
         </button>

@@ -2,8 +2,8 @@ package ma.sayhome.say_home_api.property;
 
 import ma.sayhome.say_home_api.property.dto.PropertyDTO;
 import ma.sayhome.say_home_api.property.dto.PropertyReqDTO;
-import ma.sayhome.say_home_api.property.propertyMedia.PropertyMediaServiceImpl;
 import ma.sayhome.say_home_api.shared.ApiResponse;
+import ma.sayhome.say_home_api.property.propertyMedia.PropertyMediaServiceImpl;
 import ma.sayhome.say_home_api.shared.ControllerBase;
 import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
 import ma.sayhome.say_home_api.shared.enums.PropertyType;
@@ -87,7 +87,11 @@ public class PropertyController extends ControllerBase {
 
         PropertyDTO propertyDTO = PropertyDTO.toDTO(property.get());
         propertyService.assingMedia(propertyDTO);
-        return ok(propertyDTO);
+        List<PropertyDTO> similarProperties = propertyService.findSimilarProperties(id, 3);
+
+        ApiResponse<PropertyDTO> response = ApiResponse.ok(propertyDTO);
+        response.setSimilar(similarProperties);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -167,6 +168,39 @@ public class PropertyServiceImpl {
 
     public void assingMedia(PropertyDTO property) {
         property.setMedias(propertyMediaService.getByPropertyId(property.getId()));
+    }
+
+    public List<PropertyDTO> findSimilarProperties(Integer propertyId, int limit) {
+        Property baseProperty = propertyRepository.findById(propertyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Property with id " + propertyId + " not found"));
+
+        List<Property> allProperties = propertyRepository.findAll();
+        List<PropertyDTO> similarProperties = allProperties.stream()
+                .filter(candidate -> !candidate.getId().equals(propertyId))
+                .filter(candidate ->
+                        candidate.getType() == baseProperty.getType() ||
+                        candidate.getSecteur() == baseProperty.getSecteur()
+                )
+                .sorted(
+                        Comparator
+                                .comparing((Property candidate) -> candidate.getType() == baseProperty.getType())
+                                .reversed()
+                                .thenComparing(candidate -> candidate.getSecteur() == baseProperty.getSecteur(), Comparator.reverseOrder())
+                                .thenComparing(candidate -> {
+                                    Float candidatePrice = candidate.getPrice();
+                                    Float basePrice = baseProperty.getPrice();
+                                    if (candidatePrice == null || basePrice == null) {
+                                        return Float.MAX_VALUE;
+                                    }
+                                    return Math.abs(candidatePrice - basePrice);
+                                })
+                )
+                .limit(limit)
+                .map(PropertyDTO::toDTO)
+                .toList();
+
+        similarProperties.forEach(this::assingMedia);
+        return similarProperties;
     }
 
     private void normalizeAmenities(Property property) {

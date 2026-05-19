@@ -26,10 +26,10 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
 
   return (
     <div
-      className={` fixed top-0 left-0 right-0 z-50 flex items-center justify-center ${scrolled || !onHero ? "bg-white" : "bg-transparent"} `}
+      className={` fixed top-0 left-0 right-0 z-50 flex items-center justify-center ${ !onHero ? "bg-white" : "bg-transparent"} `}
     >
       <nav
-        className={`w-[90%] flex items-center justify-between ${scrolled || !onHero ? "border-b border-black" : "border-b border-white"}`}
+        className={`w-[90%] flex items-center justify-between ${!onHero ? "border-b border-black" : "border-b border-white"}`}
       >
         {/* Logo SAY HOME */}
         <Link href="/" className="flex items-center gap-2">
@@ -38,7 +38,7 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
             alt="SAY Home"
             width={80}
             height={80}
-            className={`w-20 h-20 mt-1 ${scrolled || !onHero ? "invert-0" : "invert-100"} `}
+            className={`w-20 h-20 mt-1 ${!onHero ? "invert-0" : "invert-100"} `}
           />
         </Link>
 
@@ -48,25 +48,25 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
         >
           <Link
             href="/"
-            className={`py-7 text-base ${scrolled || !onHero ? "text-black" : "text-white"} font-medium border-b-4 border-transparent hover:border-[#1a1a1a]    transition  `}
+            className={`py-7 text-base ${!onHero ? "text-black" : "text-white"} font-medium border-b-4 border-transparent hover:border-[#1a1a1a]    transition  `}
           >
             Accueil
           </Link>
           <Link
             href="/properties"
-            className={`py-7 text-base ${scrolled || !onHero ? "text-black" : "text-white"} font-medium border-b-4 border-transparent hover:border-[#1a1a1a]   transition  `}
+            className={`py-7 text-base ${ !onHero ? "text-black" : "text-white"} font-medium border-b-4 border-transparent hover:border-[#1a1a1a]   transition  `}
           >
             Services
           </Link>
-          <Link
+          {/* <Link
             href="/#about"
-            className={`py-7 text-base ${scrolled || !onHero ? "text-black" : "text-white"} font-medium border-b-4 border-transparent hover:border-[#1a1a1a]    transition  `}
+            className={`py-7 text-base ${ !onHero ? "text-black" : "text-white"} font-medium border-b-4 border-transparent hover:border-[#1a1a1a]    transition  `}
           >
             À propos
-          </Link>
+          </Link> */}
           <Link
             href="/contact"
-            className={`py-7 text-base ${scrolled || !onHero ? "text-black" : "text-white"} font-medium border-b-4 border-transparent hover:border-[#1a1a1a]    transition  `}
+            className={`py-7 text-base ${ !onHero ? "text-black" : "text-white"} font-medium border-b-4 border-transparent hover:border-[#1a1a1a]    transition  `}
           >
             Contact
           </Link>
@@ -79,7 +79,7 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
             <>
               <Link
                 href="/auth/login"
-                className={`-fit px-5 py-2 text-sm ${scrolled || !onHero ? "text-black border border-black" : "text-white border border-white"} font-medium hover:bg-[#2C1A0E] hover:border-transparent hover:text-white transition rounded-[1px]`}
+                className={`-fit px-5 py-2 text-sm ${ !onHero ? "text-black border border-black" : "text-white border border-white"} font-medium hover:bg-[#2C1A0E] hover:border-transparent hover:text-white transition rounded-[1px]`}
               >
                 Se connecter
               </Link>
@@ -96,7 +96,7 @@ export default function Navbar({ onHero }: { onHero: boolean }) {
                 {/* <div>
                   {" "}
                   <span
-                    className={`py-7 text-base ${scrolled || !onHero ? "text-black" : "text-white"} font-medium `}
+                    className={`py-7 text-base ${ !onHero ? "text-black" : "text-white"} font-medium `}
                   >
                     {user?.firstName + " " + user?.lastName}
                   </span>
