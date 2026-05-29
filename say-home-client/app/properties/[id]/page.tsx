@@ -8,10 +8,29 @@ import { toast } from "sonner";
 import Navbar from "../../../shared/components/Navbar";
 import Footer from "../../../shared/components/Footer";
 import PropertyCard from "../../../features/properties/components/PropertyCard";
-import { createVisitRequest, getMyVisitRequests, getPropertyById } from "@/shared/lib/api";
+import {
+  createVisitRequest,
+  getMyVisitRequests,
+  getPropertyById,
+  PropertyListItem,
+} from "@/shared/lib/api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
-type VisitRequestStatus = "REQUESTED" | "SCHEDULED" | "REFUSED" | "CANCELLED" | "COMPLETED";
+type VisitRequestStatus =
+  | "REQUESTED"
+  | "SCHEDULED"
+  | "RESCHEDULE_REQUESTED"
+  | "CANCELLATION_REQUESTED"
+  | "REFUSED"
+  | "CANCELLED"
+  | "COMPLETED";
+
+const ACTIVE_REQUEST_STATUSES: VisitRequestStatus[] = [
+  "REQUESTED",
+  "SCHEDULED",
+  "RESCHEDULE_REQUESTED",
+  "CANCELLATION_REQUESTED",
+];
 
 interface VisitRequestItem {
   id: number;
@@ -33,6 +52,14 @@ const statusCopy: Record<VisitRequestStatus, { label: string; classes: string }>
     label: "Acceptee",
     classes: "bg-[#e9f7ef] text-[#1d7f4f] border-[#bfe1ce]",
   },
+  RESCHEDULE_REQUESTED: {
+    label: "Modification demandee",
+    classes: "bg-[#fff5db] text-[#8d6510] border-[#f0dba2]",
+  },
+  CANCELLATION_REQUESTED: {
+    label: "Annulation demandee",
+    classes: "bg-[#eef2f7] text-[#607080] border-[#d7dde6]",
+  },
   REFUSED: {
     label: "Refusee",
     classes: "bg-[#fdecec] text-[#bb4343] border-[#f0c3c3]",
@@ -47,12 +74,65 @@ const statusCopy: Record<VisitRequestStatus, { label: string; classes: string }>
   },
 };
 
+const TYPE_LABELS: Record<string, string> = {
+  RIAD: "Riad",
+  VILLA: "Villa",
+  APPARTEMENT: "Appartement",
+  STUDIO: "Studio",
+};
+
+const SECTEUR_LABELS: Record<string, string> = {
+  GUELIZ: "Gueliz",
+  PALMERAIE: "Palmeraie",
+  TARGA: "Targa",
+  MEDINA: "Medina",
+  ROUTE_D_OURIKA: "Route d'Ourika",
+  AGDAL: "Agdal",
+  HIVERNAGE: "Hivernage",
+  MABROUKA: "Mabrouka",
+};
+
+function getSecteurLabel(secteur?: string | null) {
+  if (!secteur) {
+    return "Marrakech, Maroc";
+  }
+
+  return SECTEUR_LABELS[secteur] ?? secteur;
+}
+
+function getTypeLabel(type?: string | null) {
+  if (!type) {
+    return "Bien";
+  }
+
+  return TYPE_LABELS[type] ?? type;
+}
+
+function isVillaOrRiad(type?: string | null) {
+  return type === "VILLA" || type === "RIAD";
+}
+
+function isStudio(type?: string | null) {
+  return type === "STUDIO";
+}
+
+function getAmenities(property: PropertyListItem) {
+  return [
+    property.climatisation ? "Climatisation" : null,
+    isVillaOrRiad(property.type) && property.piscine ? "Piscine" : null,
+    isVillaOrRiad(property.type) && property.jardin ? "Jardin" : null,
+    !isStudio(property.type) && property.garage ? "Garage" : null,
+    property.securite ? "Securite" : null,
+    property.systemeDomotiqueComplet ? "Systeme domotique complet" : null,
+  ].filter((item): item is string => Boolean(item));
+}
+
 export default function PropertyDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const [property, setProperty] = useState<any>(null);
-  const [similar, setSimilar] = useState<any[]>([]);
+  const [property, setProperty] = useState<PropertyListItem | null>(null);
+  const [similar, setSimilar] = useState<PropertyListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState<VisitRequestItem[]>([]);
   const [requestLoading, setRequestLoading] = useState(false);
@@ -75,7 +155,7 @@ export default function PropertyDetailPage() {
         setLoading(false);
       }
     };
-    fetchProperty();
+    void fetchProperty();
   }, [id]);
 
   useEffect(() => {
@@ -93,14 +173,20 @@ export default function PropertyDetailPage() {
       }
     };
 
-    loadRequests();
+    void loadRequests();
   }, [isAuthenticated]);
 
   const propertyRequests = useMemo(
     () =>
-      requests.filter((request) => String(request.propertyId) === String(property?.id)),
-    [requests, property?.id]
+      requests.filter(
+        (request) =>
+          String(request.propertyId) === String(property?.id) &&
+          ACTIVE_REQUEST_STATUSES.includes(request.status),
+      ),
+    [requests, property?.id],
   );
+
+  const hasActiveRequestForProperty = propertyRequests.length > 0;
 
   const handleRequestVisit = async () => {
     if (!property?.id) return;
@@ -113,6 +199,11 @@ export default function PropertyDetailPage() {
 
     if (!form.date || !form.time) {
       toast.error("Choisissez une date et une heure pour la visite.");
+      return;
+    }
+
+    if (hasActiveRequestForProperty) {
+      toast.error("Vous avez deja une demande active pour ce bien.");
       return;
     }
 
@@ -191,16 +282,19 @@ export default function PropertyDetailPage() {
                 <h1 className="text-3xl font-semibold text-gray-900">{property.title}</h1>
                 <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
                   <MapPin size={15} />
-                  <span>{property.secteur || "Marrakech, Maroc"}</span>
+                  <span>{getSecteurLabel(property.secteur)}</span>
                 </div>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{property.price} MAD</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {property.price} MAD{property.offerType === "RENT" ? " / mois" : ""}
+              </p>
             </div>
 
             <div className="my-8 flex flex-wrap gap-8 border-y border-gray-100 py-5">
               <Metric icon="/chambres.svg" label={`${property.rooms} chambres`} />
-              <Metric icon="/shower.svg" label="4 salles de bain" />
+              <Metric icon="/shower.svg" label={`${property.bathrooms ?? 0} salles de bain`} />
               <Metric icon="/surface.svg" label={`${property.surface} m2`} />
+              <Metric icon="/location.svg" label={getTypeLabel(property.type)} />
             </div>
 
             <div className="mb-8">
@@ -210,24 +304,61 @@ export default function PropertyDetailPage() {
               </p>
             </div>
 
-            <div className="mb-8">
+            <div className="mb-10">
               <h2 className="mb-3 text-lg font-semibold text-gray-900">Equipements & caracteristiques</h2>
               <div className="grid gap-3 md:grid-cols-2">
-                {[
-                  "Climatisation reversible",
-                  "Piscine a debordement chauffee",
-                  "Systeme domotique complet",
-                  "Cave a vin climatisee",
-                  "Salle de sport privee",
-                  "Securite 24/7 et alarme",
-                ].map((item) => (
-                  <div key={item} className="flex items-center gap-2 text-sm text-gray-600">
-                    <span className="text-gray-400">•</span>
-                    <span>{item}</span>
-                  </div>
-                ))}
+                {getAmenities(property).length > 0 ? (
+                  getAmenities(property).map((item) => (
+                    <div key={item} className="flex items-center gap-2 text-sm text-gray-600">
+                      <span className="text-gray-400">-</span>
+                      <span>{String(item)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">Aucun equipement specifique renseigne pour ce bien.</p>
+                )}
               </div>
             </div>
+
+              <div className="mb-8">
+              <h2 className="mb-3 text-lg font-semibold text-gray-900">Notre Engagement</h2>
+              <p className="text-sm leading-7 text-gray-600 max-w-2xl">
+                Chaque bien proposé sur SAY Home fait l'objet d'une 
+                vérification rigoureuse de ses documents juridiques, 
+                de son état général et de sa conformité. Vous visitez 
+                en toute confiance.
+              </p>
+            </div>
+
+              <div className="mb-8">
+                <h2 className="mb-3 text-lg font-semibold text-gray-900">Vous accompagner à chaque étape</h2>
+                <div className="flex gap-25" >
+                  <ol className=" md:list-disc">
+                  <li className="mb-2 flex items-start gap-3 text-sm text-gray-600">
+                  Visite organisée sous 48h
+                  </li>
+
+                  <li className="mb-2 flex items-start gap-3 text-sm text-gray-600">
+                    Conseiller dédié tout au long du processus
+                  </li>
+
+                  
+                </ol>
+                <ol className=" md:list-disc">
+                  <li className="mb-2 flex items-start gap-3 text-sm text-gray-600">
+                    Accompagnement juridique et administratif
+                  </li>
+                  
+                   <li className="mb-2 flex items-start gap-3 text-sm text-gray-600">
+                    Garantie "Satisfait ou remboursé" de 7 jours
+                  </li> 
+                </ol>
+                </div>
+                
+            </div>
+
+
+
           </div>
 
           <aside className="space-y-4">
@@ -274,11 +405,16 @@ export default function PropertyDetailPage() {
                 </label>
                 <button
                   type="button"
-                  disabled={requestLoading}
+                  disabled={requestLoading || hasActiveRequestForProperty}
                   onClick={handleRequestVisit}
                   className="flex w-full items-center justify-center gap-2 rounded-[2px] bg-[#2C1A0E] py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
                 >
-                  <Calendar size={14} /> {requestLoading ? "Envoi en cours..." : "Reserver maintenant"}
+                  <Calendar size={14} />{" "}
+                  {requestLoading
+                    ? "Envoi en cours..."
+                    : hasActiveRequestForProperty
+                      ? "Demande deja active"
+                      : "Reserver maintenant"}
                 </button>
               </div>
 
@@ -350,11 +486,11 @@ export default function PropertyDetailPage() {
         </div>
 
         {similar.length > 0 ? (
-          <div className="mb-10 mt-16">
+          <div className="mb-10">
             <h2 className="mb-6 text-2xl font-semibold text-gray-900">Proprietes similaires</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {similar.map((item: any, index: number) => (
-                <PropertyCard key={index} {...item} />
+              {similar.map((item) => (
+                <PropertyCard key={item.id} {...item} />
               ))}
             </div>
           </div>

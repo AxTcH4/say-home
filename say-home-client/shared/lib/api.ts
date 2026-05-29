@@ -1,6 +1,40 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
+export interface PropertyListItem {
+  id: number;
+  title: string;
+  description?: string | null;
+  type?: string | null;
+  secteur?: string | null;
+  medias: string[];
+  price?: number | null;
+  offerType?: string | null;
+  surface?: number | null;
+  rooms?: number | null;
+  bathrooms?: number | null;
+  climatisation?: boolean | null;
+  piscine?: boolean | null;
+  jardin?: boolean | null;
+  garage?: boolean | null;
+  securite?: boolean | null;
+  systemeDomotiqueComplet?: boolean | null;
+  agent?: {
+    firstName: string;
+    lastName: string;
+  } | null;
+}
+
+export interface PropertySearchResult {
+  property: PropertyListItem;
+  score: number;
+}
+
+interface ApiEnvelope<T> {
+  data?: T;
+  similar?: PropertyListItem[];
+}
+
 function buildUrl(path: string) {
   return `${API_BASE_URL}${path}`;
 }
@@ -14,8 +48,9 @@ async function readError(response: Response, fallback: string) {
   return error?.message ?? error?.error ?? fallback;
 }
 
-export async function getLatestProperties() {
-  const res = await fetch(buildUrl("/properties/latest"), {
+export async function getLatestProperties(type?: string) {
+  const url = type ? buildUrl(`/properties/latest?type=${encodeURIComponent(type)}`) : buildUrl("/properties/latest");
+  const res = await fetch(url, {
     method: "GET",
     credentials: "include",
   });
@@ -30,6 +65,8 @@ export async function searchProperties(data: {
   secteur?: string;
   minPrice?: number | string;
   maxPrice?: number | string;
+  minSurface?: number | string;
+  minRooms?: number | string;
 }) {
   const urlParams = new URLSearchParams({
     title: data.title || "",
@@ -37,6 +74,8 @@ export async function searchProperties(data: {
     secteur: data.secteur || "",
     minPrice: String(data.minPrice ?? ""),
     maxPrice: String(data.maxPrice ?? ""),
+    minSurface: String(data.minSurface ?? ""),
+    minRooms: String(data.minRooms ?? ""),
   }).toString();
 
   const res = await fetch(buildUrl(`/properties/search?${urlParams}`), {
@@ -52,33 +91,52 @@ export async function searchProperties(data: {
     };
   }
 
-  return await res.json();
+  return (await res.json()) as ApiEnvelope<PropertySearchResult[]>;
 }
 
 export async function getAllProperties(filters?: {
   minPrice?: string;
   maxPrice?: string;
-}) {
-  const params = new URLSearchParams(filters as Record<string, string>).toString();
+}): Promise<PropertyListItem[]> {
+  const params = new URLSearchParams(
+    Object.entries(filters ?? {}).filter(([, value]) => value != null && value !== "")
+  ).toString();
   const res = await fetch(buildUrl(`/properties${params ? `?${params}` : ""}`), {
     method: "GET",
     credentials: "include",
   });
 
-  if (res.status === 404) return null;
-  const data = await res.json();
-  return data.data;
+  if (res.status === 404) return [];
+  if (!res.ok) {
+    const errorMessage = await readError(
+      res,
+      `Unable to load properties (HTTP ${res.status})`
+    );
+    throw new Error(errorMessage);
+  }
+
+  const data = await readJson(res);
+  if (!data) {
+    throw new Error("Invalid properties response");
+  }
+
+  return (data.data ?? []) as PropertyListItem[];
 }
 
-export async function getPropertyById(id: string) {
+export async function getPropertyById(
+  id: string,
+): Promise<{ property: PropertyListItem | null; similar: PropertyListItem[] } | null> {
   const res = await fetch(buildUrl(`/properties/${id}`), {
     method: "GET",
     credentials: "include",
   });
 
   if (res.status === 404) return null;
-  const data = await res.json();
-  return { property: data.data, similar: data.similar };
+  const data = (await res.json()) as ApiEnvelope<PropertyListItem>;
+  return {
+    property: data.data ?? null,
+    similar: data.similar ?? [],
+  };
 }
 
 export async function createVisitRequest(payload: {
@@ -104,6 +162,41 @@ export async function createVisitRequest(payload: {
   return data.data;
 }
 
+interface SearchCriteria {
+  type?: string;
+  secteur?: string;
+  minPrice?: number | string;
+  maxPrice?: number | string;
+  minSurface?: number | string;
+  minRooms?: number | string;
+}
+
+export async function logShownProperties(propertyIds: number[], criteria: SearchCriteria) {
+  try {
+    await fetch(buildUrl("/interactions/shown"), {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ propertyIds, criteria }),
+    });
+  } catch {
+    // fire-and-forget — never block the UI
+  }
+}
+
+export async function logClickedProperty(propertyId: number, criteria: SearchCriteria) {
+  try {
+    await fetch(buildUrl("/interactions/clicked"), {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ propertyId, criteria }),
+    });
+  } catch {
+    // fire-and-forget — never block the UI
+  }
+}
+
 export async function getMyVisitRequests() {
   const res = await fetch(buildUrl("/appointments/requests/me"), {
     method: "GET",
@@ -121,4 +214,100 @@ export async function getMyVisitRequests() {
 
   const data = await res.json();
   return data.data ?? [];
+}
+
+export async function requestVisitReschedule(id: number, payload: {
+  date: string;
+  time: string;
+  message: string;
+}) {
+  const res = await fetch(buildUrl(`/appointments/${id}/request-reschedule`), {
+    method: "PATCH",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await readError(res, "Unable to request meeting reschedule"));
+  }
+
+  const data = await res.json();
+  return data.data;
+}
+
+export async function requestVisitCancellation(id: number, payload: {
+  message: string;
+}) {
+  const res = await fetch(buildUrl(`/appointments/${id}/request-cancel`), {
+    method: "PATCH",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await readError(res, "Unable to request meeting cancellation"));
+  }
+
+  const data = await res.json();
+  return data.data;
+}
+
+export async function getWishForm(token: string) {
+  const res = await fetch(buildUrl(`/wishes/${token}`), {
+    method: "GET",
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error(await readError(res, "Unable to load wish form"));
+  }
+
+  const data = await readJson(res);
+  return data?.data ?? null;
+}
+
+export async function submitWish(
+  token: string,
+  payload: {
+    offerType?: string;
+    type?: string;
+    secteur?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    minSurface?: number;
+    maxSurface?: number;
+    minRooms?: number;
+    maxRooms?: number;
+    minBathrooms?: number;
+    maxBathrooms?: number;
+    climatisation?: boolean;
+    piscine?: boolean;
+    jardin?: boolean;
+    garage?: boolean;
+    securite?: boolean;
+    systemeDomotiqueComplet?: boolean;
+  },
+) {
+  const res = await fetch(buildUrl(`/wishes/${token}`), {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await readError(res, "Unable to submit wish"));
+  }
+
+  const data = await readJson(res);
+  return data?.data ?? null;
 }

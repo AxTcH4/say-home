@@ -7,6 +7,7 @@ public record ClientVisitRequestResponse(
         String requestedDate,
         String requestedTime,
         String message,
+        String requestMessage,
         String status,
         String agentName
 ) {

@@ -23,10 +23,10 @@ export function MeetingRequests({ requests }: MeetingRequestsProps) {
     try {
       setLoadingRequestId(requestId);
       await meetingService.approveRequest(requestId);
-      toast.success("Meeting request accepted.");
+      toast.success("Demande traitee avec succes.");
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Unable to accept request");
+      toast.error(error instanceof Error ? error.message : "Impossible de confirmer la demande.");
     } finally {
       setLoadingRequestId(null);
     }
@@ -36,10 +36,10 @@ export function MeetingRequests({ requests }: MeetingRequestsProps) {
     try {
       setLoadingRequestId(requestId);
       await meetingService.refuseRequest(requestId);
-      toast.success("Meeting request refused.");
+      toast.success("Demande refusee.");
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Unable to refuse request");
+      toast.error(error instanceof Error ? error.message : "Impossible de refuser la demande.");
     } finally {
       setLoadingRequestId(null);
     }
@@ -71,11 +71,16 @@ export function MeetingRequests({ requests }: MeetingRequestsProps) {
                     <p className="font-semibold text-[#172033]">{request.prospectName}</p>
                     <span className="text-sm text-[#70819a]">{request.city}</span>
                   </div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#376fd9]">
+                    {request.requestKind}
+                  </p>
                   <p className="text-sm font-medium text-[#2c1a0e]">{request.propertyTitle}</p>
                   <p className="text-sm text-[#61728b]">
-                    {request.budgetLabel} · Requested for {request.requestedDate} at {request.requestedTime}
+                    {request.budgetLabel} - Demande pour le {request.requestedDate} a {request.requestedTime}
                   </p>
-                  <p className="text-sm text-[#70819a]">{request.message || "No additional message."}</p>
+                  <p className="text-sm text-[#70819a]">
+                    {request.message || "Aucun message supplementaire."}
+                  </p>
                 </div>
 
                 <div className="flex flex-wrap justify-end gap-2 lg:max-w-[460px]">
@@ -83,7 +88,7 @@ export function MeetingRequests({ requests }: MeetingRequestsProps) {
                     href={`/prospects/${request.prospectId}`}
                     className="rounded-[10px] border border-[#e4eaf4] px-3 py-2 text-sm font-semibold text-[#172033]"
                   >
-                    View Prospect
+                    Voir le prospect
                   </Link>
                   {canManage ? (
                     <>
@@ -93,7 +98,7 @@ export function MeetingRequests({ requests }: MeetingRequestsProps) {
                         onClick={() => handleApprove(request.id)}
                         className="inline-flex min-h-10 items-center justify-center rounded-[10px] border border-[#2c1a0e] px-4 py-2 text-sm font-semibold text-[#2c1a0e] disabled:opacity-60"
                       >
-                        Accept
+                        Confirmer
                       </button>
                       <button
                         type="button"
@@ -101,13 +106,13 @@ export function MeetingRequests({ requests }: MeetingRequestsProps) {
                         onClick={() => handleRefuse(request.id)}
                         className="inline-flex min-h-10 items-center justify-center rounded-[10px] border border-[#e4eaf4] px-4 py-2 text-sm font-semibold text-[#172033] disabled:opacity-60"
                       >
-                        Refuse
+                        Refuser
                       </button>
                       <Link
                         href={`/appointments/${request.id}/edit`}
                         className="inline-flex min-h-10 items-center justify-center rounded-[10px] bg-[#2c1a0e] px-4 py-2 text-sm font-semibold text-white"
                       >
-                        Review & Plan
+                        Revoir & planifier
                       </Link>
                     </>
                   ) : null}

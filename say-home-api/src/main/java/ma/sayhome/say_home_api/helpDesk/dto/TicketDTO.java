@@ -1,15 +1,13 @@
 package ma.sayhome.say_home_api.helpDesk.dto;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ma.sayhome.say_home_api.auth.dto.UserDTO;
 import ma.sayhome.say_home_api.helpDesk.ticket.Ticket;
-import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.prospect.dto.ChatSessionOwner;
 import ma.sayhome.say_home_api.shared.enums.TicketPriority;
 import ma.sayhome.say_home_api.shared.enums.TicketStatus;
+import ma.sayhome.say_home_api.user.dto.UserDTO;
 
 import java.time.LocalDateTime;
 
@@ -44,6 +42,10 @@ public class TicketDTO {
                 new ChatSessionOwner(
                         ticket.getProspect().getId(),
                         ticket.getProspect().getStatus(),
+
+                        ticket.getProspect().getCity(),
+                        ticket.getProspect().getSource(),
+                        ticket.getProspect().getBudget(),
                         UserDTO.toDTO(ticket.getProspect().getUser())
                 )
         );

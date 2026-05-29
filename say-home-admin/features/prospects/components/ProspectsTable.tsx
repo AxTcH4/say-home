@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { ProspectActionsMenu } from "./ProspectActionsMenu";
 import type { ProspectListItem } from "../types/prospect.types";
@@ -7,6 +8,12 @@ interface ProspectsTableProps {
   page: number;
   pageSize: number;
   total: number;
+  searchParams?: {
+    search?: string;
+    status?: string;
+    assignedAgent?: string;
+    source?: string;
+  };
 }
 
 const statusStyles: Record<string, string> = {
@@ -27,9 +34,26 @@ export function ProspectsTable({
   page,
   pageSize,
   total,
+  searchParams,
 }: ProspectsTableProps) {
   const from = prospects.length === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = (page - 1) * pageSize + prospects.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const buildPageHref = (targetPage: number) => {
+    const params = new URLSearchParams();
+    if (searchParams?.search) params.set("search", searchParams.search);
+    if (searchParams?.status) params.set("status", searchParams.status);
+    if (searchParams?.assignedAgent) params.set("assignedAgent", searchParams.assignedAgent);
+    if (searchParams?.source) params.set("source", searchParams.source);
+    params.set("page", String(targetPage));
+    return `/prospects?${params.toString()}`;
+  };
+
+  const visiblePages = Array.from(
+    { length: Math.min(totalPages, 5) },
+    (_, index) => index + 1,
+  );
 
   return (
     <div className="overflow-hidden rounded-[16px] border border-[#e7edf5] bg-white shadow-[0_12px_35px_rgba(20,32,60,0.06)]">
@@ -112,36 +136,56 @@ export function ProspectsTable({
         </p>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e4eaf4] text-[#61728b]"
+          <Link
+            href={buildPageHref(Math.max(1, page - 1))}
+            aria-disabled={page === 1}
+            className={`flex h-8 w-8 items-center justify-center rounded-full border text-[#61728b] ${
+              page === 1
+                ? "pointer-events-none border-[#eef2f7] text-[#c2ccda]"
+                : "border-[#e4eaf4] hover:bg-[#f7f9fc]"
+            }`}
           >
             {"<"}
-          </button>
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2c1a0e] text-white"
-          >
-            1
-          </button>
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e4eaf4] text-[#61728b]"
-          >
-            2
-          </button>
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e4eaf4] text-[#61728b]"
-          >
-            3
-          </button>
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e4eaf4] text-[#61728b]"
+          </Link>
+          {visiblePages.map((pageNumber) => (
+            <Link
+              key={pageNumber}
+              href={buildPageHref(pageNumber)}
+              className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+                pageNumber === page
+                  ? "border-[#2c1a0e] bg-[#2c1a0e] text-white"
+                  : "border-[#e4eaf4] text-[#61728b] hover:bg-[#f7f9fc]"
+              }`}
+            >
+              {pageNumber}
+            </Link>
+          ))}
+          {totalPages > visiblePages.length ? (
+            <span className="px-1 text-[#9aa7bb]">...</span>
+          ) : null}
+          {totalPages > visiblePages.length ? (
+            <Link
+              href={buildPageHref(totalPages)}
+              className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+                totalPages === page
+                  ? "border-[#2c1a0e] bg-[#2c1a0e] text-white"
+                  : "border-[#e4eaf4] text-[#61728b] hover:bg-[#f7f9fc]"
+              }`}
+            >
+              {totalPages}
+            </Link>
+          ) : null}
+          <Link
+            href={buildPageHref(Math.min(totalPages, page + 1))}
+            aria-disabled={page === totalPages}
+            className={`flex h-8 w-8 items-center justify-center rounded-full border text-[#61728b] ${
+              page === totalPages
+                ? "pointer-events-none border-[#eef2f7] text-[#c2ccda]"
+                : "border-[#e4eaf4] hover:bg-[#f7f9fc]"
+            }`}
           >
             {">"}
-          </button>
+          </Link>
         </div>
       </div>
     </div>

@@ -10,7 +10,6 @@ export const APP_ROUTES = {
   PROSPECTS_NEW: "/prospects/new",
   PROPERTIES: "/properties",
   PIPELINE: "/pipeline",
-  AI_MATCHING: "/ai-matching",
   APPOINTMENTS: "/appointments",
   APPOINTMENTS_NEW: "/appointments/new",
   TICKETS: "/tickets",

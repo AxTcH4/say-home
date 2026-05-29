@@ -1,7 +1,7 @@
 package ma.sayhome.say_home_api.config;
 
-import ma.sayhome.say_home_api.auth.User;
-import ma.sayhome.say_home_api.auth.UserRepository;
+import ma.sayhome.say_home_api.user.User;
+import ma.sayhome.say_home_api.user.UserRepository;
 import ma.sayhome.say_home_api.shared.enums.Role;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;

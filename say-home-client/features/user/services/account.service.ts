@@ -3,6 +3,7 @@ import type {
   ApiResponse,
   DashboardProfile,
   DashboardProfileUpdatePayload,
+  RealEstateRecord,
   DashboardSummary,
 } from "../types/account.types";
 
@@ -19,6 +20,13 @@ export const accountService = {
       `/user/summary/${userId}`
     );
     return data.data;
+  },
+
+  async getRealEstate(userId: number) {
+    const { data } = await apiClient.get<RealEstateRecord[]>(
+      `/user/real-estate/${userId}`
+    );
+    return data;
   },
 
   async updateProfile(userId: number, payload: DashboardProfileUpdatePayload) {

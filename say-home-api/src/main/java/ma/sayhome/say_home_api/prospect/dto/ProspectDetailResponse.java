@@ -1,5 +1,7 @@
 package ma.sayhome.say_home_api.prospect.dto;
 
+import ma.sayhome.say_home_api.prospectProperty.dto.ProspectPropertyRecordResponse;
+
 import java.util.List;
 
 public record ProspectDetailResponse(
@@ -18,8 +20,11 @@ public record ProspectDetailResponse(
         String createdAt,
         String notes,
         String temperature,
+        LeadScoreMetricsResponse leadScoreMetrics,
+        List<ProspectPropertyInsightResponse> propertyInsights,
         List<ProspectInteractionResponse> interactions,
         List<ProspectMeetingResponse> meetings,
-        List<ProspectFeedbackResponse> feedback
+        List<ProspectWishResponse> wishes,
+        List<ProspectPropertyRecordResponse> propertyRecords
 ) {
 }

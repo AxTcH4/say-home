@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 // import PublicOnlyRoute from "@/shared/components/PublicOnlyRoute";
 import LoginForm from "@/features/auth/components/LoginForm";

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { APP_ROUTES } from "@/shared/lib/routes";
@@ -49,7 +50,17 @@ export default function LoginForm() {
       await login(formData);
       router.push(APP_ROUTES.HOME);
     } catch (error) {
-      setError("Email ou mot de passe incorrect.");
+      if (axios.isAxiosError(error)) {
+        const message =
+          (error.response?.data as { error?: string; message?: string } | undefined)?.error ||
+          (error.response?.data as { error?: string; message?: string } | undefined)?.message ||
+          `Connexion impossible (${error.response?.status ?? "unknown"})`;
+        setError(message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Connexion impossible.");
+      }
       console.error(error);
     } finally {
       setIsLoading(false);

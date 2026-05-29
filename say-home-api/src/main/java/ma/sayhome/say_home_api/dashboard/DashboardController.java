@@ -1,8 +1,13 @@
 package ma.sayhome.say_home_api.dashboard;
 
+import ma.sayhome.say_home_api.dashboard.dto.DashboardProfileUpdateRequest;
+import ma.sayhome.say_home_api.prospectProperty.dto.ProspectPropertyRecordResponse;
 import ma.sayhome.say_home_api.shared.ControllerBase;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/user")
@@ -15,11 +20,13 @@ public class DashboardController extends ControllerBase {
     }
 
     @GetMapping("/profile/{userId}")
+    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
     public ResponseEntity<?> getProfile(@PathVariable Integer userId) {
         return ok(dashboardService.getProfile(userId));
     }
 
     @PutMapping("/profile/{userId}")
+    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
     public ResponseEntity<?> updateProfile(
             @PathVariable Integer userId,
             @RequestBody DashboardProfileUpdateRequest request) {
@@ -27,11 +34,19 @@ public class DashboardController extends ControllerBase {
     }
 
     @GetMapping("/summary/{userId}")
+    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
     public ResponseEntity<?> getSummary(@PathVariable Integer userId) {
         return ok(dashboardService.getSummary(userId));
     }
 
+    @GetMapping("/real-estate/{userId}")
+    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
+    public ResponseEntity<List<ProspectPropertyRecordResponse>> getRealEstateRecords(@PathVariable Integer userId) {
+        return ResponseEntity.ok(dashboardService.getRealEstateRecords(userId));
+    }
+
     @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
     public ResponseEntity<?> getStats() {
         return ok(dashboardService.getStats());
     }

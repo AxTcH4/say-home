@@ -1,8 +1,24 @@
-import { use } from "react";
-import { useEffect } from "react";
+/* eslint-disable @next/next/no-img-element */
 import { X } from "lucide-react";
-import { url } from "inspector";
-export default function ProspectModal({ prospect, onClose, isClosing }: any) {
+
+interface ProspectModalProspect {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string | null;
+}
+
+interface ProspectModalProps {
+  prospect: ProspectModalProspect;
+  onClose: () => void;
+  isClosing: boolean;
+}
+
+export default function ProspectModal({
+  prospect,
+  onClose,
+  isClosing,
+}: ProspectModalProps) {
   return (
     <div
       className={`transition-all duration-200 ease-in-out ${isClosing ? "opacity-0 scale-95" : "opacity-100 scale-100"} fixed inset-0 bg-black/40 flex items-center justify-center z-50`}

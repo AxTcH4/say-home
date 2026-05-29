@@ -1,51 +1,43 @@
 package ma.sayhome.say_home_api.matchingEngine;
 
 import jakarta.validation.Valid;
-import ma.sayhome.say_home_api.matchingEngine.matchResult.MatchResult;
 import ma.sayhome.say_home_api.shared.ApiResponse;
 import ma.sayhome.say_home_api.shared.ControllerBase;
 import ma.sayhome.say_home_api.shared.exceptions.BadRequestException;
 import ma.sayhome.say_home_api.shared.exceptions.ResourceNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 public class MatchingEngineController extends ControllerBase {
-    @Autowired
-    private MatchingEngineServiceImp matchingEngineService;
+    private final MatchingEngineServiceImpl matchingEngineService;
+
+    public MatchingEngineController(MatchingEngineServiceImpl matchingEngineService) {
+        this.matchingEngineService = matchingEngineService;
+    }
 
     @GetMapping("/api/properties/search")
-    @CrossOrigin(origins = "http://localhost:3000")
-
-    //sanitize inputs
-    public ResponseEntity<ApiResponse<List<SearchEngineResult>>> search (@Valid @ModelAttribute SearchRequest request) {
-        if (request.getTitle() != null ) {
+    @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+    public ResponseEntity<ApiResponse<List<SearchEngineResult>>> search(@Valid @ModelAttribute SearchRequest request) {
+        if (request.getTitle() != null) {
             request.setTitle(request.getTitle().trim().toLowerCase());
         }
 
-        if (request.getMinPrice() != null && request.getMaxPrice() != null ) {
-            if (request.getMinPrice() > request.getMaxPrice() && request.getMaxPrice() != 0 ) {
-                throw new BadRequestException("Min price cannot be greater than max price");}
-            }
+        if (request.getMinPrice() != null && request.getMaxPrice() != null
+                && request.getMinPrice() > request.getMaxPrice() && request.getMaxPrice() != 0F) {
+            throw new BadRequestException("Min price cannot be greater than max price");
+        }
 
-            //forward request to FASTAPI
-            List<SearchEngineResult> result = matchingEngineService.fetchMatchingProperties(request);
-
-            MatchResult matchResult = new MatchResult();
-            //construct a match result
-            //store result in match result and send back to front
+        List<SearchEngineResult> result = matchingEngineService.fetchMatchingProperties(request);
         if (result == null || result.isEmpty()) {
             throw new ResourceNotFoundException("Aucun resultat");
         }
 
         return ok(result);
-
     }
 }
-
-
-
-

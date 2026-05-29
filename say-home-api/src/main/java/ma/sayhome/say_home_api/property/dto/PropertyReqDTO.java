@@ -3,12 +3,11 @@ package ma.sayhome.say_home_api.property.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ma.sayhome.say_home_api.auth.UserRepository;
 import ma.sayhome.say_home_api.property.Property;
-import ma.sayhome.say_home_api.property.propertyMedia.PropertyMedia;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.stream.Collectors;
+import ma.sayhome.say_home_api.shared.enums.PropertyOfferType;
+import ma.sayhome.say_home_api.shared.enums.PropertySecteur;
+import ma.sayhome.say_home_api.shared.enums.PropertyStatus;
+import ma.sayhome.say_home_api.shared.enums.PropertyType;
 
 @Data
 @NoArgsConstructor
@@ -17,13 +16,21 @@ public class PropertyReqDTO {
 
     private String title;
     private String description;
-    private String type;
-    private String secteur;
+    private PropertyType type;
+    private PropertySecteur secteur;
     private Float price;
+    private PropertyOfferType offerType;
     private Integer surface;
     private Integer rooms;
+    private Integer bathrooms;
+    private Boolean climatisation;
+    private Boolean piscine;
+    private Boolean jardin;
+    private Boolean garage;
+    private Boolean securite;
+    private Boolean systemeDomotiqueComplet;
     private String agentName;
-    private String status;
+    private PropertyStatus status;
 
 
 
@@ -34,9 +41,17 @@ public class PropertyReqDTO {
         property.setType(propertyDTO.getType());
         property.setSecteur(propertyDTO.getSecteur());
         property.setPrice(propertyDTO.getPrice());
+        property.setOfferType(propertyDTO.getOfferType() != null ? propertyDTO.getOfferType() : PropertyOfferType.SALE);
         property.setSurface(propertyDTO.getSurface());
         property.setRooms(propertyDTO.getRooms());
-        property.setStatus(propertyDTO.getStatus() != null ? propertyDTO.getStatus() : "AVAILABLE");
+        property.setBathrooms(propertyDTO.getBathrooms());
+        property.setClimatisation(Boolean.TRUE.equals(propertyDTO.getClimatisation()));
+        property.setPiscine(Boolean.TRUE.equals(propertyDTO.getPiscine()));
+        property.setJardin(Boolean.TRUE.equals(propertyDTO.getJardin()));
+        property.setGarage(Boolean.TRUE.equals(propertyDTO.getGarage()));
+        property.setSecurite(Boolean.TRUE.equals(propertyDTO.getSecurite()));
+        property.setSystemeDomotiqueComplet(Boolean.TRUE.equals(propertyDTO.getSystemeDomotiqueComplet()));
+        property.setStatus(propertyDTO.getStatus() != null ? propertyDTO.getStatus() : PropertyStatus.AVAILABLE);
 
         return  property;
     }

@@ -1,9 +1,11 @@
 package ma.sayhome.say_home_api.appointment;
 
 import ma.sayhome.say_home_api.appointment.dto.CreateAppointmentRequest;
+import ma.sayhome.say_home_api.appointment.dto.ClientAppointmentActionRequest;
 import ma.sayhome.say_home_api.appointment.dto.CreateVisitRequest;
 import ma.sayhome.say_home_api.shared.ControllerBase;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -17,59 +19,114 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/appointments")
 public class AppointmentController extends ControllerBase {
-    private final AppointmentServiceImp appointmentService;
+    private final AppointmentServiceImpl appointmentService;
 
-    public AppointmentController(AppointmentServiceImp appointmentService) {
+    public AppointmentController(AppointmentServiceImpl appointmentService) {
         this.appointmentService = appointmentService;
     }
 
     @GetMapping("/board")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
     public ResponseEntity<?> getBoard() {
         return ok(appointmentService.getBoard());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
     public ResponseEntity<?> getAppointment(@PathVariable Integer id) {
         return ok(appointmentService.getAppointmentDetail(id));
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> createAppointment(@RequestBody CreateAppointmentRequest request) {
         return created(appointmentService.createAppointment(request));
     }
 
     @PostMapping("/requests")
-        public ResponseEntity<?> createVisitRequest(@RequestBody CreateVisitRequest request) {
-            System.out.println("Landed in the controller");
-            return created(appointmentService.createVisitRequest(request));
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<?> createVisitRequest(@RequestBody CreateVisitRequest request) {
+        return created(appointmentService.createVisitRequest(request));
     }
 
     @GetMapping("/requests/me")
+    @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<?> getMyVisitRequests() {
         return ok(appointmentService.getMyVisitRequests());
     }
 
+    @PatchMapping("/{id}/request-reschedule")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<?> requestReschedule(
+            @PathVariable Integer id,
+            @RequestBody ClientAppointmentActionRequest request
+    ) {
+        return ok(appointmentService.requestReschedule(id, request));
+    }
+
+    @PatchMapping("/{id}/request-cancel")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<?> requestCancellation(
+            @PathVariable Integer id,
+            @RequestBody ClientAppointmentActionRequest request
+    ) {
+        return ok(appointmentService.requestCancellation(id, request));
+    }
+
+    @GetMapping("/requests/prospect/{id}")
+    public ResponseEntity<?> getVisitRequestsByProspect(
+            @PathVariable Integer id
+    ) {
+        return ok(
+                appointmentService
+                        .getVisitRequestsByProspect(id)
+        );
+    }
+
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateAppointment(@PathVariable Integer id, @RequestBody CreateAppointmentRequest request) {
         return ok(appointmentService.updateAppointment(id, request));
     }
 
     @PatchMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> approveAppointmentRequest(@PathVariable Integer id) {
         return ok(appointmentService.approveRequest(id));
     }
 
     @PatchMapping("/{id}/refuse")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> refuseAppointmentRequest(@PathVariable Integer id) {
         return ok(appointmentService.refuseRequest(id));
     }
 
     @PatchMapping("/{id}/cancel")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> cancelAppointment(@PathVariable Integer id) {
         return ok(appointmentService.cancelAppointment(id));
     }
 
+    @PatchMapping("/{id}/complete")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> completeAppointment(@PathVariable Integer id) {
+        return ok(appointmentService.completeAppointment(id));
+    }
+
+    @PatchMapping("/{id}/complete-agreement")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> completeWithAgreement(@PathVariable Integer id) {
+        return ok(appointmentService.completeAppointmentWithAgreement(id));
+    }
+
+    @PatchMapping("/{id}/complete-no-agreement")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> completeWithNoAgreement(@PathVariable Integer id) {
+        return ok(appointmentService.completeAppointmentWithNoAgreement(id));
+    }
+
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteAppointment(@PathVariable Integer id) {
         appointmentService.delete(id);
         return noContent();

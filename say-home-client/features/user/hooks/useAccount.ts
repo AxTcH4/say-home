@@ -2,18 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { accountService } from "../services/account.service";
-import type { DashboardProfile, DashboardSummary } from "../types/account.types";
+import type {
+  DashboardProfile,
+  DashboardSummary,
+  RealEstateRecord,
+} from "../types/account.types";
 
 export function useAccount(userId?: number) {
   const [profile, setProfile] = useState<DashboardProfile | null>(null);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [realEstate, setRealEstate] = useState<RealEstateRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!userId) {
-      setProfile(null);
-      setSummary(null);
       return;
     }
 
@@ -24,20 +27,22 @@ export function useAccount(userId?: number) {
         setLoading(true);
         setError("");
 
-        const [profileData, summaryData] = await Promise.all([
+        const [profileData, summaryData, realEstateData] = await Promise.all([
           accountService.getProfile(userId),
           accountService.getSummary(userId),
+          accountService.getRealEstate(userId),
         ]);
 
         if (mounted) {
           setProfile(profileData);
           setSummary(summaryData);
+          setRealEstate(realEstateData);
         }
-      } catch (error) {
+      } catch (loadError) {
         if (mounted) {
           setError("Impossible de charger les donnees du compte.");
         }
-        console.error(error);
+        console.error(loadError);
       } finally {
         if (mounted) {
           setLoading(false);
@@ -53,9 +58,10 @@ export function useAccount(userId?: number) {
   }, [userId]);
 
   return {
-    profile,
-    summary,
-    loading,
-    error,
+    profile: userId ? profile : null,
+    summary: userId ? summary : null,
+    realEstate: userId ? realEstate : [],
+    loading: userId ? loading : false,
+    error: userId ? error : "",
   };
 }

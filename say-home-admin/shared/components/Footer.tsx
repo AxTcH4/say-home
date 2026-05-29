@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 export default function Footer() {
   return (
     <footer className="flex items-center justify-between bg-[#1a1a1a] text-white"

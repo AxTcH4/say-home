@@ -18,7 +18,7 @@ export const userService = {
     });
 
     if (!response.ok) {
-      throw new Error("Unable to load users");
+      throw new Error("Unable to load agents");
     }
 
     const result = await response.json();
@@ -31,7 +31,7 @@ export const userService = {
     });
 
     if (!response.ok) {
-      throw new Error("Unable to load user");
+      throw new Error("Unable to load agent");
     }
 
     const result = await response.json();
@@ -49,7 +49,7 @@ export const userService = {
 
     if (!response.ok) {
       const error = await response.json().catch(() => null);
-      throw new Error(error?.message ?? "Unable to create user");
+      throw new Error(error?.message ?? "Unable to create agent");
     }
   },
 
@@ -64,7 +64,7 @@ export const userService = {
 
     if (!response.ok) {
       const error = await response.json().catch(() => null);
-      throw new Error(error?.message ?? "Unable to update user");
+      throw new Error(error?.message ?? "Unable to update agent");
     }
   },
 
@@ -75,7 +75,7 @@ export const userService = {
 
     if (!response.ok) {
       const error = await response.json().catch(() => null);
-      throw new Error(error?.message ?? "Unable to update user status");
+      throw new Error(error?.message ?? "Unable to update agent status");
     }
   },
 };

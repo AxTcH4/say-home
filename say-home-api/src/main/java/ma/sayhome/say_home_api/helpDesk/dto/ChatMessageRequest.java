@@ -1,6 +1,5 @@
 package ma.sayhome.say_home_api.helpDesk.dto;
 
-import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -8,8 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessage;
-import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
-import ma.sayhome.say_home_api.shared.EntityBase;
 import ma.sayhome.say_home_api.shared.enums.Sender;
 
 @Data
@@ -19,7 +16,7 @@ import ma.sayhome.say_home_api.shared.enums.Sender;
 
 public class ChatMessageRequest {
 
-        private Integer id;
+//        private Integer id;
 
         @NotBlank
         @Size(max = 2000)
@@ -27,13 +24,13 @@ public class ChatMessageRequest {
 
         private Sender sender; // "agent" or "prospect"
 
-        private ChatSession session;
+        private ChatSessionDTO session;
 
     public static ChatMessage toEntity(ChatMessageRequest messageRequest) {
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setContent(messageRequest.getContent());
         chatMessage.setSender(messageRequest.getSender());
-        chatMessage.setSession(messageRequest.getSession());
+        chatMessage.setSession(ChatSessionDTO.toEntity(messageRequest.getSession()));
         return chatMessage;
     }
 }

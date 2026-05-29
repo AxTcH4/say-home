@@ -1,13 +1,10 @@
 package ma.sayhome.say_home_api.notification.dto;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ma.sayhome.say_home_api.auth.User;
-import ma.sayhome.say_home_api.auth.dto.UserDTO;
+import ma.sayhome.say_home_api.user.dto.UserDTO;
 import ma.sayhome.say_home_api.notification.Notification;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 

@@ -1,40 +1,32 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { APP_ROUTES } from "@/shared/lib/routes";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { accountService } from "../services/account.service";
 import { useAccount } from "../hooks/useAccount";
-import { toast } from "sonner";
 
 export default function ProfileForm() {
-  const router = useRouter();
-  const { user, logout, setCurrentUser } = useAuth();
+  const { user, setCurrentUser } = useAuth();
   const { profile, loading, error } = useAccount(user?.id);
   const [isEditing, setIsEditing] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    phone: "",
-    email: "",
-  });
+  const [draftFormData, setDraftFormData] = useState<{
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email: string;
+  } | null>(null);
 
   const source = profile || user;
-
-  useEffect(() => {
-    if (source) {
-      setFormData({
-        firstName: source.firstName || "",
-        lastName: source.lastName || "",
-        phone: source.phone || "",
-        email: source.email || "",
-      });
-    }
-  }, [source]);
+  const formData = draftFormData ?? {
+    firstName: source?.firstName || "",
+    lastName: source?.lastName || "",
+    phone: source?.phone || "",
+    email: source?.email || "",
+  };
 
   const initials = useMemo(() => {
     const first = formData.firstName.trim().charAt(0);
@@ -42,14 +34,13 @@ export default function ProfileForm() {
     return `${first}${last}`.toUpperCase() || "SH";
   }, [formData.firstName, formData.lastName]);
 
-  const fullName =
-    `${formData.firstName} ${formData.lastName}`.trim() || "Mon profil";
+  const fullName = `${formData.firstName} ${formData.lastName}`.trim() || "Mon profil";
 
   const handleChange =
     (field: "firstName" | "lastName" | "phone") =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev) => ({
-        ...prev,
+      setDraftFormData((prev) => ({
+        ...(prev ?? formData),
         [field]: event.target.value,
       }));
       setFormError("");
@@ -57,16 +48,8 @@ export default function ProfileForm() {
     };
 
   const handleCancel = () => {
-    if (source) {
-      setFormData({
-        firstName: source.firstName || "",
-        lastName: source.lastName || "",
-        phone: source.phone || "",
-        email: source.email || "",
-      });
-    }
-
     setIsEditing(false);
+    setDraftFormData(null);
     setFormError("");
     setSuccess("");
   };
@@ -105,18 +88,12 @@ export default function ProfileForm() {
         phone: updatedProfile.phone,
       });
 
-      setFormData({
-        firstName: updatedProfile.firstName,
-        lastName: updatedProfile.lastName,
-        phone: updatedProfile.phone || "",
-        email: updatedProfile.email,
-      });
-
+      setDraftFormData(null);
       setIsEditing(false);
       toast.success("Profil mis a jour avec succes.");
-    } catch (error) {
+    } catch (saveError) {
       setFormError("Impossible de mettre a jour le profil.");
-      console.error(error);
+      console.error(saveError);
     } finally {
       setIsSaving(false);
     }
@@ -126,32 +103,30 @@ export default function ProfileForm() {
     <>
       <div className="flex justify-between">
         <div className="flex items-center gap-5">
-          {" "}
-          <div className="w-20 h-20 rounded-full bg-[#F5F5F5] cursor-pointer hover:brightness-90  flex items-center justify-center text-2xl text-bold font-medium uppercase opacity-70 hover:opacity-90">
+          <div className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-full bg-[#F5F5F5] text-2xl font-medium uppercase opacity-70 transition hover:scale-105 hover:brightness-90 hover:opacity-90">
             {initials}
           </div>
           <div>
             <div className="flex flex-row items-center justify-between gap-4">
-              <h2 className="text-[30px] font-semibold leading-tight">
-                {fullName}
-              </h2>
+              <h2 className="text-[30px] font-semibold leading-tight">{fullName}</h2>
 
               <div className="h-5 w-[1px] bg-[#d8c8bb]" aria-hidden="true" />
 
-              <h2 className="text-[16px] text-[#d8c8bb] leading-tight">
+              <h2 className="text-[16px] leading-tight text-[#d8c8bb]">
                 {!user?.role
                   ? " "
-                  : user?.role.charAt(0).toUpperCase() +
-                    user?.role.slice(1).toLowerCase()}
+                  : user.role.charAt(0).toUpperCase() +
+                    user.role.slice(1).toLowerCase()}
               </h2>
             </div>
 
             <p className="mt-1 text-sm text-[#d8c8bb]">{formData.email}</p>
-                        
-              {loading ? 
-              <p className="mt-1 text-sm text-[#d8c8bb]">Chargement... </p> :
-              <p className="mt-1 text-sm text-[green]">Compte actif </p>
-              }
+
+            {loading ? (
+              <p className="mt-1 text-sm text-[#d8c8bb]">Chargement...</p>
+            ) : (
+              <p className="mt-1 text-sm text-[green]">Compte actif</p>
+            )}
           </div>
         </div>
 
@@ -161,25 +136,23 @@ export default function ProfileForm() {
               type="button"
               onClick={() => {
                 setIsEditing(true);
+                setDraftFormData({
+                  firstName: source?.firstName || "",
+                  lastName: source?.lastName || "",
+                  phone: source?.phone || "",
+                  email: source?.email || "",
+                });
                 setSuccess("");
               }}
-              className={`-fit px-5 py-2 text-sm  font-medium hover:bg-[#2C1A0E] border border-black hover:border-transparent hover:text-white transition rounded-[1px]`}
+              className="rounded-[1px] border border-black px-5 py-2 text-sm font-medium transition hover:border-transparent hover:bg-[#2C1A0E] hover:text-white"
             >
               Modifier
             </button>
           )}
         </div>
-
       </div>
-      <div className="space-y-8 flex align-center justify-center  ">
-        <div className=" min-w-[35vw]  ">
-
-          {/* <div className=" px-5 py-5 border border-black">
-            <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              //TODO:Add pfp upload
-            </div>
-          </div> */}
-
+      <div className="flex justify-center space-y-8">
+        <div className="min-w-[35vw]">
           <div className="px-8 py-8">
             {(error || formError || success) && (
               <div
@@ -195,7 +168,7 @@ export default function ProfileForm() {
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-1">
               <Field
-                label="Prénom"
+                label="Prenom"
                 value={formData.firstName}
                 disabled={!isEditing || isSaving}
                 onChange={handleChange("firstName")}

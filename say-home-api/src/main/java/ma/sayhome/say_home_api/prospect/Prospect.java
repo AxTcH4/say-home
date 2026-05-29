@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import ma.sayhome.say_home_api.appointment.Appointment;
-import ma.sayhome.say_home_api.auth.User;
+import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
 import ma.sayhome.say_home_api.helpDesk.ticket.Ticket;
 import ma.sayhome.say_home_api.leadScore.LeadScore;

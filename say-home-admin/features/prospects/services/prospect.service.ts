@@ -1,11 +1,16 @@
 import { apiFetch } from "@/shared/lib/api-fetch";
 import type {
+  AssignProspectPropertyPayload,
+  CreateProspectPropertyInteractionPayload,
   CreateProspectPayload,
   ProspectDetail,
+  ProspectPropertyDocumentType,
   ProspectListResponse,
   ProspectQueryParams,
-  UpdateProspectPayload,
+  ProspectPropertyRecord,
   CreateInteractionPayload,
+  UpdateProspectPayload,
+  UpdateProspectPropertyPayload,
 } from "../types/prospect.types";
 
 const API_BASE_URL =
@@ -22,6 +27,8 @@ function buildQuery(params: ProspectQueryParams) {
     searchParams.set("assignedAgent", params.assignedAgent);
   }
   if (params.source) searchParams.set("source", params.source);
+  if (params.page) searchParams.set("page", String(params.page));
+  if (params.pageSize) searchParams.set("pageSize", String(params.pageSize));
 
   const query = searchParams.toString();
   return query ? `?${query}` : "";
@@ -112,6 +119,110 @@ export const prospectService = {
 
     const result = await response.json();
     return result.data as ProspectDetail;
+  },
+
+  async assignProperty(payload: AssignProspectPropertyPayload) {
+    const response = await apiFetch(`${API_BASE_URL}/prospect-properties`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message ?? "Unable to assign property");
+    }
+
+    const result = await response.json();
+    return result.data as ProspectPropertyRecord;
+  },
+
+  async updatePropertyRecord(
+    recordId: number,
+    payload: UpdateProspectPropertyPayload,
+  ) {
+    const response = await apiFetch(
+      `${API_BASE_URL}/prospect-properties/${recordId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message ?? "Unable to update property record");
+    }
+
+    const result = await response.json();
+    return result.data as ProspectPropertyRecord;
+  },
+
+  async addPropertyInteraction(
+    recordId: number,
+    payload: CreateProspectPropertyInteractionPayload,
+  ) {
+    const response = await apiFetch(
+      `${API_BASE_URL}/prospect-properties/${recordId}/interactions`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message ?? "Unable to add property interaction");
+    }
+
+    const result = await response.json();
+    return result.data as ProspectPropertyRecord;
+  },
+
+  async deletePropertyRecord(recordId: number) {
+    const response = await apiFetch(`${API_BASE_URL}/prospect-properties/${recordId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message ?? "Unable to delete property record");
+    }
+  },
+
+  async uploadPropertyDocuments(
+    recordId: number,
+    type: ProspectPropertyDocumentType,
+    files: File[],
+  ) {
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append("files", file);
+    }
+
+    const response = await apiFetch(
+      `${API_BASE_URL}/prospect-properties/${recordId}/documents?type=${type}`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message ?? "Unable to upload property document");
+    }
+
+    const result = await response.json();
+    return result.data as ProspectPropertyRecord;
   },
 
   async deleteProspect(id: number) {

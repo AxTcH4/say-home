@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { APP_ROUTES } from "@/shared/lib/routes";
 import { userService } from "../services/user.service";
 import type { CreateUserPayload, UpdateUserPayload } from "../types/user.types";
 
 interface UserFormProps {
   mode: "create" | "edit";
   userId?: number;
-  initialValues?: Omit<UpdateUserPayload, "role"> & { role: string };
+  initialValues?: Omit<UpdateUserPayload, "role">;
 }
 
 export function UserForm({ mode, userId, initialValues }: UserFormProps) {
@@ -22,7 +21,6 @@ export function UserForm({ mode, userId, initialValues }: UserFormProps) {
     email: initialValues?.email ?? "",
     password: "",
     phone: initialValues?.phone ?? "",
-    role: initialValues?.role ?? "AGENT",
   });
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -32,21 +30,24 @@ export function UserForm({ mode, userId, initialValues }: UserFormProps) {
 
     try {
       if (mode === "create") {
-        await userService.createUser(form as CreateUserPayload);
+        await userService.createUser({
+          ...form,
+          role: "AGENT",
+        } as CreateUserPayload);
       } else if (userId) {
         await userService.updateUser(userId, {
           firstName: form.firstName,
           lastName: form.lastName,
           email: form.email,
           phone: form.phone,
-          role: form.role,
+          role: "AGENT",
         } as UpdateUserPayload);
       }
 
       router.push("/agents");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to save user");
+      setError(err instanceof Error ? err.message : "Unable to save agent");
     } finally {
       setIsSubmitting(false);
     }
@@ -102,16 +103,6 @@ export function UserForm({ mode, userId, initialValues }: UserFormProps) {
             />
           </Field>
         ) : null}
-        <Field label="Role">
-          <select
-            value={form.role}
-            onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))}
-            className="h-12 w-full rounded-[12px] border border-[#e4eaf4] px-4 text-sm outline-none"
-          >
-            <option value="ADMIN">Admin</option>
-            <option value="AGENT">Agent</option>
-          </select>
-        </Field>
       </div>
 
       {error ? <p className="mt-4 rounded-[10px] bg-[#ffe8e8] px-3 py-2 text-sm text-[#c13d3d]">{error}</p> : null}
@@ -122,7 +113,7 @@ export function UserForm({ mode, userId, initialValues }: UserFormProps) {
           disabled={isSubmitting}
           className="rounded-[10px] bg-[#2c1a0e] px-5 py-3 text-sm font-semibold text-white"
         >
-          {isSubmitting ? "Saving..." : mode === "create" ? "Create User" : "Save Changes"}
+          {isSubmitting ? "Saving..." : mode === "create" ? "Create Agent" : "Save Changes"}
         </button>
         <button
           type="button"

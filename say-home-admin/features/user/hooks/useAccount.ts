@@ -12,8 +12,6 @@ export function useAccount(userId?: number) {
 
   useEffect(() => {
     if (!userId) {
-      setProfile(null);
-      setSummary(null);
       return;
     }
 
@@ -53,9 +51,9 @@ export function useAccount(userId?: number) {
   }, [userId]);
 
   return {
-    profile,
-    summary,
-    loading,
-    error,
+    profile: userId ? profile : null,
+    summary: userId ? summary : null,
+    loading: userId ? loading : false,
+    error: userId ? error : "",
   };
 }

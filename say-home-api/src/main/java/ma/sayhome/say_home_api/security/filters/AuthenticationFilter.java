@@ -5,97 +5,90 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import ma.sayhome.say_home_api.auth.User;
-import ma.sayhome.say_home_api.auth.UserToken;
-import ma.sayhome.say_home_api.auth.UserTokenRepository;
-import ma.sayhome.say_home_api.shared.exceptions.UnauthorizedException;
-import org.springframework.beans.factory.annotation.Autowired;
+import ma.sayhome.say_home_api.auth.JwtService;
+import ma.sayhome.say_home_api.user.User;
+import ma.sayhome.say_home_api.user.UserRepository;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.naming.AuthenticationException;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class AuthenticationFilter extends OncePerRequestFilter {
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private UserTokenRepository userTokenRepository;
+    public AuthenticationFilter(JwtService jwtService, UserRepository userRepository) {
+        this.jwtService = jwtService;
+        this.userRepository = userRepository;
+    }
+
+    @Value("${sayhome.internalKey}")
+    private String internalKey;
 
     @Override
-        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-
-            System.out.println("Filter hit: " + request.getRequestURI());
-
-        System.out.println("==== REQUEST DEBUG ====");
-        System.out.println("URI: " + request.getRequestURI());
-        System.out.println("Method: " + request.getMethod());
-        System.out.println("RemoteAddr: " + request.getRemoteAddr());
-
-            Cookie[] cookies = request.getCookies();
-        if (cookies == null) {
-            System.out.println("No cookies found");
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        String requestInternalKey = request.getHeader("X-Internal-Key");
+        if (requestInternalKey != null && requestInternalKey.equals(internalKey)) {
+            UsernamePasswordAuthenticationToken internalAuth =
+                    new UsernamePasswordAuthenticationToken(
+                            "internal-service",
+                            null,
+                            List.of(
+                                    new SimpleGrantedAuthority("ROLE_ADMIN"),
+                                    new SimpleGrantedAuthority("ROLE_AGENT"),
+                                    new SimpleGrantedAuthority("ROLE_CLIENT")
+                            )
+                    );
+            SecurityContextHolder.getContext().setAuthentication(internalAuth);
             filterChain.doFilter(request, response);
             return;
-            }
+        }
+
+        Cookie[] cookies = request.getCookies();
 
         if (cookies == null) {
-            System.out.println("Cookies: NULL");
-        } else {
-            System.out.println("Cookies:");
-            for (Cookie c : cookies) {
-                System.out.println(" - " + c.getName() + " = " + c.getValue());
-            }
+            filterChain.doFilter(request, response);
+            return;
         }
 
-
-        System.out.println("Headers:");
-        var headerNames = request.getHeaderNames();
-
-        while (headerNames.hasMoreElements()) {
-            String name = headerNames.nextElement();
-            System.out.println(" - " + name + ": " + request.getHeader(name));
+        String token = "";
+        for (Cookie c : cookies) {
+            if ("token".equals(c.getName())) {
+                token = c.getValue();
+                break;
+            }
+        }
+        if (token == null || token.isBlank()) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        System.out.println("Origin: " + request.getHeader("Origin"));
-        System.out.println("Host: " + request.getHeader("Host"));
-
-            String token = "";
-            for(Cookie c: cookies) {
-                System.out.println(c.getName() +  ": " + c.getValue());
-                if(c.getName().equals("token")) {
-                    token = c.getValue();
-                    break;
-                }
-            }
-            System.out.println("token: " + token);
-            if (token == null || token.isBlank()) {
+        try {
+            String email = jwtService.extractEmail(token);
+            Optional<User> user = userRepository.findByEmail(email);
+            if (user.isEmpty() || !jwtService.isTokenValid(token, user.get())) {
                 filterChain.doFilter(request, response);
                 return;
             }
-            System.out.println("searching userToken...");
-            UserToken userToken = userTokenRepository.findByToken(token);
-            if (userToken == null) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
-                return; // stop here, don't continue the filter chain
-            }
-            System.out.println("finding userToken in DB...");
 
-            User authUser = userToken.getUser();
-            System.out.println("userToken is found in DB");
-            //set context
+            User authUser = user.get();
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(authUser, null, authUser.getAuthorities());
 
             SecurityContextHolder.getContext().setAuthentication(auth);
-            System.out.println("Security context set for: " + authUser.getEmail());
-            System.out.println("Authorities: " + authUser.getAuthorities());
-
+        } catch (Exception ignored) {
             filterChain.doFilter(request, response);
-            System.out.print("Forwarded request to controller!!");
-
+            return;
         }
+        filterChain.doFilter(request, response);
+    }
 }

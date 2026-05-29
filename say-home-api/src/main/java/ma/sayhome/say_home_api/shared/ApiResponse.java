@@ -8,6 +8,7 @@ public class ApiResponse<T> {
     private boolean success;
     private T data;
     private String error;
+    private Object similar;
 
     public static <T> ApiResponse<T> ok(T data) {
         ApiResponse<T> response = new ApiResponse<>();
@@ -48,5 +49,12 @@ public class ApiResponse<T> {
         return error;
     }
 
+    public Object getSimilar() {
+        return similar;
+    }
+
+    public void setSimilar(Object similar) {
+        this.similar = similar;
+    }
 
 }

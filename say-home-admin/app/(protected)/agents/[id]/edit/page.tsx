@@ -15,10 +15,10 @@ export default async function EditAgentPage({
     <section className="space-y-6">
       <div>
         <h1 className="text-[42px] font-semibold tracking-[-0.03em] text-[#172033]">
-          Edit User
+          Edit Agent
         </h1>
         <p className="mt-2 text-sm text-[#70819a]">
-          Update role and contact information for this user.
+          Update the contact information for this agent.
         </p>
       </div>
 
@@ -29,8 +29,7 @@ export default async function EditAgentPage({
           firstName: user.fullName.split(" ").slice(0, -1).join(" ") || user.fullName,
           lastName: user.fullName.split(" ").slice(-1)[0] || "",
           email: user.email,
-          phone: "",
-          role: user.role === "Admin" ? "ADMIN" : "AGENT",
+          phone: user.phone ?? "",
         }}
       />
     </section>

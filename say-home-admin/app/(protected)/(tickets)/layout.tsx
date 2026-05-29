@@ -1,25 +1,21 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-export default function TicketsLayout({ children }: { children: React.ReactNode }) {
-  const [activeTab, setActiveTab] = useState<"tickets" | "sessions">("tickets");
-  const isFirstRender = useRef(true);
+
+import { usePathname, useRouter } from "next/navigation";
+
+export default function TicketsLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname();
   const router = useRouter();
-    useEffect(() => {
-    if (isFirstRender.current) {
-        // isFirstRender.current = false;
-        // return;
-    }
-    if (activeTab === "sessions") router.push("/chats");
-    else router.push("/tickets");
-    }, [activeTab]);
+  const activeTab = pathname === "/chats" ? "sessions" : "tickets";
 
   return (
-    <div className="px-4 h-full flex flex-col">
-      {/* Tabs */}
-      <div className="flex gap-6 border-b border-gray-200 ">
+    <div className="flex h-full flex-col px-4">
+      <div className="flex gap-6 border-b border-gray-200">
         <button
-          onClick={() => setActiveTab("tickets")}
+          onClick={() => router.push("/tickets")}
           className={`pb-3 text-sm font-semibold transition-colors ${
             activeTab === "tickets"
               ? "border-b-2 border-[#2f1b10] text-[#2f1b10]"
@@ -29,7 +25,7 @@ export default function TicketsLayout({ children }: { children: React.ReactNode 
           Tickets
         </button>
         <button
-          onClick={() => setActiveTab("sessions")}
+          onClick={() => router.push("/chats")}
           className={`pb-3 text-sm font-semibold transition-colors ${
             activeTab === "sessions"
               ? "border-b-2 border-[#2f1b10] text-[#2f1b10]"

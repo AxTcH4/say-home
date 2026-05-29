@@ -1,7 +1,13 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { hasManagementAccess, isAdminRole } from "@/shared/lib/auth";
+import { prospectService } from "../services/prospect.service";
 import type { ProspectDetail } from "../types/prospect.types";
 
 interface ProspectDetailHeaderProps {
@@ -31,8 +37,30 @@ const statusStyles: Record<string, string> = {
 
 export function ProspectDetailHeader({ prospect }: ProspectDetailHeaderProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const canManage = hasManagementAccess(user?.role);
   const isAdmin = isAdminRole(user?.role);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm(`Delete ${prospect.fullName}?`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await prospectService.deleteProspect(prospect.id);
+      toast.success("Prospect deleted successfully.");
+      router.push("/prospects");
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to delete prospect.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="rounded-[18px] border border-[#e7edf5] bg-white px-6 py-6 shadow-[0_12px_35px_rgba(20,32,60,0.06)]">
@@ -69,20 +97,28 @@ export function ProspectDetailHeader({ prospect }: ProspectDetailHeaderProps) {
 
         {canManage ? (
           <div className="flex flex-wrap gap-3">
-            <button className="rounded-[10px] border border-[#e4eaf4] px-4 py-2 text-sm font-semibold text-[#172033]">
+            <Link
+              href={`/prospects/${prospect.id}/edit`}
+              className="rounded-[10px] border border-[#e4eaf4] px-4 py-2 text-sm font-semibold text-[#172033] transition hover:bg-[#f7f9fc]"
+            >
               Edit
-            </button>
+            </Link>
             {isAdmin ? (
-              <button className="rounded-[10px] border border-[#ffe1e1] px-4 py-2 text-sm font-semibold text-[#d24a4a]">
-                Delete
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="rounded-[10px] border border-[#ffe1e1] px-4 py-2 text-sm font-semibold text-[#d24a4a] transition hover:bg-[#fff5f5] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
               </button>
             ) : null}
-            <button className="rounded-[10px] border border-[#e4eaf4] px-4 py-2 text-sm font-semibold text-[#172033]">
-              Add Interaction
-            </button>
-            <button className="rounded-[10px] bg-[#2c1a0e] px-4 py-2 text-sm font-semibold text-white">
+            <Link
+              href={`/appointments/new?prospectId=${prospect.id}`}
+              className="rounded-[10px] bg-[#2c1a0e] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#3a2416]"
+            >
               Add Meeting
-            </button>
+            </Link>
           </div>
         ) : null}
       </div>

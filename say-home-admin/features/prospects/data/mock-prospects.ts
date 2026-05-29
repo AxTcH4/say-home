@@ -61,7 +61,7 @@ export const mockProspectsResponse: ProspectListResponse = {
   ],
 };
 
-export const mockProspectDetails: Record<number, ProspectDetail> = {
+export const mockProspectDetails = {
   1: {
     id: 1,
     fullName: "Lando Norris",
@@ -86,8 +86,75 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
       { id: 1, type: "Visite", date: "2026-04-28", time: "10:30", status: "Scheduled" },
       { id: 2, type: "Call", date: "2026-04-30", time: "15:00", status: "Planned" },
     ],
-    feedback: [
-      { id: 1, date: "2026-04-18", satisfaction: "High", comment: "Tres interesse par les biens avec terrasse et parking." },
+    wishes: [
+      {
+        id: 1,
+        date: "2026-04-18",
+        source: "FORM",
+        submitted: true,
+        title: "Souhait renseigne par formulaire",
+        summary: "Appartement | Prix: 450000 - 650000 MAD | Chambres: 2 - 4",
+      },
+    ],
+    propertyRecords: [
+      {
+        id: 101,
+        propertyId: 41,
+        propertyTitle: "Riad Atlas View",
+        propertyType: "Riad",
+        propertySector: "Medina",
+        propertyPrice: 580000,
+        propertyStatus: "RESERVED",
+        relationStatus: "NEGOTIATING",
+        finalPrice: 560000,
+        notes: "Discussion avancee, le prospect attend le contrat final.",
+        createdAt: "2026-04-16T10:00:00",
+        updatedAt: "2026-04-28T16:30:00",
+        medias: ["/placeholder.jpg"],
+        documents: [
+          {
+            id: 5001,
+            name: "draft-contract.pdf",
+            url: "#",
+            type: "CONTRACT",
+            uploadedAt: "2026-04-28T16:32:00",
+          },
+        ],
+        expectedDocuments: [],
+        interactions: [
+          {
+            id: 9001,
+            type: "NEGOTIATION_STARTED",
+            comment: "Echange avance avec le prospect sur les conditions de vente.",
+            createdAt: "2026-04-28T16:20:00",
+          },
+        ],
+      },
+      {
+        id: 102,
+        propertyId: 18,
+        propertyTitle: "Appartement Palm Heights",
+        propertyType: "Appartement",
+        propertySector: "Hay Riad",
+        propertyPrice: 620000,
+        propertyStatus: "AVAILABLE",
+        relationStatus: "FAVORITE",
+        finalPrice: null,
+        notes: "Bien conserve en shortlist.",
+        createdAt: "2026-04-15T09:30:00",
+        updatedAt: "2026-04-20T11:00:00",
+        medias: ["/placeholder.jpg"],
+        documents: [],
+        expectedDocuments: [],
+        interactions: [
+          {
+            id: 9002,
+            type: "FAVORITED",
+            comment: "Le bien a ete ajoute a la shortlist du prospect.",
+            createdAt: "2026-04-20T11:00:00",
+          },
+        ],
+      },
     ],
   },
   2: {
@@ -112,7 +179,49 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
     meetings: [
       { id: 1, type: "Call", date: "2026-04-29", time: "12:00", status: "Scheduled" },
     ],
-    feedback: [],
+    wishes: [],
+    propertyRecords: [
+      {
+        id: 201,
+        propertyId: 24,
+        propertyTitle: "Villa Ocean Breeze",
+        propertyType: "Villa",
+        propertySector: "Agadir Bay",
+        propertyPrice: 1120000,
+        propertyStatus: "SOLD",
+        relationStatus: "BOUGHT",
+        finalPrice: 1080000,
+        notes: "Transaction finalisee avec dossier complet.",
+        createdAt: "2026-04-10T14:00:00",
+        updatedAt: "2026-04-27T18:10:00",
+        medias: ["/placeholder.jpg"],
+        documents: [
+          {
+            id: 6001,
+            name: "purchase-receipt.pdf",
+            url: "#",
+            type: "RECEIPT",
+            uploadedAt: "2026-04-27T18:15:00",
+          },
+          {
+            id: 6002,
+            name: "signed-contract.pdf",
+            url: "#",
+            type: "CONTRACT",
+            uploadedAt: "2026-04-27T18:18:00",
+          },
+        ],
+        expectedDocuments: [],
+        interactions: [
+          {
+            id: 9003,
+            type: "PURCHASE_COMPLETED",
+            comment: "Transaction confirmee et dossier archive.",
+            createdAt: "2026-04-27T18:10:00",
+          },
+        ],
+      },
+    ],
   },
   3: {
     id: 3,
@@ -132,7 +241,8 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
     temperature: "COLD",
     interactions: [],
     meetings: [],
-    feedback: [],
+    wishes: [],
+    propertyRecords: [],
   },
   4: {
     id: 4,
@@ -156,8 +266,57 @@ export const mockProspectDetails: Record<number, ProspectDetail> = {
     meetings: [
       { id: 1, type: "Visite", date: "2026-05-02", time: "11:15", status: "Scheduled" },
     ],
-    feedback: [
-      { id: 1, date: "2026-04-19", satisfaction: "Very High", comment: "Souhaite des dossiers complets et une reactivite maximale." },
+    wishes: [
+      {
+        id: 1,
+        date: "2026-04-19",
+        source: "AGREEMENT",
+        submitted: true,
+        title: "Accord apres visite - Residence Cap Spartel",
+        summary: "Prix: 31500 - 38500 MAD | Surface: 90 - 110 m2 | Securite",
+      },
+    ],
+    propertyRecords: [
+      {
+        id: 401,
+        propertyId: 72,
+        propertyTitle: "Residence Cap Spartel",
+        propertyType: "Residence",
+        propertySector: "Cap Spartel",
+        propertyPrice: 35000,
+        propertyStatus: "RENTED",
+        relationStatus: "RENTED",
+        finalPrice: 33000,
+        notes: "Location annuelle confirmee pour un cadre executif.",
+        createdAt: "2026-04-12T08:00:00",
+        updatedAt: "2026-05-01T09:45:00",
+        medias: ["/placeholder.jpg"],
+        documents: [
+          {
+            id: 7001,
+            name: "lease-contract.pdf",
+            url: "#",
+            type: "CONTRACT",
+            uploadedAt: "2026-05-01T09:48:00",
+          },
+          {
+            id: 7002,
+            name: "payment-proof.pdf",
+            url: "#",
+            type: "PAYMENT_PROOF",
+            uploadedAt: "2026-05-01T09:50:00",
+          },
+        ],
+        expectedDocuments: [],
+        interactions: [
+          {
+            id: 9004,
+            type: "RENT_COMPLETED",
+            comment: "Location annuelle finalisee avec contrat signe.",
+            createdAt: "2026-05-01T09:45:00",
+          },
+        ],
+      },
     ],
   },
-};
+} as unknown as Record<number, ProspectDetail>;

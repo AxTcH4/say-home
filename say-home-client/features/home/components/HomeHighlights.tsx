@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ArrowRight, BadgeCheck, Building2, MapPinned, Sparkles } from "lucide-react";
 
 export default function HomeHighlights() {
@@ -87,15 +88,15 @@ export default function HomeHighlights() {
                 Vous voulez aller plus vite sur votre prochaine visite ?
               </h2>
               <p className="mt-4 text-sm leading-7 text-white/80">
-                Parcourez les biens, envoyez vos demandes et laissez l'equipe confirmer les visites selon les disponibilites.
+                Parcourez les biens, envoyez vos demandes et laissez l&apos;equipe confirmer les visites selon les disponibilites.
               </p>
             </div>
-            <a
+            <Link
               href="/properties"
               className="inline-flex items-center gap-2 rounded-[2px] bg-white px-5 py-3 text-sm font-semibold text-[#2f1b10] transition hover:translate-x-1"
             >
               Voir les proprietes <ArrowRight className="h-4 w-4" />
-            </a>
+            </Link>
           </div>
         </div>
       </RevealSection>

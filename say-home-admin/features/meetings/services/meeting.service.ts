@@ -91,6 +91,31 @@ export const meetingService = {
     if (!response.ok) throw new Error(await readErrorMessage(response, "Unable to cancel meeting"));
   },
 
+  async completeAppointment(id: number) {
+    const response = await apiFetch(`${API_BASE_URL}/appointments/${id}/complete`, {
+      method: "PATCH",
+    });
+    if (!response.ok) throw new Error(await readErrorMessage(response, "Unable to complete meeting"));
+  },
+
+  async completeWithAgreement(id: number) {
+    const response = await apiFetch(`${API_BASE_URL}/appointments/${id}/complete-agreement`, {
+      method: "PATCH",
+    });
+    if (!response.ok) {
+      throw new Error(await readErrorMessage(response, "Unable to complete agreement flow"));
+    }
+  },
+
+  async completeWithNoAgreement(id: number) {
+    const response = await apiFetch(`${API_BASE_URL}/appointments/${id}/complete-no-agreement`, {
+      method: "PATCH",
+    });
+    if (!response.ok) {
+      throw new Error(await readErrorMessage(response, "Unable to complete no-agreement flow"));
+    }
+  },
+
   async deleteAppointment(id: number) {
     const response = await apiFetch(`${API_BASE_URL}/appointments/${id}`, {
       method: "DELETE",

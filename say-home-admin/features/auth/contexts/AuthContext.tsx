@@ -1,13 +1,12 @@
 "use client";
 
-import { createContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useEffect, useMemo, useState } from "react";
 import { storage } from "@/shared/lib/storage";
 import { authService } from "../services/auth.service";
 import type { AuthUser, LoginPayload } from "../types/auth.types";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { APP_ROUTES } from "@/shared/lib/routes";
-
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -28,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
@@ -38,57 +37,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setToken(null);
     }
-  };
+  }, []);
 
-  const login = async (payload: LoginPayload) => {
+  const login = useCallback(async (payload: LoginPayload) => {
+    const response = await authService.login(payload);
 
-   const response = await authService.login(payload);
-
-    if (!response.user ) {
+    if (!response.user) {
       throw new Error("Invalid authentication response");
     }
 
     if (response.user.role === "CLIENT") {
-    window.location.href = process.env.NEXT_PUBLIC_FRONTOFFICE_URL!;
-          toast.success("redireiction vers espace client", {
+      window.location.href = process.env.NEXT_PUBLIC_FRONTOFFICE_URL!;
+      toast.success("redirection vers espace client", {
         duration: 3000,
         position: "bottom-center",
       });
-    return;
-    } else {
-      
-    storage.setUser(response.user);
+      return;
+    }
 
+    storage.setUser(response.user);
     setUser(response.user);
     router.push(APP_ROUTES.HOME);
-    toast.success("Bienvenue à nouveau, " + response.user.firstName, {duration: 3000,position: "bottom-center"});
+    toast.success("Bienvenue a nouveau, " + response.user.firstName, {
+      duration: 3000,
+      position: "bottom-center",
+    });
+  }, [router]);
 
-    }
-    
-  };
-
-  const logout = async () => {
-    await authService.logout();;
+  const logout = useCallback(async () => {
+    await authService.logout();
 
     storage.clearAuth();
     setUser(null);
-    toast.success("Vous avez bien vous deconnecté!", {duration: 3000,position: "bottom-center"});
+    setToken(null);
+    toast.success("Vous avez bien vous deconnecte !", {
+      duration: 3000,
+      position: "bottom-center",
+    });
+    router.push(APP_ROUTES.LOGIN);
+  }, [router]);
 
-
-  };
-
-  const setCurrentUser = (user: AuthUser) => {
-    storage.setUser(user);
-    setUser(user);
-  };
+  const setCurrentUser = useCallback((currentUser: AuthUser) => {
+    storage.setUser(currentUser);
+    setUser(currentUser);
+  }, []);
 
   useEffect(() => {
     const init = async () => {
       try {
-        const user = await authService.getCurrentUser(); // uses HttpOnly cookie
-        setUser(user);
+        const currentUser = await authService.getCurrentUser();
+        setUser(currentUser);
       } catch {
         setUser(null);
+        setToken(null);
       }
 
       setIsLoading(false);
@@ -108,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshUser,
       setCurrentUser,
     }),
-    [user, isLoading]
+    [user, token, isLoading, login, logout, refreshUser, setCurrentUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

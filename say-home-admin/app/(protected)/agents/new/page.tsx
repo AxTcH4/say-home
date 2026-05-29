@@ -11,10 +11,10 @@ async function requireAdminPage() {
     <section className="space-y-6">
       <div>
         <h1 className="text-[42px] font-semibold tracking-[-0.03em] text-[#172033]">
-          Add User
+          Add Agent
         </h1>
         <p className="mt-2 text-sm text-[#70819a]">
-          Create a new admin or agent account for the back-office.
+          Create a new agent account for the back-office.
         </p>
       </div>
 

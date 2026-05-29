@@ -1,6 +1,6 @@
 package ma.sayhome.say_home_api.prospect;
 
-import ma.sayhome.say_home_api.auth.User;
+import ma.sayhome.say_home_api.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -20,4 +20,6 @@ public interface ProspectRepository extends JpaRepository<Prospect,Integer> {
             String phone
     );
     Optional<Prospect> findByEmail(String email);
+
+
 }

@@ -1,16 +1,13 @@
 package ma.sayhome.say_home_api.helpDesk.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import ma.sayhome.say_home_api.auth.dto.UserDTO;
 import ma.sayhome.say_home_api.helpDesk.chatMessage.ChatMessage;
 import ma.sayhome.say_home_api.helpDesk.chatSession.ChatSession;
-import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.prospect.dto.ChatSessionOwner;
+import ma.sayhome.say_home_api.user.dto.UserDTO;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,19 +26,22 @@ public class ChatSessionDTO {
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime expiresAt;
+
     boolean isOngoing;
 
 
 
     public static ChatSessionDTO toDTO(ChatSession session){
-         List<ChatMessage> messagesDTO = new ArrayList<>();
         ChatSessionDTO chatSessionDTO = new ChatSessionDTO();
         chatSessionDTO.setId(session.getId());
-//        chatSessionDTO.setProspect(session./);
         chatSessionDTO.setProspect(
                 new ChatSessionOwner(
                         session.getProspect().getId(),
                         session.getProspect().getStatus(),
+                        session.getProspect().getCity(),
+                        session.getProspect().getSource(),
+                        session.getProspect().getBudget(),
                         UserDTO.toDTO(session.getProspect().getUser())
                 )
         );
@@ -55,5 +55,15 @@ public class ChatSessionDTO {
         chatSessionDTO.setCreatedAt(session.getCreatedAt());
 
         return chatSessionDTO;
+    }
+
+
+    public static ChatSession toEntity(ChatSessionDTO sessionDTO) {
+        ChatSession session = new ChatSession();
+        session.setId(sessionDTO.getId());
+        session.setOngoing(sessionDTO.isOngoing());
+        session.setCreatedAt(sessionDTO.getCreatedAt());
+        // prospect is never set → null
+        return session;
     }
 }

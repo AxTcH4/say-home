@@ -8,7 +8,12 @@ import { toast } from "sonner";
 import Navbar from "../../shared/components/Navbar";
 import Footer from "../../shared/components/Footer";
 import PropertyCard from "../../features/properties/components/PropertyCard";
-import { getAllProperties, searchProperties } from "../../shared/lib/api";
+import {
+  getAllProperties,
+  logClickedProperty,
+  logShownProperties,
+  searchProperties,
+} from "../../shared/lib/api";
 
 const searchSchema = z.object({
   title: z.string().optional(),
@@ -16,6 +21,8 @@ const searchSchema = z.object({
   secteur: z.string().optional(),
   minPrice: z.coerce.number().optional(),
   maxPrice: z.coerce.number().optional(),
+  minSurface: z.coerce.number().optional(),
+  minRooms: z.coerce.number().optional(),
 });
 
 const defaultFilters = {
@@ -24,18 +31,39 @@ const defaultFilters = {
   secteur: "",
   minPrice: "",
   maxPrice: "",
+  minSurface: "",
+  minRooms: "",
 };
+
+const PROPERTY_TYPE_OPTIONS = [
+  { value: "villa", label: "Villa" },
+  { value: "appartement", label: "Appartement" },
+  { value: "riad", label: "Riad" },
+  { value: "studio", label: "Studio" },
+];
+
+const PROPERTY_SECTEUR_OPTIONS = [
+  { value: "gueliz", label: "Gueliz" },
+  { value: "palmeraie", label: "Palmeraie" },
+  { value: "targa", label: "Targa" },
+  { value: "medina", label: "Medina" },
+  { value: "route-d-ourika", label: "Route d'Ourika" },
+  { value: "agdal", label: "Agdal" },
+  { value: "hivernage", label: "Hivernage" },
+  { value: "mabrouka", label: "Mabrouka" },
+];
 
 export default function PropertiesPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<"404" | "400" | "500" | null>(null);
+  const [isSimilar, setIsSimilar] = useState(false);
   const [filters, setFilters] = useState(defaultFilters);
 
   const resultsLabel = useMemo(
     () => `${items.length} propriete${items.length > 1 ? "s" : ""}`,
-    [items.length]
+    [items.length],
   );
 
   const mapProperty = (p: any) => ({
@@ -51,6 +79,7 @@ export default function PropertiesPage() {
 
   const fetchProperties = async () => {
     setLoading(true);
+    setIsSimilar(false);
     try {
       const data = await getAllProperties();
       setItems(Array.isArray(data) ? data.map(mapProperty) : []);
@@ -65,10 +94,10 @@ export default function PropertiesPage() {
   };
 
   useEffect(() => {
-    fetchProperties();
+    void fetchProperties();
   }, []);
 
-  const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSearch = async (event: { preventDefault: () => void }) => {
     event.preventDefault();
     setSubmitting(true);
 
@@ -79,6 +108,8 @@ export default function PropertiesPage() {
         secteur: filters.secteur.trim(),
         minPrice: filters.minPrice || 0,
         maxPrice: filters.maxPrice || 0,
+        minSurface: filters.minSurface || 0,
+        minRooms: filters.minRooms || 0,
       });
 
       if (Number(filters.maxPrice) !== 0 && Number(filters.minPrice) > Number(filters.maxPrice)) {
@@ -98,8 +129,9 @@ export default function PropertiesPage() {
       }
 
       const result = await searchProperties(data);
+      const failedResult = !result || ("status" in result && result.status >= 400);
 
-      if (!result || result.status === 500) {
+      if (failedResult && result?.status === 500) {
         setItems([]);
         setError("500");
         toast.error("Une erreur est survenue pendant la recherche.", {
@@ -109,7 +141,7 @@ export default function PropertiesPage() {
         return;
       }
 
-      if (result.status === 400) {
+      if (failedResult && result.status === 400) {
         setItems([]);
         setError("400");
         toast.error("Un ou plusieurs champs sont invalides.", {
@@ -119,7 +151,7 @@ export default function PropertiesPage() {
         return;
       }
 
-      if (result.status === 404 || !result.data?.length) {
+      if ((failedResult && result.status === 404) || !("data" in result) || !result.data?.length) {
         setItems([]);
         setError("404");
         toast.error("Aucun bien ne correspond a votre recherche.", {
@@ -129,21 +161,35 @@ export default function PropertiesPage() {
         return;
       }
 
-      setItems(
-        result.data.map((item: any) => ({
-          id: item.property.id,
-          description: item.property.description || "Aucune description",
-          type: item.property.type || "N/A",
-          secteur: item.property.secteur || "Unknown location",
-          title: item.property.title,
-          price: `${item.property.price} MAD`,
-          surface: item.property.surface ? `${item.property.surface} M2` : "N/A",
-          rooms: item.property.rooms ? `${item.property.rooms} chambre(s)` : "N/A",
-          medias: item.property.medias,
-          score: item.score,
-        }))
-      );
+      const similar = result.data.every((item: any) => item.score < 0.15);
+      setIsSimilar(similar);
+
+      const mapped = result.data.map((item: any) => ({
+        id: item.property.id,
+        description: item.property.description || "Aucune description",
+        type: item.property.type || "N/A",
+        secteur: item.property.secteur || "Unknown location",
+        title: item.property.title,
+        price: `${item.property.price} MAD`,
+        surface: item.property.surface ? `${item.property.surface} M2` : "N/A",
+        rooms: item.property.rooms ? `${item.property.rooms} chambre(s)` : "N/A",
+        medias: item.property.medias,
+        score: item.score,
+      }));
+      setItems(mapped);
       setError(null);
+
+      logShownProperties(
+        mapped.map((i: any) => i.id),
+        {
+          type: filters.type || undefined,
+          secteur: filters.secteur || undefined,
+          minPrice: filters.minPrice ? Number(filters.minPrice) : undefined,
+          maxPrice: filters.maxPrice ? Number(filters.maxPrice) : undefined,
+          minSurface: filters.minSurface ? Number(filters.minSurface) : undefined,
+          minRooms: filters.minRooms ? Number(filters.minRooms) : undefined,
+        },
+      );
     } catch (submitError) {
       console.error(submitError);
       setItems([]);
@@ -155,6 +201,7 @@ export default function PropertiesPage() {
 
   const resetFilters = async () => {
     setFilters(defaultFilters);
+    setIsSimilar(false);
     await fetchProperties();
   };
 
@@ -173,13 +220,14 @@ export default function PropertiesPage() {
                 Explorez des biens qui collent vraiment a votre projet.
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-7 text-[#6e6258]">
-                Affinez par type, secteur et budget pour trouver rapidement les biens les plus pertinents.
+                Affinez par type, secteur et budget pour trouver rapidement les biens les plus
+                pertinents.
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
               <QuickStat label="Resultats visibles" value={resultsLabel} />
-              <QuickStat label="Secteurs suivis" value="Guéliz, Hivernage, Medina" />
+              <QuickStat label="Secteurs suivis" value="Palmeraie, Agdal, Hivernage" />
               <QuickStat label="Experience" value="Recherche rapide et claire" />
             </div>
           </div>
@@ -226,9 +274,11 @@ export default function PropertiesPage() {
                   className="w-full rounded-[2px] border border-[#d8d1c8] bg-[#fbfaf8] px-3 py-3 text-sm text-[#4a4038] outline-none"
                 >
                   <option value="">Selectionnez un type</option>
-                  <option value="villa">Villa</option>
-                  <option value="appartement">Appartement</option>
-                  <option value="riad">Riad</option>
+                  {PROPERTY_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </Field>
 
@@ -239,13 +289,15 @@ export default function PropertiesPage() {
                   className="w-full rounded-[2px] border border-[#d8d1c8] bg-[#fbfaf8] px-3 py-3 text-sm text-[#4a4038] outline-none"
                 >
                   <option value="">Selectionnez un secteur</option>
-                  <option value="gueliz">Gueliz</option>
-                  <option value="hivernage">Hivernage</option>
-                  <option value="medina">Medina</option>
+                  {PROPERTY_SECTEUR_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </Field>
 
-              <Field label="Budget">
+              <Field label="Budget (MAD)">
                 <div className="grid grid-cols-2 gap-3">
                   <input
                     type="number"
@@ -262,6 +314,26 @@ export default function PropertiesPage() {
                     className="rounded-[2px] border border-[#d8d1c8] bg-[#fbfaf8] px-3 py-3 text-sm outline-none"
                   />
                 </div>
+              </Field>
+
+              <Field label="Surface minimum (m2)">
+                <input
+                  type="number"
+                  value={filters.minSurface}
+                  onChange={(event) => setFilters((current) => ({ ...current, minSurface: event.target.value }))}
+                  placeholder="Ex: 80"
+                  className="w-full rounded-[2px] border border-[#d8d1c8] bg-[#fbfaf8] px-3 py-3 text-sm outline-none"
+                />
+              </Field>
+
+              <Field label="Chambres minimum">
+                <input
+                  type="number"
+                  value={filters.minRooms}
+                  onChange={(event) => setFilters((current) => ({ ...current, minRooms: event.target.value }))}
+                  placeholder="Ex: 3"
+                  className="w-full rounded-[2px] border border-[#d8d1c8] bg-[#fbfaf8] px-3 py-3 text-sm outline-none"
+                />
               </Field>
             </div>
 
@@ -286,8 +358,22 @@ export default function PropertiesPage() {
               </div>
 
               <div className="flex flex-wrap gap-2 text-xs font-medium text-[#6d6259]">
-                {filters.type && <FilterChip label={filters.type} />}
-                {filters.secteur && <FilterChip label={filters.secteur} />}
+                {filters.type && (
+                  <FilterChip
+                    label={
+                      PROPERTY_TYPE_OPTIONS.find((option) => option.value === filters.type)?.label ??
+                      filters.type
+                    }
+                  />
+                )}
+                {filters.secteur && (
+                  <FilterChip
+                    label={
+                      PROPERTY_SECTEUR_OPTIONS.find((option) => option.value === filters.secteur)
+                        ?.label ?? filters.secteur
+                    }
+                  />
+                )}
                 {(filters.minPrice || filters.maxPrice) && (
                   <FilterChip
                     label={`${filters.minPrice || "0"} - ${filters.maxPrice || "∞"} MAD`}
@@ -326,10 +412,32 @@ export default function PropertiesPage() {
                 ))}
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {items.map((item: any, index: number) => (
-                  <PropertyCard key={index} {...item} />
-                ))}
+              <div className="space-y-4">
+                {isSimilar && (
+                  <div className="rounded-[2px] border border-amber-200 bg-amber-50 px-5 py-4">
+                    <p className="text-sm font-semibold text-amber-800">
+                      Aucun resultat exact - voici les biens les plus proches de votre recherche.
+                    </p>
+                  </div>
+                )}
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {items.map((item: any, index: number) => (
+                    <PropertyCard
+                      key={index}
+                      {...item}
+                      onDetailsClick={() =>
+                        logClickedProperty(item.id, {
+                          type: filters.type || undefined,
+                          secteur: filters.secteur || undefined,
+                          minPrice: filters.minPrice ? Number(filters.minPrice) : undefined,
+                          maxPrice: filters.maxPrice ? Number(filters.maxPrice) : undefined,
+                          minSurface: filters.minSurface ? Number(filters.minSurface) : undefined,
+                          minRooms: filters.minRooms ? Number(filters.minRooms) : undefined,
+                        })
+                      }
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>

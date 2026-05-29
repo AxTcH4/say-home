@@ -1,10 +1,11 @@
 package ma.sayhome.say_home_api.appointment;
 import jakarta.persistence.*;
 import lombok.Data;
-import ma.sayhome.say_home_api.auth.User;
+import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.property.Property;
 import ma.sayhome.say_home_api.prospect.Prospect;
 import ma.sayhome.say_home_api.shared.EntityBase;
+import ma.sayhome.say_home_api.shared.enums.AppointmentOutcome;
 import ma.sayhome.say_home_api.shared.enums.AppointmentStatus;
 
 import java.time.LocalDateTime;
@@ -26,6 +27,22 @@ public class Appointment extends EntityBase {
 
     @Column(length = 2000)
     private String notes;
+
+    @Column(name = "client_request_message", length = 2000)
+    private String clientRequestMessage;
+
+    @Column(name = "client_requested_date")
+    private LocalDateTime clientRequestedDate;
+
+    @Column(name = "wish_request_token", unique = true, length = 120)
+    private String wishRequestToken;
+
+    @Column(name = "wish_form_sent_at")
+    private LocalDateTime wishFormSentAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "outcome")
+    private AppointmentOutcome outcome;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -1,40 +1,32 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { APP_ROUTES } from "@/shared/lib/routes";
+import { useMemo, useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { accountService } from "../services/account.service";
 import { useAccount } from "../hooks/useAccount";
 import { toast } from "sonner";
 
 export default function ProfileForm() {
-  const router = useRouter();
-  const { user, logout, setCurrentUser } = useAuth();
+  const { user, setCurrentUser } = useAuth();
   const { profile, loading, error } = useAccount(user?.id);
   const [isEditing, setIsEditing] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    phone: "",
-    email: "",
-  });
+  const [draftFormData, setDraftFormData] = useState<{
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email: string;
+  } | null>(null);
 
   const source = profile || user;
-
-  useEffect(() => {
-    if (source) {
-      setFormData({
-        firstName: source.firstName || "",
-        lastName: source.lastName || "",
-        phone: source.phone || "",
-        email: source.email || "",
-      });
-    }
-  }, [source]);
+  const formData = draftFormData ?? {
+    firstName: source?.firstName || "",
+    lastName: source?.lastName || "",
+    phone: source?.phone || "",
+    email: source?.email || "",
+  };
 
   const initials = useMemo(() => {
     const first = formData.firstName.trim().charAt(0);
@@ -48,8 +40,8 @@ export default function ProfileForm() {
   const handleChange =
     (field: "firstName" | "lastName" | "phone") =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev) => ({
-        ...prev,
+      setDraftFormData((prev) => ({
+        ...(prev ?? formData),
         [field]: event.target.value,
       }));
       setFormError("");
@@ -57,16 +49,8 @@ export default function ProfileForm() {
     };
 
   const handleCancel = () => {
-    if (source) {
-      setFormData({
-        firstName: source.firstName || "",
-        lastName: source.lastName || "",
-        phone: source.phone || "",
-        email: source.email || "",
-      });
-    }
-
     setIsEditing(false);
+    setDraftFormData(null);
     setFormError("");
     setSuccess("");
   };
@@ -105,13 +89,7 @@ export default function ProfileForm() {
         phone: updatedProfile.phone,
       });
 
-      setFormData({
-        firstName: updatedProfile.firstName,
-        lastName: updatedProfile.lastName,
-        phone: updatedProfile.phone || "",
-        email: updatedProfile.email,
-      });
-
+      setDraftFormData(null);
       setIsEditing(false);
       toast.success("Profil mis a jour avec succes.");
     } catch (error) {
@@ -161,6 +139,12 @@ export default function ProfileForm() {
               type="button"
               onClick={() => {
                 setIsEditing(true);
+                setDraftFormData({
+                  firstName: source?.firstName || "",
+                  lastName: source?.lastName || "",
+                  phone: source?.phone || "",
+                  email: source?.email || "",
+                });
                 setSuccess("");
               }}
               className={`-fit px-5 py-2 text-sm  font-medium hover:bg-[#2C1A0E] border border-black hover:border-transparent hover:text-white transition rounded-[1px]`}

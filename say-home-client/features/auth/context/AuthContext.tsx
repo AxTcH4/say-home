@@ -1,19 +1,21 @@
 "use client";
 
-import { createContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { storage } from "@/shared/lib/storage";
 import { authService } from "../services/auth.service";
 import type {
   AuthUser,
   LoginPayload,
-  LogoutPayload,
   SignupPayload,
 } from "../types/auth.types";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-
-
-
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -33,11 +35,11 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [token] = useState<string | null>(() => storage.getToken());
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
@@ -46,66 +48,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       storage.clearAuth();
       setUser(null);
     }
-  };
+  }, []);
 
-  const login = async (payload: LoginPayload) => {
-    const response = await authService.login(payload);
+  const login = useCallback(
+    async (payload: LoginPayload) => {
+      const response = await authService.login(payload);
 
-    if (!response.user) {
-      throw new Error("Invalid authentication response");
-    }
+      if (!response.user) {
+        throw new Error("Invalid authentication response");
+      }
 
-    if (response.user.role === "CLIENT") {
-      router.push("/");
-      storage.setUser(response.user);
+      if (response.user.role === "CLIENT") {
+        router.push("/");
+        storage.setUser(response.user);
+        setUser(response.user);
+        toast.success(`Bienvenue a nouveau, ${response.user.firstName}`, {
+          duration: 3000,
+          position: "bottom-center",
+        });
+        return;
+      }
 
-      setUser(response.user);
-      toast.success("Bienvenue à nouveau, " + response.user.firstName, {
-        duration: 3000,
-        position: "bottom-center",
-      });
-    } else {
       window.location.href = process.env.NEXT_PUBLIC_BACKOFFICE_URL!;
-      toast.success("redireiction vers back office", {
+      toast.success("Redirection vers le back office", {
         duration: 3000,
         position: "bottom-center",
       });
-    return
-    }
-  };
+    },
+    [router],
+  );
 
-  const signup = async (payload: SignupPayload) => {
+  const signup = useCallback(async (payload: SignupPayload) => {
     try {
       await authService.signup(payload);
-    } catch (error: any) {
-      toast.error(error.response.data.message, {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Une erreur est survenue pendant l'inscription.";
+      toast.error(message, {
         duration: 3000,
         position: "bottom-center",
       });
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await authService.logout();
-
     storage.clearAuth();
-    // setToken(null);
     setUser(null);
-    toast.success("Vous avez bien vous deconnecté!", {
+    toast.success("Vous avez bien ete deconnecte.", {
       duration: 3000,
       position: "bottom-center",
     });
-  };
+  }, []);
 
-  const setCurrentUser = (user: AuthUser) => {
-    storage.setUser(user);
-    setUser(user);
-  };
-useEffect(() => {
+  const setCurrentUser = useCallback((nextUser: AuthUser) => {
+    storage.setUser(nextUser);
+    setUser(nextUser);
+  }, []);
+
+  useEffect(() => {
     const init = async () => {
       try {
-        const user = await authService.getCurrentUser(); // uses HttpOnly cookie
-        setUser(user);
+        const currentUser = await authService.getCurrentUser();
+        setUser(currentUser);
       } catch {
         setUser(null);
       }
@@ -113,15 +120,14 @@ useEffect(() => {
       setIsLoading(false);
     };
 
-    init();
+    void init();
   }, []);
-
 
   const value = useMemo(
     () => ({
       user,
       token,
-      isAuthenticated: !! user,
+      isAuthenticated: !!user,
       isLoading,
       login,
       signup,
@@ -129,7 +135,7 @@ useEffect(() => {
       refreshUser,
       setCurrentUser,
     }),
-    [user, token, isLoading],
+    [user, token, isLoading, login, signup, logout, refreshUser, setCurrentUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

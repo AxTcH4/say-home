@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import ma.sayhome.say_home_api.shared.EntityBase;
+import ma.sayhome.say_home_api.user.User;
 
 @Data
 @NoArgsConstructor

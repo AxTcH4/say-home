@@ -1,11 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 
 export default function LoginForm() {
-  const router = useRouter();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: "",

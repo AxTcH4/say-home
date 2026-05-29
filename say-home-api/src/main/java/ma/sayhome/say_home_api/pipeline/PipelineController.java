@@ -3,6 +3,7 @@ package ma.sayhome.say_home_api.pipeline;
 import ma.sayhome.say_home_api.pipeline.dto.UpdatePipelineStatusRequest;
 import ma.sayhome.say_home_api.shared.ControllerBase;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,10 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/pipeline")
+@PreAuthorize("hasRole('ADMIN')")
 public class PipelineController extends ControllerBase {
-    private final PipelineServiceImp pipelineService;
+    private final PipelineServiceImpl pipelineService;
 
-    public PipelineController(PipelineServiceImp pipelineService) {
+    public PipelineController(PipelineServiceImpl pipelineService) {
         this.pipelineService = pipelineService;
     }
 

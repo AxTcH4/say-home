@@ -4,6 +4,7 @@ import ma.sayhome.say_home_api.prospect.dto.CreateProspectInteractionRequest;
 import ma.sayhome.say_home_api.prospect.dto.CreateProspectRequest;
 import ma.sayhome.say_home_api.shared.ControllerBase;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,10 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/prospects")
+@PreAuthorize("hasRole('ADMIN')")
 public class ProspectController extends ControllerBase {
-    private final ProspectServiceImp prospectService;
+    private final ProspectServiceImpl prospectService;
 
-    public ProspectController(ProspectServiceImp prospectService) {
+    public ProspectController(ProspectServiceImpl prospectService) {
         this.prospectService = prospectService;
     }
 
@@ -28,9 +30,11 @@ public class ProspectController extends ControllerBase {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String assignedAgent,
-            @RequestParam(required = false) String source
+            @RequestParam(required = false) String source,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize
     ) {
-        return ok(prospectService.getProspects(search, status, assignedAgent, source));
+        return ok(prospectService.getProspects(search, status, assignedAgent, source, page, pageSize));
     }
 
     @GetMapping("/{id}")

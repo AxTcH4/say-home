@@ -1,7 +1,7 @@
 package ma.sayhome.say_home_api.helpDesk;
 
 import jakarta.validation.Valid;
-import ma.sayhome.say_home_api.auth.User;
+import ma.sayhome.say_home_api.user.User;
 import ma.sayhome.say_home_api.helpDesk.dto.*;
 
 import ma.sayhome.say_home_api.shared.ApiResponse;
@@ -112,10 +112,20 @@ public class HelpDeskController extends ControllerBase {
     @PostMapping("/tickets/new")
 //    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
     public ResponseEntity<ApiResponse<TicketDTO>> createTicket(@Valid @RequestBody TicketRequest ticketRequest) {
-        User authenticatedUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (authenticatedUser == null) throw new UnauthorizedException("User is not logged in");
-        TicketDTO result = helpDeskService.createTicket(authenticatedUser, ticketRequest);
+        System.out.println("Hit the endpoint!!");
+        TicketDTO result = helpDeskService.createTicket(ticketRequest);
         return created(result);
+    }
+
+    @PostMapping("/tickets/comfirmation")
+    public ResponseEntity<ApiResponse<Boolean>> confirmTicket(@Valid @RequestBody EmailRequest emailRequest) {
+        return ok(helpDeskService.sendComfirmationEmail(emailRequest.getEmail(),
+                                                        emailRequest.getSubject(),
+                                                        emailRequest.getGreeting(),
+                                                        emailRequest.getBody(),
+                                                        emailRequest.getFootnote()
+            )
+        );
     }
 
     // get all tickets
@@ -131,6 +141,25 @@ public class HelpDeskController extends ControllerBase {
     @PreAuthorize("hasAnyRole('ADMIN', 'AGENT', 'CLIENT')")
     public ResponseEntity<ApiResponse<List<TicketDTO>>> getTicketsByProspectId(@PathVariable("prospectId") Integer prospectId) {
         List<TicketDTO> results = helpDeskService.getTicketsByProspectId(prospectId);
+        return ok(results);
+    }
+
+    @GetMapping("/tickets/me")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<ApiResponse<List<TicketDTO>>> getMyTickets() {
+        User authenticatedUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (authenticatedUser == null) {
+            throw new UnauthorizedException("User is not logged in");
+        }
+
+        return ok(helpDeskService.getTicketsByAuthenticatedProspect(authenticatedUser));
+    }
+
+    //Get latest active tickets by prospectId
+    @GetMapping("/tickets/latest/{prospectId}")
+    public ResponseEntity<ApiResponse<List<TicketDTO>>> getLatestactiveTickets(@PathVariable("prospectId") Integer prospectId) {
+        List<TicketDTO> results = helpDeskService.getLatestActiveTicketsByProspectId(prospectId);
         return ok(results);
     }
 
